@@ -1,6 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import { AssociationDetails, CategoryId, TournamentCategory } from '../../types';
-import { Building2, CheckCircle2, AlertCircle, Upload, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { CheckCircle2, AlertCircle, Building2 } from 'lucide-react';
+import { ImageUploadField } from '../ImageUploadField';
 
 interface StepProps {
   category: CategoryId;
@@ -19,40 +20,11 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
   categories,
   errors
 }) => {
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const handleChange = (field: keyof AssociationDetails, value: string) => {
     setAssociation(prev => ({
       ...prev,
       [field]: value
     }));
-  };
-
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploadingLogo(true);
-    try {
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileType: file.type,
-          tag: 'association_logo'
-        })
-      });
-      const data = await res.json();
-      if (data.secure_url) {
-        handleChange('associationLogo', data.secure_url);
-      }
-    } catch (err) {
-      console.error('Upload error:', err);
-    } finally {
-      setIsUploadingLogo(false);
-    }
   };
 
   return (
@@ -62,7 +34,7 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="text-lg font-bold text-white flex items-center gap-2 font-heading">
-              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/40">
+              <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#FFB800]/20 text-[#FFB800] text-xs font-bold border border-[#FFB800]/40">
                 1
               </span>
               Select Tournament Category (School Class)
@@ -71,7 +43,7 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
               There are strictly two categories based on player school class. Every squad must have exactly 8 players.
             </p>
           </div>
-          <span className="text-xs text-amber-400 font-semibold hidden sm:inline font-mono-sport">
+          <span className="text-xs text-[#FFB800] font-semibold hidden sm:inline font-mono-sport">
             Oct 3-4, 2026 • NCR
           </span>
         </div>
@@ -90,21 +62,21 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
               <div
                 key={cat.id}
                 onClick={() => setCategory(cat.id)}
-                className={`relative p-5 rounded-2xl border transition-all cursor-pointer text-left ${
+                className={`relative p-5 rounded-2xl border transition-all duration-200 cursor-pointer text-left select-none active:scale-[0.99] ${
                   isSelected
-                    ? 'bg-slate-900 border-amber-500 ring-2 ring-amber-500/40 shadow-xl shadow-amber-500/10'
-                    : 'bg-slate-900/50 border-slate-800 hover:border-slate-700 hover:bg-slate-900/80'
+                    ? 'bg-[#0B1538] border-[#FFB800] ring-2 ring-[#FFB800]/40 shadow-xl shadow-[#FFB800]/10'
+                    : 'bg-[#091230]/60 border-[#1A2C68] hover:border-slate-700 hover:bg-[#091230]'
                 }`}
               >
                 {isSelected && (
-                  <div className="absolute top-4 right-4 text-amber-400">
-                    <CheckCircle2 className="w-5 h-5 fill-amber-400/20" />
+                  <div className="absolute top-4 right-4 text-[#FFB800]">
+                    <CheckCircle2 className="w-5 h-5 fill-[#FFB800]/20" />
                   </div>
                 )}
 
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2.5 py-0.5 rounded text-[11px] font-black bg-amber-400/15 text-amber-300 border border-amber-400/30 uppercase font-mono-sport">
-                    {cat.classes}
+                  <span className="px-2.5 py-0.5 rounded text-[11px] font-black bg-[#FFB800]/15 text-[#FFB800] border border-[#FFB800]/30 uppercase font-mono-sport">
+                    {cat.classes || (cat.id === 'class_4_5_6' ? 'Class 4, 5, 6' : 'Class 7, 8, 9')}
                   </span>
                   <span className="text-xs text-slate-400">
                     Official Division
@@ -119,9 +91,9 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
                   {cat.description}
                 </p>
 
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs">
+                <div className="pt-3 border-t border-[#1A2C68] flex items-center justify-between text-xs">
                   <span className="text-slate-400">Squad Requirement:</span>
-                  <span className="font-bold text-amber-400 font-mono-sport">
+                  <span className="font-bold text-[#FFB800] font-mono-sport">
                     EXACTLY 8 PLAYERS
                   </span>
                 </div>
@@ -132,16 +104,16 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
       </div>
 
       {/* 2. Association Details */}
-      <div className="pt-6 border-t border-slate-800">
+      <div className="pt-6 border-t border-[#1A2C68]">
         <div className="mb-4">
           <h3 className="text-lg font-bold text-white flex items-center gap-2 font-heading">
-            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/40">
+            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#FFB800]/20 text-[#FFB800] text-xs font-bold border border-[#FFB800]/40">
               2
             </span>
             Association & Branch Information
           </h3>
           <p className="text-xs text-slate-400">
-            The registering entity may be a School, Academy, Club, or Sports Association.
+            The registering entity may be a School, Cricket Academy, Club, or Sports Association.
           </p>
         </div>
 
@@ -149,15 +121,15 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
           {/* Association Name */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-              Association Name *
+              Association / School Name <span className="text-[#FFB800]">*</span>
             </label>
             <input
               type="text"
               value={association.associationName}
               onChange={e => handleChange('associationName', e.target.value)}
               placeholder="e.g. Delhi Public School / Drona Cricket Academy"
-              className={`w-full px-3.5 py-2.5 bg-slate-900 border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 ${
-                errors.associationName ? 'border-red-500' : 'border-slate-800 focus:border-amber-500'
+              className={`w-full px-4 py-3 bg-[#0A1230] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FFB800]/50 transition-all ${
+                errors.associationName ? 'border-red-500' : 'border-[#1A2C68] focus:border-[#FFB800]'
               }`}
             />
             {errors.associationName && (
@@ -168,15 +140,15 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
           {/* Branch */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-              Branch *
+              Branch / Campus <span className="text-[#FFB800]">*</span>
             </label>
             <input
               type="text"
               value={association.branch}
               onChange={e => handleChange('branch', e.target.value)}
               placeholder="e.g. East Campus, Sector 28 / Main Branch"
-              className={`w-full px-3.5 py-2.5 bg-slate-900 border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 ${
-                errors.branch ? 'border-red-500' : 'border-slate-800 focus:border-amber-500'
+              className={`w-full px-4 py-3 bg-[#0A1230] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FFB800]/50 transition-all ${
+                errors.branch ? 'border-red-500' : 'border-[#1A2C68] focus:border-[#FFB800]'
               }`}
             />
             {errors.branch && (
@@ -187,15 +159,15 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
           {/* Association Email */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-              Email *
+              Official Email <span className="text-[#FFB800]">*</span>
             </label>
             <input
               type="email"
               value={association.email}
               onChange={e => handleChange('email', e.target.value)}
-              placeholder="e.g. sports@dpglobal-delhi.edu.in"
-              className={`w-full px-3.5 py-2.5 bg-slate-900 border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 ${
-                errors.email ? 'border-red-500' : 'border-slate-800 focus:border-amber-500'
+              placeholder="e.g. sports@school.edu.in"
+              className={`w-full px-4 py-3 bg-[#0A1230] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FFB800]/50 transition-all ${
+                errors.email ? 'border-red-500' : 'border-[#1A2C68] focus:border-[#FFB800]'
               }`}
             />
             {errors.email && (
@@ -206,15 +178,15 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
           {/* Association Mobile */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-              Mobile *
+              Contact Mobile <span className="text-[#FFB800]">*</span>
             </label>
             <input
               type="tel"
               value={association.mobile}
               onChange={e => handleChange('mobile', e.target.value)}
               placeholder="e.g. +91 98112 34567"
-              className={`w-full px-3.5 py-2.5 bg-slate-900 border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-amber-500 ${
-                errors.mobile ? 'border-red-500' : 'border-slate-800 focus:border-amber-500'
+              className={`w-full px-4 py-3 bg-[#0A1230] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FFB800]/50 transition-all ${
+                errors.mobile ? 'border-red-500' : 'border-[#1A2C68] focus:border-[#FFB800]'
               }`}
             />
             {errors.mobile && (
@@ -223,61 +195,17 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
           </div>
         </div>
 
-        {/* Association Logo * Upload & URL */}
-        <div className="mt-4 p-4 rounded-xl bg-slate-900/60 border border-slate-800">
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-            Association Logo *
-          </label>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            {association.associationLogo ? (
-              <div className="w-16 h-16 rounded-xl border border-slate-700 bg-slate-950 p-1 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                <img
-                  src={association.associationLogo}
-                  alt="Association Logo"
-                  className="w-full h-full object-contain rounded-lg"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-            ) : (
-              <div className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-700 bg-slate-950/50 flex-shrink-0 flex items-center justify-center text-slate-500">
-                <ImageIcon className="w-6 h-6" />
-              </div>
-            )}
-
-            <div className="flex-1 space-y-2 w-full">
-              <div className="flex items-center gap-2">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleLogoUpload}
-                  accept="image/*"
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploadingLogo}
-                  className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <Upload className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{isUploadingLogo ? 'Uploading to Cloudinary...' : 'Upload Logo'}</span>
-                </button>
-                <span className="text-[11px] text-slate-500">PNG, JPG or SVG</span>
-              </div>
-              <input
-                type="url"
-                value={association.associationLogo}
-                onChange={e => handleChange('associationLogo', e.target.value)}
-                placeholder="Or paste direct image URL (e.g. Cloudinary/CDN)..."
-                className={`w-full px-3 py-1.5 bg-slate-950 border rounded-lg text-xs text-white placeholder-slate-600 focus:outline-none ${
-                  errors.associationLogo ? 'border-red-500' : 'border-slate-800 focus:border-amber-500'
-                }`}
-              />
-            </div>
-          </div>
-          {errors.associationLogo && (
-            <p className="text-[11px] text-red-400 mt-2">{errors.associationLogo}</p>
-          )}
+        {/* Association Logo - Professional Upload */}
+        <div className="mt-5">
+          <ImageUploadField
+            label="Association / School Logo"
+            required
+            value={association.associationLogo}
+            onChange={url => handleChange('associationLogo', url)}
+            error={errors.associationLogo}
+            aspectRatio="square"
+            helperText="Official crest or logo of school, academy or club"
+          />
         </div>
       </div>
     </div>

@@ -1,8 +1,30 @@
 @import "tailwindcss";
 
+:root {
+  /* Centralized BidWar.in Design Tokens */
+  --bidwar-primary: #0A1230;
+  --bidwar-primary-dark: #070D24;
+  --bidwar-accent: #FFB800;
+  --bidwar-gold: #FFB800;
+  --bidwar-gold-hover: #FBBF24;
+  --bidwar-gold-muted: rgba(255, 184, 0, 0.15);
+  --bidwar-surface: #0B1538;
+  --bidwar-surface-elevated: #101E4D;
+  --bidwar-card: #0D1944;
+  --bidwar-border: #1A2C68;
+  --bidwar-border-subtle: #132252;
+  --bidwar-border-focus: #FFB800;
+  --bidwar-text: #FFFFFF;
+  --bidwar-text-secondary: #E2E8F0;
+  --bidwar-muted: #94A3B8;
+  --bidwar-dim: #64748B;
+}
+
 @layer base {
   body {
     font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--bidwar-primary-dark);
+    color: var(--bidwar-text);
   }
 
   h1, h2, h3, .font-heading {
@@ -15,17 +37,17 @@
   }
 }
 
-/* Custom sports grid patterns and badge print support */
+/* BidWar subtle broadcast grid pattern */
 .bg-pitch-grid {
-  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(rgba(255, 184, 0, 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 
 .sports-stripe {
   background: repeating-linear-gradient(
     -45deg,
-    rgba(245, 158, 11, 0.05),
-    rgba(245, 158, 11, 0.05) 10px,
+    rgba(255, 184, 0, 0.04),
+    rgba(255, 184, 0, 0.04) 10px,
     transparent 10px,
     transparent 20px
   );

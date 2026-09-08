@@ -87,12 +87,36 @@ export interface PaymentInfo {
   paymentScreenshot?: string;
 }
 
+export interface SponsorConfig {
+  id: string;
+  type: string; // e.g. "OFFICIAL SPONSOR", "TITLE SPONSOR", "POWERED BY"
+  name: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+}
+
+export type RegistrationStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'CONFIRMED' | 'REJECTED';
+
+export interface DraftRecord {
+  draftId: string;
+  currentStep: number;
+  category: CategoryId;
+  association: AssociationDetails;
+  mentor: MentorDetails;
+  teamName: string;
+  includeBranding: boolean;
+  teamTagline: string;
+  players: PlayerDetails[];
+  payment: PaymentInfo;
+  status: 'DRAFT' | 'SUBMITTED' | 'CONFIRMED';
+  updatedAt: string;
+  createdAt: string;
+}
+
 export interface TeamBrandingDetails {
   teamName: string;
   includeBranding: boolean;
   teamTagline?: string;
-  primaryColor?: string;
-  secondaryColor?: string;
   teamShortCode?: string;
 }
 
@@ -100,7 +124,7 @@ export interface RegistrationRecord {
   id: string; // Format: BPL-2026-XXXX (e.g. BPL-2026-0001)
   teamCode: string; // Format: exactly 4 numeric digits (e.g. "1027")
   createdAt: string;
-  status: 'Confirmed' | 'Verification Pending';
+  status: 'Confirmed' | 'Verification Pending' | RegistrationStatus;
   category: CategoryId;
   association: AssociationDetails;
   mentor: MentorDetails;
@@ -117,6 +141,9 @@ export interface RegistrationRecord {
     brandingAmount: number;
     totalAmount: number;
     paymentStatus: 'VERIFIED' | 'PENDING_VERIFICATION';
+    paidAt?: string;
+    utrTransactionId?: string;
+    paymentScreenshot?: string;
   };
   whatsappCommunityUrl?: string;
   notes?: string;

@@ -1,6 +1,6 @@
 import React from 'react';
 import { 
-  Trophy, Shield, Calendar, HelpCircle, Tv, Users
+  Trophy, Shield, Calendar, HelpCircle, Tv
 } from 'lucide-react';
 
 export const RulesAndFaq: React.FC = () => {
@@ -35,7 +35,7 @@ export const RulesAndFaq: React.FC = () => {
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto">
-        <span className="text-xs font-black tracking-widest text-amber-400 uppercase font-mono-sport">
+        <span className="text-xs font-black tracking-widest text-[#FFB800] uppercase font-mono-sport">
           OFFICIAL TOURNAMENT HANDBOOK
         </span>
         <h2 className="text-2xl sm:text-4xl font-black text-white font-heading mt-1 mb-3">
@@ -48,8 +48,8 @@ export const RulesAndFaq: React.FC = () => {
 
       {/* Format Bento Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center font-bold">
+        <div className="bg-[#0B1538] border border-[#1A2C68] rounded-2xl p-6 space-y-3 shadow-lg">
+          <div className="w-10 h-10 rounded-xl bg-[#FFB800]/10 text-[#FFB800] border border-[#FFB800]/20 flex items-center justify-center font-bold">
             <Trophy className="w-5 h-5" />
           </div>
           <h3 className="text-base font-bold text-white font-heading">Squad & Match Structure</h3>
@@ -62,7 +62,7 @@ export const RulesAndFaq: React.FC = () => {
           </ul>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-3">
+        <div className="bg-[#0B1538] border border-[#1A2C68] rounded-2xl p-6 space-y-3 shadow-lg">
           <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 flex items-center justify-center font-bold">
             <Shield className="w-5 h-5" />
           </div>
@@ -76,7 +76,7 @@ export const RulesAndFaq: React.FC = () => {
           </ul>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-3">
+        <div className="bg-[#0B1538] border border-[#1A2C68] rounded-2xl p-6 space-y-3 shadow-lg">
           <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold">
             <Tv className="w-5 h-5" />
           </div>
@@ -86,15 +86,15 @@ export const RulesAndFaq: React.FC = () => {
             <li><strong>With Branding:</strong> ₹13,000 (adds ₹5,000)</li>
             <li>Live ball-by-ball scoring on BidWar</li>
             <li>OBS stream lower-third graphics</li>
-            <li>Official printable BPL-2026 Team Pass</li>
+            <li>Official BPL-2026 digital team credentials</li>
           </ul>
         </div>
       </div>
 
       {/* Exactly Two Categories Detail Card */}
-      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-4">
+      <div className="bg-[#0B1538] border border-[#1A2C68] rounded-2xl p-6 sm:p-8 space-y-4 shadow-xl">
         <h3 className="text-lg font-bold text-white flex items-center gap-2 font-heading">
-          <Calendar className="w-5 h-5 text-amber-400" />
+          <Calendar className="w-5 h-5 text-[#FFB800]" />
           Official Registration Categories
         </h3>
         <p className="text-xs text-slate-300">
@@ -102,28 +102,28 @@ export const RulesAndFaq: React.FC = () => {
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-          <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-2">
-            <span className="px-2.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold border border-amber-500/30 uppercase font-mono-sport">
+          <div className="p-5 rounded-2xl bg-[#070D24] border border-[#1A2C68] text-xs space-y-2">
+            <span className="px-2.5 py-0.5 rounded bg-[#FFB800]/15 text-[#FFB800] font-bold border border-[#FFB800]/30 uppercase font-mono-sport">
               CATEGORY 1
             </span>
             <h4 className="text-base font-bold text-white">Class 4–5–6 Division</h4>
             <p className="text-slate-300">
               For students studying in 4th, 5th, or 6th standard. All 8 players must belong to Class 4, 5, or 6.
             </p>
-            <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+            <div className="pt-2 border-t border-[#1A2C68] text-[11px] text-slate-400">
               Roster requirement: Exactly 8 players
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 text-xs space-y-2">
-            <span className="px-2.5 py-0.5 rounded bg-amber-500/10 text-amber-400 font-bold border border-amber-500/30 uppercase font-mono-sport">
+          <div className="p-5 rounded-2xl bg-[#070D24] border border-[#1A2C68] text-xs space-y-2">
+            <span className="px-2.5 py-0.5 rounded bg-sky-500/15 text-sky-400 font-bold border border-sky-500/30 uppercase font-mono-sport">
               CATEGORY 2
             </span>
             <h4 className="text-base font-bold text-white">Class 7–8–9 Division</h4>
             <p className="text-slate-300">
               For students studying in 7th, 8th, or 9th standard. All 8 players must belong to Class 7, 8, or 9.
             </p>
-            <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+            <div className="pt-2 border-t border-[#1A2C68] text-[11px] text-slate-400">
               Roster requirement: Exactly 8 players
             </div>
           </div>
@@ -133,7 +133,7 @@ export const RulesAndFaq: React.FC = () => {
       {/* FAQ Accordion List */}
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-white flex items-center gap-2 font-heading">
-          <HelpCircle className="w-5 h-5 text-amber-400" />
+          <HelpCircle className="w-5 h-5 text-[#FFB800]" />
           Frequently Asked Questions
         </h3>
 
@@ -141,10 +141,10 @@ export const RulesAndFaq: React.FC = () => {
           {faqs.map((faq, idx) => (
             <div
               key={idx}
-              className="p-5 rounded-xl bg-slate-900/70 border border-slate-800 space-y-2 text-left"
+              className="p-5 rounded-xl bg-[#0B1538] border border-[#1A2C68] space-y-2 text-left shadow"
             >
               <h4 className="text-sm font-bold text-white flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-slate-800 text-amber-400 text-xs flex items-center justify-center font-mono font-bold">
+                <span className="w-5 h-5 rounded-full bg-[#070D24] text-[#FFB800] border border-[#1A2C68] text-xs flex items-center justify-center font-mono font-bold">
                   Q
                 </span>
                 {faq.q}

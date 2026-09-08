@@ -117,8 +117,6 @@ const registrationsDatabase: any[] = [
       teamName: "DPS Thunderbolts",
       includeBranding: true,
       teamTagline: "Defend with Pride, Strike with Power",
-      primaryColor: "#0284c7",
-      secondaryColor: "#f59e0b",
       teamShortCode: "DPS"
     },
     association: {
@@ -274,8 +272,6 @@ const registrationsDatabase: any[] = [
       teamName: "Drona Young Challengers",
       includeBranding: false,
       teamTagline: "Future Champions of Indian Cricket",
-      primaryColor: "#059669",
-      secondaryColor: "#eab308",
       teamShortCode: "DYC"
     },
     association: {
@@ -491,6 +487,67 @@ app.get("/api/registrations/:query", (req, res) => {
   res.json({ registration: found });
 });
 
+// Server-Side Draft Persistence (Supports DRAFT status & session recovery)
+const draftsDatabase = new Map<string, any>();
+
+// Draft Endpoints: Create or update draft
+app.post("/api/drafts", (req, res) => {
+  const {
+    draftId,
+    currentStep,
+    category,
+    association,
+    mentor,
+    teamName,
+    includeBranding,
+    teamTagline,
+    players,
+    payment
+  } = req.body;
+
+  const id = draftId || `BPL-DRAFT-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+  const draftRecord = {
+    draftId: id,
+    currentStep: typeof currentStep === "number" ? currentStep : 0,
+    category: category || "class_4_5_6",
+    association: association || {},
+    mentor: mentor || {},
+    teamName: teamName || "",
+    includeBranding: Boolean(includeBranding),
+    teamTagline: teamTagline || "",
+    players: Array.isArray(players) ? players : [],
+    payment: payment || {},
+    status: "DRAFT",
+    updatedAt: new Date().toISOString(),
+    createdAt: draftsDatabase.get(id)?.createdAt || new Date().toISOString()
+  };
+
+  draftsDatabase.set(id, draftRecord);
+
+  res.json({
+    success: true,
+    draftId: id,
+    status: "DRAFT",
+    updatedAt: draftRecord.updatedAt
+  });
+});
+
+// Retrieve an existing draft
+app.get("/api/drafts/:draftId", (req, res) => {
+  const draft = draftsDatabase.get(req.params.draftId);
+  if (!draft) {
+    return res.status(404).json({ error: "Draft not found" });
+  }
+  res.json({ success: true, draft });
+});
+
+// Clean up draft
+app.delete("/api/drafts/:draftId", (req, res) => {
+  draftsDatabase.delete(req.params.draftId);
+  res.json({ success: true });
+});
+
 // 5. Submit New Registration (Strict Backend Enforcement)
 app.post("/api/registrations", (req, res) => {
   // A. Enforce Registration Window
@@ -682,8 +739,6 @@ app.post("/api/registrations", (req, res) => {
       teamName: teamName.trim(),
       includeBranding: hasBranding,
       teamTagline: req.body.teamTagline?.trim() || "",
-      primaryColor: req.body.primaryColor || "#0284c7",
-      secondaryColor: req.body.secondaryColor || "#f59e0b",
       teamShortCode: req.body.teamShortCode || "BPL"
     },
     association: {
@@ -736,6 +791,11 @@ app.post("/api/registrations", (req, res) => {
 
   // Prepend to database
   registrationsDatabase.unshift(newRecord);
+
+  // If there was an active draft, remove it now that registration is SUBMITTED
+  if (req.body.draftId) {
+    draftsDatabase.delete(req.body.draftId);
+  }
 
   res.status(201).json({
     success: true,
