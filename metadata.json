@@ -1,0 +1,6 @@
+{
+  "name": "BidWar Premier League — Kids Version",
+  "description": "Official team registration portal for schools, academies, and associations for the BidWar Premier League Kids Version Season 1 box-cricket tournament (3rd & 4th October 2026).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
