@@ -192,7 +192,8 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
 
   // 5. Payment Details
   const [payment, setPayment] = useState<PaymentInfo>({
-    method: 'UPI',
+    method: 'CASHFREE',
+    gateway: 'CASHFREE',
     transactionReference: '',
     paymentDate: new Date().toISOString().split('T')[0],
     paymentProofUrl: ''
@@ -400,11 +401,17 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
       }
     } else if (stepIndex === 4) {
       // Validate payment
-      if (!payment.transactionReference?.trim()) {
-        newErrors.payment = 'UTR / Transaction Reference number is required.';
-      }
-      if (!payment.paymentProofUrl?.trim()) {
-        newErrors.payment = 'Payment receipt / screenshot is required.';
+      if (payment.method === 'CASHFREE') {
+        if (!payment.gatewayPaymentId && !payment.transactionReference) {
+          newErrors.payment = 'Please complete your online payment with Cashfree before final submission.';
+        }
+      } else {
+        if (!payment.transactionReference?.trim()) {
+          newErrors.payment = 'UTR / Transaction Reference number is required.';
+        }
+        if (!payment.paymentProofUrl?.trim()) {
+          newErrors.payment = 'Payment receipt / screenshot is required.';
+        }
       }
     }
 

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { verifyPaymentByAdmin, getRegistrationById } from '../db/registrations';
 import { requireAdminKey } from '../middleware/auth';
 import { adminLimiter } from '../middleware/rateLimiter';
+import { triggerPaymentVerifiedEmails } from '../services/emailService';
 
 export const adminRoutes = Router();
 
@@ -24,6 +25,10 @@ adminRoutes.post(
         });
         return;
       }
+
+      // Trigger payment verified email workflow (payment confirmation + rules)
+      triggerPaymentVerifiedEmails(registrationId)
+        .catch((err) => console.error('[Admin Email Error]', err.message));
 
       const updated = await getRegistrationById(registrationId);
       res.json({

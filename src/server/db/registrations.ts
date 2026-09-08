@@ -44,9 +44,14 @@ export interface MentorInput {
 }
 
 export interface PaymentInput {
-  utrTransactionId: string;
-  paymentScreenshot: string;
+  utrTransactionId?: string;
+  paymentScreenshot?: string;
   method?: string;
+  gateway?: 'CASHFREE' | 'MANUAL';
+  gatewayOrderId?: string;
+  gatewayPaymentId?: string;
+  gatewayRawResponse?: any;
+  paymentStatus?: string;
 }
 
 export interface RegistrationSubmissionInput {
@@ -86,11 +91,16 @@ export interface RegistrationFullRecord {
     utrTransactionId: string;
     paymentScreenshot: string;
     method: string;
+    gateway?: string;
+    gatewayOrderId?: string;
+    gatewayPaymentId?: string;
     baseAmount: number;
     brandingAmount: number;
     totalAmount: number;
     paymentStatus: string;
     paidAt: string;
+    verifiedBy?: string | null;
+    verifiedAt?: string | null;
   };
 }
 
@@ -290,12 +300,15 @@ export function validateRegistrationPayload(input: RegistrationSubmissionInput):
     return { valid: false, error: 'Payment details are required.' };
   }
 
-  const utr = normalizeUtr(input.payment.utrTransactionId || '');
+  const isCashfree = input.payment.gateway === 'CASHFREE' || input.payment.method === 'CASHFREE';
+  const rawRef = input.payment.gatewayPaymentId || input.payment.utrTransactionId || input.payment.gatewayOrderId || '';
+  const utr = normalizeUtr(rawRef);
+
   if (!utr) {
-    return { valid: false, error: 'Payment UTR / Transaction Reference number is required.' };
+    return { valid: false, error: isCashfree ? 'Cashfree payment reference is required.' : 'Payment UTR / Transaction Reference number is required.' };
   }
 
-  if (!input.payment.paymentScreenshot?.trim()) {
+  if (!isCashfree && !input.payment.paymentScreenshot?.trim()) {
     return { valid: false, error: 'Payment screenshot proof is required.' };
   }
 
@@ -320,7 +333,7 @@ export async function createRegistrationTransaction(
     throw new Error(validation.error || 'Invalid registration payload.');
   }
 
-  const normalizedUtr = normalizeUtr(input.payment.utrTransactionId);
+  const isCashfree = input.payment.gateway === 'CASHFREE' || input.payment.method === 'CASHFREE';
 
   // 3. Execute atomic transaction
   return withTransaction(async (client) => {
@@ -336,20 +349,95 @@ export async function createRegistrationTransaction(
       }
     }
 
-    // B. Check UTR uniqueness
+    // B. Calculate authoritative fee
+    const hasBranding = Boolean(input.includeBranding);
+    const baseAmount = config.fees.baseRegistrationFee; // ₹8,000
+    const brandingAmount = hasBranding ? config.fees.brandingAddonFee : 0; // ₹5,000 or ₹0
+    const totalAmount = baseAmount + brandingAmount; // ₹13,000 or ₹8,000
+
+    let normalizedUtr = '';
+    let gatewayOrderId: string | null = null;
+    let gatewayPaymentId: string | null = null;
+    let paymentStatus = 'PENDING_VERIFICATION';
+    let verifiedBy: string | null = null;
+    let paymentScreenshot = '';
+    let gateway = 'MANUAL';
+    let rawResponse: string | null = null;
+
+    if (isCashfree) {
+      const orderIdToLookup = input.payment.gatewayOrderId || input.payment.utrTransactionId;
+      if (!orderIdToLookup) {
+        throw new Error('Cashfree registration requires a valid Cashfree order ID.');
+      }
+
+      // 1. Authoritative DB Lookup against internal payment_intents table
+      const intentRes = await client.query(
+        `SELECT * FROM payment_intents WHERE order_id = $1 LIMIT 1`,
+        [orderIdToLookup.trim()]
+      );
+
+      if (intentRes.rows.length === 0) {
+        throw new Error('Invalid or unrecognized Cashfree order ID. Payment intent does not exist.');
+      }
+
+      const intent = intentRes.rows[0];
+
+      // 2. Authoritatively verify payment intent is PAID
+      if (intent.status !== 'PAID') {
+        throw new Error('Cashfree payment is not verified. Please complete payment before submitting.');
+      }
+
+      // 3. Verify exact amount match
+      if (intent.amount !== totalAmount) {
+        throw new Error(`Payment amount mismatch: expected ₹${totalAmount}, but paid ₹${intent.amount}.`);
+      }
+
+      // 4. Verify session/draft binding if draftToken supplied
+      if (input.draftToken && intent.draft_token && intent.draft_token !== input.draftToken) {
+        throw new Error('This Cashfree payment belongs to a different registration session.');
+      }
+
+      // 5. Check duplicate gateway_order_id usage
+      const usedOrderCheck = await client.query(
+        `SELECT 1 FROM payments WHERE gateway_order_id = $1 LIMIT 1`,
+        [intent.order_id]
+      );
+      if (usedOrderCheck.rows.length > 0) {
+        throw new Error(`This Cashfree order '${intent.order_id}' has already been used for another registration.`);
+      }
+
+      gatewayOrderId = intent.order_id;
+      gatewayPaymentId = intent.cf_payment_id || intent.bank_reference || intent.order_id;
+      normalizedUtr = normalizeUtr(gatewayPaymentId);
+      paymentStatus = 'VERIFIED';
+      verifiedBy = 'CASHFREE_GATEWAY';
+      gateway = 'CASHFREE';
+      paymentScreenshot = 'CASHFREE_GATEWAY_VERIFIED';
+      rawResponse = intent.raw_response ? JSON.stringify(intent.raw_response) : null;
+    } else {
+      // Manual payment path (UPI QR / Bank Transfer / Cheque)
+      const rawRef = input.payment.utrTransactionId || '';
+      normalizedUtr = normalizeUtr(rawRef);
+      if (!normalizedUtr) {
+        throw new Error('Payment UTR / Transaction Reference number is required.');
+      }
+      if (!input.payment.paymentScreenshot?.trim()) {
+        throw new Error('Payment screenshot proof is required for manual payment verification.');
+      }
+      paymentScreenshot = input.payment.paymentScreenshot.trim();
+      paymentStatus = 'PENDING_VERIFICATION';
+      verifiedBy = null;
+      gateway = 'MANUAL';
+    }
+
+    // Check UTR / Payment Reference Uniqueness
     const utrCheck = await client.query(
       `SELECT 1 FROM payments WHERE utr_transaction_id = $1 LIMIT 1`,
       [normalizedUtr]
     );
     if (utrCheck.rows.length > 0) {
-      throw new Error(`This UTR / Transaction reference '${normalizedUtr}' has already been submitted for another registration.`);
+      throw new Error(`This payment transaction reference '${normalizedUtr}' has already been submitted for another registration.`);
     }
-
-    // C. Calculate authoritative fee
-    const hasBranding = Boolean(input.includeBranding);
-    const baseAmount = config.fees.baseRegistrationFee; // ₹8,000
-    const brandingAmount = hasBranding ? config.fees.brandingAddonFee : 0; // ₹5,000 or ₹0
-    const totalAmount = baseAmount + brandingAmount; // ₹13,000 or ₹8,000
 
     // D. Generate server-side identifiers
     const registrationId = await generateNextRegistrationId(client);
@@ -435,20 +523,27 @@ export async function createRegistrationTransaction(
       );
     }
 
-    // I. Insert Payment Record (STRICTLY PENDING_VERIFICATION)
+    // I. Insert Payment Record
     await client.query(
       `INSERT INTO payments (
-        registration_id, utr_transaction_id, payment_screenshot, method,
-        base_amount, branding_amount, total_amount, payment_status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'PENDING_VERIFICATION')`,
+        registration_id, utr_transaction_id, payment_screenshot, method, gateway,
+        gateway_order_id, gateway_payment_id, gateway_raw_response,
+        base_amount, branding_amount, total_amount, payment_status, verified_at, verified_by, confirmation_email_sent_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CASE WHEN $12 = 'VERIFIED' THEN NOW() ELSE NULL END, $13, CASE WHEN $12 = 'VERIFIED' THEN NOW() ELSE NULL END)`,
       [
         registrationId,
         normalizedUtr,
-        input.payment.paymentScreenshot.trim(),
-        input.payment.method || 'UPI',
+        paymentScreenshot,
+        input.payment.method || (isCashfree ? 'CASHFREE' : 'UPI'),
+        gateway,
+        gatewayOrderId,
+        gatewayPaymentId,
+        rawResponse,
         baseAmount,
         brandingAmount,
         totalAmount,
+        paymentStatus,
+        verifiedBy,
       ]
     );
 
@@ -578,11 +673,16 @@ export async function getRegistrationById(
       utrTransactionId: payment.utr_transaction_id,
       paymentScreenshot: payment.payment_screenshot,
       method: payment.method,
+      gateway: payment.gateway,
+      gatewayOrderId: payment.gateway_order_id,
+      gatewayPaymentId: payment.gateway_payment_id,
       baseAmount: payment.base_amount,
       brandingAmount: payment.branding_amount,
       totalAmount: payment.total_amount,
       paymentStatus: payment.payment_status,
       paidAt: payment.paid_at,
+      verifiedBy: payment.verified_by,
+      verifiedAt: payment.verified_at,
     },
   };
 }

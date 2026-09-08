@@ -7,7 +7,7 @@ import {
 import { query } from '../db/index';
 import { registrationSubmissionLimiter, publicApiLimiter } from '../middleware/rateLimiter';
 import { optionalAuth, AuthenticatedRequest } from '../middleware/auth';
-import { sendRegistrationConfirmationEmail } from '../services/emailService';
+import { triggerRegistrationCompletedEmails, triggerPaymentVerifiedEmails } from '../services/emailService';
 
 export const registrationRoutes = Router();
 
@@ -36,18 +36,13 @@ registrationRoutes.post(
       const registration = await createRegistrationTransaction(input);
 
       // Async notification dispatch - failsafe outside transaction
-      sendRegistrationConfirmationEmail({
-        registrationId: registration.id,
-        teamCode: registration.teamCode,
-        teamName: registration.teamName,
-        category: registration.category,
-        associationName: registration.association.associationName,
-        mentorName: registration.mentor.name,
-        mentorEmail: registration.mentor.email,
-        associationEmail: registration.association.email,
-        totalAmount: registration.payment.totalAmount,
-        paymentStatus: registration.payment.paymentStatus,
-      }).catch((err) => console.error('[Email Notification Error]', err.message));
+      triggerRegistrationCompletedEmails(registration.id)
+        .then(async () => {
+          if (registration.payment.paymentStatus === 'VERIFIED') {
+            await triggerPaymentVerifiedEmails(registration.id);
+          }
+        })
+        .catch((err) => console.error('[Email Notification Error]', err.message));
 
       // Return strictly minimal confirmation DTO (NO private player, mentor, UTR, or contact details)
       res.status(201).json({

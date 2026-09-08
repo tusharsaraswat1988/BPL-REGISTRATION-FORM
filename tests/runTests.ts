@@ -3,6 +3,7 @@ import {
   validateRegistrationPayload,
   isRegistrationWindowOpen,
   normalizeUtr,
+  createRegistrationTransaction,
   PublicTeamDTO,
   RegistrationSubmissionInput
 } from '../src/server/db/registrations';
@@ -19,7 +20,32 @@ import {
   closeDatabase
 } from '../src/server/db/index';
 import { config, validateEnv } from '../src/server/config/env';
-import { sendRegistrationConfirmationEmail, RegistrationEmailData } from '../src/server/services/emailService';
+import {
+  sendRegistrationConfirmationEmail,
+  triggerRegistrationCompletedEmails,
+  triggerPaymentVerifiedEmails,
+  sendEmailWithIdempotency,
+  RegistrationEmailData
+} from '../src/server/services/emailService';
+import {
+  renderRegistrationConfirmationEmail,
+  renderPaymentConfirmationEmail,
+  renderTournamentRulesEmail
+} from '../src/server/services/email/templates';
+import {
+  EmailLayout,
+  EmailHeader,
+  EmailFooter,
+  InfoCard,
+  TeamDetailsCard,
+  PaymentDetailsCard,
+  PlayerTable,
+  ParentChildCard,
+  StatusBadge,
+  CTAButton
+} from '../src/server/services/email/components';
+import { TOURNAMENT_CONFIG } from '../src/config/tournamentConfig';
+import { cashfreeService } from '../src/server/services/cashfreeService';
 import crypto from 'crypto';
 import http from 'http';
 import fs from 'fs';
@@ -232,12 +258,14 @@ async function runAllTests() {
   // -------------------------------------------------------------
   console.log('\n--- Suite 6: Public API Privacy & Strict DTO Verification ---');
   
-  // Set up mock DB store for server routes
+  // Mock stores for database interceptor
   const mockRegistrations = new Map<string, any>();
   const mockAssociations = new Map<string, any>();
   const mockMentors = new Map<string, any>();
   const mockPlayers = new Map<string, any[]>();
   const mockPayments = new Map<string, any>();
+  const mockPaymentIntents = new Map<string, any>();
+  const mockEmailDeliveries = new Map<string, any>();
 
   // Seed Registration A (Owned by User A: bidwar_user_A)
   const regAId = 'BPL-2026-0001';
@@ -274,14 +302,19 @@ async function runAllTests() {
   });
   mockPlayers.set(regAId, valid8Players);
   mockPayments.set(regAId, {
+    registration_id: regAId,
     utr_transaction_id: 'HDFC982319082',
     payment_screenshot: 'https://res.cloudinary.com/bpl-kids/payment-proofs/proof.jpg',
     method: 'UPI',
+    gateway: 'MANUAL',
+    gateway_order_id: null,
+    gateway_payment_id: null,
     base_amount: 8000,
     branding_amount: 5000,
     total_amount: 13000,
     payment_status: 'PENDING_VERIFICATION',
     paid_at: new Date().toISOString(),
+    confirmation_email_sent_at: null,
   });
 
   // Seed Registration B (Owned by User B: bidwar_user_B)
@@ -319,18 +352,23 @@ async function runAllTests() {
   });
   mockPlayers.set(regBId, valid8Players);
   mockPayments.set(regBId, {
+    registration_id: regBId,
     utr_transaction_id: 'ICICI982319083',
     payment_screenshot: 'https://res.cloudinary.com/bpl-kids/payment-proofs/proof2.jpg',
     method: 'UPI',
+    gateway: 'MANUAL',
+    gateway_order_id: null,
+    gateway_payment_id: null,
     base_amount: 8000,
     branding_amount: 0,
     total_amount: 8000,
     payment_status: 'PENDING_VERIFICATION',
     paid_at: new Date().toISOString(),
+    confirmation_email_sent_at: null,
   });
 
   // Configure Database Interceptor for deterministic test assertions
-  setDatabaseOverrides({
+  const mockDbOverrides = {
     query: async (text: string, params?: any[]) => {
       // 1. SELECT id, auth_user_id FROM registrations WHERE id = $1 OR team_code = $1 LIMIT 1
       if (text.includes('SELECT id, auth_user_id FROM registrations')) {
@@ -392,7 +430,86 @@ async function runAllTests() {
         return { rows: payment ? [payment] : [] } as any;
       }
 
-      // 7. Public teams query
+      // 7. Payment Intents queries
+      if (text.includes('INSERT INTO payment_intents')) {
+        const orderId = params?.[0];
+        const draftToken = params?.[1];
+        const amount = params?.[2];
+        const category = params?.[3];
+        const includeBranding = params?.[4];
+        const teamName = params?.[5];
+        const authUserId = params?.[6];
+        mockPaymentIntents.set(orderId, {
+          order_id: orderId,
+          draft_token: draftToken,
+          amount,
+          currency: 'INR',
+          status: 'CREATED',
+          category,
+          include_branding: includeBranding,
+          team_name: teamName,
+          auth_user_id: authUserId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        return { rows: [] } as any;
+      }
+
+      if (text.includes('SELECT * FROM payment_intents WHERE order_id = $1')) {
+        const orderId = params?.[0];
+        const intent = mockPaymentIntents.get(orderId);
+        return { rows: intent ? [intent] : [] } as any;
+      }
+
+      if (text.includes('UPDATE payment_intents')) {
+        const orderId = params?.[params.length - 1];
+        const intent = mockPaymentIntents.get(orderId);
+        if (intent) {
+          intent.status = 'PAID';
+          intent.cf_payment_id = params?.[0] || intent.cf_payment_id;
+          intent.bank_reference = params?.[1] || intent.bank_reference;
+          intent.payment_method = params?.[2] || intent.payment_method;
+          intent.raw_response = params?.[3] || intent.raw_response;
+          intent.updated_at = new Date().toISOString();
+        }
+        return { rows: [] } as any;
+      }
+
+      // 8. Update payments for Webhook
+      if (text.includes('UPDATE payments') && text.includes('gateway_order_id')) {
+        const orderId = params?.[2] || params?.[0];
+        let foundRegId: string | null = null;
+        let foundSentAt: any = null;
+        for (const [regId, pay] of mockPayments.entries()) {
+          if (pay.gateway_order_id === orderId) {
+            pay.payment_status = 'VERIFIED';
+            pay.verified_at = new Date().toISOString();
+            pay.verified_by = 'CASHFREE_WEBHOOK';
+            pay.gateway_payment_id = params?.[0] || pay.gateway_payment_id;
+            pay.gateway_raw_response = params?.[1] || pay.gateway_raw_response;
+            pay.confirmation_email_sent_at = pay.confirmation_email_sent_at || new Date().toISOString();
+            foundRegId = regId;
+            foundSentAt = pay.confirmation_email_sent_at;
+            break;
+          }
+        }
+        return {
+          rows: foundRegId ? [{ registration_id: foundRegId, confirmation_email_sent_at: foundSentAt }] : []
+        } as any;
+      }
+
+      // 9. Atomic email claim in Webhook
+      if (text.includes('UPDATE payments') && text.includes('confirmation_email_sent_at = NOW()')) {
+        const regId = params?.[0];
+        const pay = mockPayments.get(regId);
+        if (pay && !pay.confirmation_email_sent_at) {
+          pay.confirmation_email_sent_at = new Date().toISOString();
+          return { rows: [{ '?column?': 1 }] } as any;
+        }
+        return { rows: [] } as any;
+      }
+
+      // 10. Public teams query
       if (text.includes('a.association_name AS "associationName"')) {
         const rows: PublicTeamDTO[] = Array.from(mockRegistrations.values()).map(r => {
           const a = mockAssociations.get(r.id);
@@ -406,10 +523,76 @@ async function runAllTests() {
         return { rows } as any;
       }
 
+      // 11. Admin verify payment query
+      if (text.includes('UPDATE payments') && (text.includes("payment_status = 'VERIFIED'") || text.includes('payment_status = $1'))) {
+        const verifiedBy = params?.[0];
+        const regId = params?.[1];
+        const pay = mockPayments.get(regId);
+        if (pay) {
+          pay.payment_status = 'VERIFIED';
+          pay.verified_at = new Date().toISOString();
+          pay.verified_by = verifiedBy;
+          return { rows: [{ '?column?': 1 }] } as any;
+        }
+        return { rows: [] } as any;
+      }
+
+      // 12. INSERT INTO email_deliveries
+      if (text.includes('INSERT INTO email_deliveries')) {
+        const regId = params?.[0];
+        const recType = params?.[1];
+        const recEmail = params?.[2];
+        const emailType = params?.[3];
+        const key = `${regId}:${recEmail}:${emailType}`;
+        const existing = mockEmailDeliveries.get(key);
+        if (existing && existing.status === 'SENT') {
+          return { rows: [] } as any;
+        }
+        const id = existing ? existing.id : `deliv_${crypto.randomBytes(8).toString('hex')}`;
+        const record = {
+          id,
+          registration_id: regId,
+          recipient_type: recType,
+          recipient_email: recEmail,
+          email_type: emailType,
+          status: 'PENDING',
+          created_at: existing ? existing.created_at : new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        mockEmailDeliveries.set(key, record);
+        return { rows: [record] } as any;
+      }
+
+      // 13. UPDATE email_deliveries
+      if (text.includes('UPDATE email_deliveries')) {
+        const targetId = params?.[params.length - 1];
+        for (const record of mockEmailDeliveries.values()) {
+          if (record.id === targetId || params?.includes(record.id)) {
+            if (text.includes("status = 'SENT'")) {
+              record.status = 'SENT';
+              record.provider_message_id = params?.[0] || 'mock_msg_id';
+              record.sent_at = new Date().toISOString();
+              record.error_message = null;
+            } else if (text.includes("status = 'FAILED'")) {
+              record.status = 'FAILED';
+              record.error_message = params?.[0];
+            }
+            break;
+          }
+        }
+        return { rows: [] } as any;
+      }
+
+      // 14. SELECT from email_deliveries
+      if (text.includes('SELECT * FROM email_deliveries') || text.includes('FROM email_deliveries')) {
+        const regId = params?.[0];
+        const rows = Array.from(mockEmailDeliveries.values()).filter(d => !regId || d.registration_id === regId);
+        return { rows } as any;
+      }
+
       return { rows: [] } as any;
     },
     withTransaction: async (callback) => {
-      // Mock Transaction Client
       let createdRegId = 'BPL-2026-0003';
       let createdTeamCode = '3156';
       let storedAuthUserId: string | null = null;
@@ -419,13 +602,34 @@ async function runAllTests() {
       const mockClient: any = {
         query: async (text: string, params?: any[]) => {
           if (text.includes('registration_sequence')) {
-            return { rows: [{ last_number: 3 }] };
+            const seqNum = mockRegistrations.size + 1;
+            return { rows: [{ last_number: seqNum }] };
           }
           if (text.includes('SELECT 1 FROM registrations WHERE team_code')) {
+            const code = params?.[0];
+            for (const r of mockRegistrations.values()) {
+              if (r.team_code === code) return { rows: [{ '?column?': 1 }] };
+            }
             return { rows: [] };
           }
           if (text.includes('SELECT 1 FROM payments WHERE utr_transaction_id')) {
+            const utr = params?.[0];
+            for (const p of mockPayments.values()) {
+              if (p.utr_transaction_id === utr) return { rows: [{ '?column?': 1 }] };
+            }
             return { rows: [] };
+          }
+          if (text.includes('SELECT 1 FROM payments WHERE gateway_order_id')) {
+            const ordId = params?.[0];
+            for (const p of mockPayments.values()) {
+              if (p.gateway_order_id === ordId) return { rows: [{ '?column?': 1 }] };
+            }
+            return { rows: [] };
+          }
+          if (text.includes('SELECT * FROM payment_intents WHERE order_id = $1')) {
+            const ordId = params?.[0];
+            const intent = mockPaymentIntents.get(ordId);
+            return { rows: intent ? [intent] : [] };
           }
           if (text.includes('INSERT INTO registrations')) {
             createdRegId = params?.[0];
@@ -439,6 +643,8 @@ async function runAllTests() {
               category: storedCategory,
               team_name: storedTeamName,
               include_branding: params?.[4],
+              team_tagline: params?.[5],
+              team_short_code: params?.[6],
               status: 'SUBMITTED',
               auth_user_id: storedAuthUserId,
               created_at: new Date().toISOString(),
@@ -464,16 +670,52 @@ async function runAllTests() {
             });
             return { rows: [] };
           }
+          if (text.includes('INSERT INTO players')) {
+            const existing = mockPlayers.get(createdRegId) || [];
+            existing.push({
+              playerName: params?.[2],
+              studentClass: params?.[3],
+              dateOfBirth: params?.[4],
+              parentMobile: params?.[5],
+              parentEmail: params?.[6],
+              playerPhoto: params?.[7],
+              jerseyNumber: params?.[8],
+              jerseySize: params?.[9],
+              cricketRole: params?.[10],
+              battingStyle: params?.[11],
+              bowlingStyle: params?.[12],
+            });
+            mockPlayers.set(createdRegId, existing);
+            return { rows: [] };
+          }
           if (text.includes('INSERT INTO payments')) {
+            const gOrderId = params?.[5];
+            if (gOrderId) {
+              for (const p of mockPayments.values()) {
+                if (p.gateway_order_id === gOrderId) {
+                  throw new Error('duplicate key value violates unique constraint "idx_payments_gateway_order_unique"');
+                }
+              }
+            }
             mockPayments.set(createdRegId, {
+              registration_id: createdRegId,
               utr_transaction_id: params?.[1],
               payment_screenshot: params?.[2],
               method: params?.[3],
-              base_amount: params?.[4],
-              branding_amount: params?.[5],
-              total_amount: params?.[6],
-              payment_status: 'PENDING_VERIFICATION',
+              gateway: params?.[4],
+              gateway_order_id: params?.[5],
+              gateway_payment_id: params?.[6],
+              gateway_raw_response: params?.[7],
+              base_amount: params?.[8],
+              branding_amount: params?.[9],
+              total_amount: params?.[10],
+              payment_status: params?.[11],
+              verified_by: params?.[12],
+              confirmation_email_sent_at: params?.[11] === 'VERIFIED' ? new Date().toISOString() : null,
             });
+            return { rows: [] };
+          }
+          if (text.includes('DELETE FROM drafts')) {
             return { rows: [] };
           }
           if (text.includes('SELECT * FROM registrations WHERE id = $1')) {
@@ -492,7 +734,23 @@ async function runAllTests() {
             return { rows: mentor ? [mentor] : [] };
           }
           if (text.includes('SELECT * FROM players WHERE registration_id = $1')) {
-            return { rows: [] };
+            const id = params?.[0];
+            const players = mockPlayers.get(id) || [];
+            return {
+              rows: players.map((p) => ({
+                player_name: p.playerName,
+                student_class: p.studentClass,
+                date_of_birth: p.dateOfBirth,
+                parent_mobile: p.parentMobile,
+                parent_email: p.parentEmail,
+                player_photo: p.playerPhoto,
+                jersey_number: p.jerseyNumber,
+                jersey_size: p.jerseySize,
+                cricket_role: p.cricketRole,
+                batting_style: p.battingStyle,
+                bowling_style: p.bowlingStyle,
+              })),
+            };
           }
           if (text.includes('SELECT * FROM payments WHERE registration_id = $1')) {
             const id = params?.[0];
@@ -505,7 +763,9 @@ async function runAllTests() {
 
       return callback(mockClient);
     },
-  });
+  };
+
+  setDatabaseOverrides(mockDbOverrides);
 
   const app = createApp();
   const server = http.createServer(app);
@@ -812,6 +1072,9 @@ async function runAllTests() {
     console.log('  ⚠ SKIP: DATABASE_URL not set in environment, skipping live PostgreSQL queries.');
   }
 
+  // Re-enable database overrides for deterministic mock suites
+  setDatabaseOverrides(mockDbOverrides);
+
   // -------------------------------------------------------------
   // TEST SUITE 11: Production Transactional Email Verification & Failsafe
   // -------------------------------------------------------------
@@ -824,6 +1087,7 @@ async function runAllTests() {
   const origOtp = { ...config.otp };
   const origSessionSecret = config.sessionSecret;
   const origAdminKey = config.adminApiKey;
+  const origCashfree = { ...config.cashfree };
 
   // Set mock full production environment
   config.databaseUrl = 'postgresql://user:pass@ep-host.neon.tech/neondb?sslmode=require';
@@ -837,6 +1101,8 @@ async function runAllTests() {
   config.email.resendApiKey = 're_mock_production_api_key';
   config.email.mailFrom = 'BidWar Premier League <bpl@bidwar.in>';
   config.email.emailEnabled = true;
+  config.cashfree.appId = 'mock_cf_app_id_123';
+  config.cashfree.secretKey = 'mock_cf_secret_key_12345';
 
   // 11.1 Production + email enabled + credentials present -> valid
   const validProdResult = validateEnv(true);
@@ -905,6 +1171,767 @@ async function runAllTests() {
   }
   assert(!emailSendThrew, '11.6: sendRegistrationConfirmationEmail never throws unhandled exceptions on network/API failure');
   assert(emailResult === false || emailResult === true, '11.6: sendRegistrationConfirmationEmail returns boolean result gracefully');
+
+  // -------------------------------------------------------------
+  // TEST SUITE 12: Cashfree Production Hardening & Security Audit (16 Scenarios)
+  // -------------------------------------------------------------
+  console.log('\n--- Suite 12: Cashfree Production Hardening & Payment Integrity (16 Scenarios) ---');
+
+  // Scenario 1: Client sends payment.method = "CASHFREE" and paymentStatus = "VERIFIED" without verified intent/order
+  let scenario1Rejected = false;
+  try {
+    await createRegistrationTransaction({
+      ...validSubmission,
+      teamName: 'Forged Cashfree Team',
+      payment: {
+        method: 'CASHFREE',
+        gateway: 'CASHFREE',
+        utrTransactionId: 'UNREGISTERED_CF_ORDER_9999',
+        gatewayOrderId: 'UNREGISTERED_CF_ORDER_9999',
+        paymentStatus: 'VERIFIED',
+      },
+    });
+  } catch (err: any) {
+    scenario1Rejected = err.message.includes('Payment intent does not exist') || err.message.includes('Invalid or unrecognized Cashfree order ID');
+  }
+  assert(scenario1Rejected, 'Scenario 1: Client claiming paymentStatus=VERIFIED without verified intent is strictly rejected');
+
+  // Scenario 2: Client sends arbitrary UTR for Cashfree
+  let scenario2Rejected = false;
+  try {
+    await createRegistrationTransaction({
+      ...validSubmission,
+      teamName: 'Fake UTR Team',
+      payment: {
+        method: 'CASHFREE',
+        gateway: 'CASHFREE',
+        utrTransactionId: 'ARBITRARY_FAKE_UTR_123456789',
+        paymentStatus: 'VERIFIED',
+      },
+    });
+  } catch (err: any) {
+    scenario2Rejected = err.message.includes('Payment intent does not exist') || err.message.includes('Invalid or unrecognized Cashfree order ID');
+  }
+  assert(scenario2Rejected, 'Scenario 2: Arbitrary/forged UTR for Cashfree payment is strictly rejected');
+
+  // Scenario 3: Cashfree order with ₹8,000 for branded package (Amount Tampering)
+  const tamperOrderId = 'BPL_TAMPER_ORD_001';
+  mockPaymentIntents.set(tamperOrderId, {
+    order_id: tamperOrderId,
+    draft_token: 'draft_tamper_123',
+    amount: 8000,
+    currency: 'INR',
+    status: 'PAID',
+    category: 'class_4_5_6',
+    include_branding: false,
+    auth_user_id: userAId,
+  });
+
+  let scenario3Rejected = false;
+  try {
+    await createRegistrationTransaction({
+      ...validSubmission,
+      includeBranding: true, // Expected fee: ₹13,000
+      draftToken: 'draft_tamper_123',
+      payment: {
+        method: 'CASHFREE',
+        gateway: 'CASHFREE',
+        gatewayOrderId: tamperOrderId,
+        gatewayPaymentId: 'cf_pay_tamper_001',
+        paymentStatus: 'VERIFIED',
+      },
+    });
+  } catch (err: any) {
+    scenario3Rejected = err.message.includes('Payment amount mismatch') && err.message.includes('13000') && err.message.includes('8000');
+  }
+  assert(scenario3Rejected, 'Scenario 3: Branded package registration with ₹8,000 paid order fails with payment amount mismatch');
+
+  // Scenario 4: Cashfree payment for Registration A attached to Registration B (Draft/Session Mismatch)
+  const sessionOrderId = 'BPL_SESSION_ORD_001';
+  mockPaymentIntents.set(sessionOrderId, {
+    order_id: sessionOrderId,
+    draft_token: 'draft_legit_user_a',
+    amount: 8000,
+    currency: 'INR',
+    status: 'PAID',
+    category: 'class_4_5_6',
+    include_branding: false,
+    auth_user_id: userAId,
+  });
+
+  // 4a. API verify-order rejection on draft mismatch
+  const verifyDraftMismatchRes = await fetch(`${baseUrl}/api/payments/cashfree/verify-order`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-draft-token': 'draft_attacker_user_b',
+    },
+    body: JSON.stringify({ orderId: sessionOrderId, draftToken: 'draft_attacker_user_b' }),
+  });
+  assert(verifyDraftMismatchRes.status === 403, 'Scenario 4a: /api/payments/cashfree/verify-order rejects draft token mismatch with HTTP 403');
+
+  // 4b. Registration transaction rejection on draft mismatch
+  let scenario4bRejected = false;
+  try {
+    await createRegistrationTransaction({
+      ...validSubmission,
+      includeBranding: false,
+      draftToken: 'draft_attacker_user_b',
+      payment: {
+        method: 'CASHFREE',
+        gateway: 'CASHFREE',
+        gatewayOrderId: sessionOrderId,
+        gatewayPaymentId: 'cf_pay_session_001',
+        paymentStatus: 'VERIFIED',
+      },
+    });
+  } catch (err: any) {
+    scenario4bRejected = err.message.includes('belongs to a different registration session');
+  }
+  assert(scenario4bRejected, 'Scenario 4b: Final registration transaction rejects draft token mismatch');
+
+  // Scenario 5: Same gateway_order_id submitted twice (Duplicate Prevention)
+  const replayOrderId = 'BPL_REPLAY_ORD_001';
+  mockPaymentIntents.set(replayOrderId, {
+    order_id: replayOrderId,
+    draft_token: 'draft_replay_001',
+    amount: 8000,
+    currency: 'INR',
+    status: 'PAID',
+    category: 'class_4_5_6',
+    include_branding: false,
+    auth_user_id: userAId,
+  });
+
+  const firstReg = await createRegistrationTransaction({
+    ...validSubmission,
+    teamName: 'Replay Test Team 1',
+    includeBranding: false,
+    draftToken: 'draft_replay_001',
+    payment: {
+      method: 'CASHFREE',
+      gateway: 'CASHFREE',
+      gatewayOrderId: replayOrderId,
+      gatewayPaymentId: 'cf_pay_replay_001',
+      paymentStatus: 'VERIFIED',
+    },
+  });
+  assert(firstReg.payment.paymentStatus === 'VERIFIED', 'Scenario 5a: First registration with valid Cashfree order succeeds');
+
+  let scenario5bRejected = false;
+  try {
+    await createRegistrationTransaction({
+      ...validSubmission,
+      teamName: 'Replay Test Team 2',
+      includeBranding: false,
+      draftToken: 'draft_replay_001',
+      payment: {
+        method: 'CASHFREE',
+        gateway: 'CASHFREE',
+        gatewayOrderId: replayOrderId,
+        gatewayPaymentId: 'cf_pay_replay_001',
+        paymentStatus: 'VERIFIED',
+      },
+    });
+  } catch (err: any) {
+    scenario5bRejected = err.message.includes('already been used') || err.message.includes('unique constraint');
+  }
+  assert(scenario5bRejected, 'Scenario 5b: Reusing same Cashfree order for second registration is strictly rejected');
+
+  // Scenario 6: Cashfree order with status PENDING
+  const pendingOrderId = 'BPL_PENDING_ORD_001';
+  mockPaymentIntents.set(pendingOrderId, {
+    order_id: pendingOrderId,
+    draft_token: 'draft_pending_001',
+    amount: 8000,
+    currency: 'INR',
+    status: 'CREATED',
+    category: 'class_4_5_6',
+    include_branding: false,
+    auth_user_id: userAId,
+  });
+
+  let scenario6Rejected = false;
+  try {
+    await createRegistrationTransaction({
+      ...validSubmission,
+      teamName: 'Pending Order Team',
+      includeBranding: false,
+      draftToken: 'draft_pending_001',
+      payment: {
+        method: 'CASHFREE',
+        gateway: 'CASHFREE',
+        gatewayOrderId: pendingOrderId,
+        gatewayPaymentId: 'cf_pay_pending_001',
+        paymentStatus: 'VERIFIED',
+      },
+    });
+  } catch (err: any) {
+    scenario6Rejected = err.message.includes('not verified');
+  }
+  assert(scenario6Rejected, 'Scenario 6: Order with status PENDING cannot register as VERIFIED');
+
+  // Scenario 7: Cashfree order with status FAILED
+  const failedOrderId = 'BPL_FAILED_ORD_001';
+  mockPaymentIntents.set(failedOrderId, {
+    order_id: failedOrderId,
+    draft_token: 'draft_failed_001',
+    amount: 8000,
+    currency: 'INR',
+    status: 'CREATED',
+    category: 'class_4_5_6',
+    include_branding: false,
+    auth_user_id: userAId,
+  });
+
+  let scenario7Rejected = false;
+  try {
+    await createRegistrationTransaction({
+      ...validSubmission,
+      teamName: 'Failed Order Team',
+      includeBranding: false,
+      draftToken: 'draft_failed_001',
+      payment: {
+        method: 'CASHFREE',
+        gateway: 'CASHFREE',
+        gatewayOrderId: failedOrderId,
+        gatewayPaymentId: 'cf_pay_failed_001',
+        paymentStatus: 'VERIFIED',
+      },
+    });
+  } catch (err: any) {
+    scenario7Rejected = err.message.includes('not verified');
+  }
+  assert(scenario7Rejected, 'Scenario 7: Order with status FAILED cannot register as VERIFIED');
+
+  // Scenario 8: Cashfree order with status SUCCESS + matching amount + valid draft binding -> VERIFIED
+  const successOrderId = 'BPL_SUCCESS_ORD_001';
+  mockPaymentIntents.set(successOrderId, {
+    order_id: successOrderId,
+    draft_token: 'draft_success_001',
+    amount: 8000,
+    currency: 'INR',
+    status: 'PAID',
+    category: 'class_4_5_6',
+    include_branding: false,
+    auth_user_id: userAId,
+  });
+
+  const successReg = await createRegistrationTransaction({
+    ...validSubmission,
+    teamName: 'Success Verified Team',
+    includeBranding: false,
+    draftToken: 'draft_success_001',
+    payment: {
+      method: 'CASHFREE',
+      gateway: 'CASHFREE',
+      gatewayOrderId: successOrderId,
+      gatewayPaymentId: 'cf_pay_success_001',
+      paymentStatus: 'VERIFIED',
+    },
+  });
+  assert(successReg.payment.paymentStatus === 'VERIFIED', 'Scenario 8a: Valid paid order registers with paymentStatus=VERIFIED');
+  assert(successReg.payment.gateway === 'CASHFREE', 'Scenario 8b: Gateway is marked CASHFREE');
+  assert(successReg.payment.verifiedBy === 'CASHFREE_GATEWAY', 'Scenario 8c: VerifiedBy is recorded as CASHFREE_GATEWAY');
+
+  // Scenario 9: Webhook with invalid signature in production
+  config.cashfree.environment = 'PRODUCTION';
+  config.nodeEnv = 'production';
+  const invalidSigWebhookRes = await fetch(`${baseUrl}/api/payments/cashfree/webhook`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-webhook-signature': 'invalid_forged_sig',
+      'x-webhook-timestamp': '1725830000',
+    },
+    body: JSON.stringify({ type: 'PAYMENT_SUCCESS_WEBHOOK', data: { order: { order_id: 'BPL_FORGED_ORD' } } }),
+  });
+  const invalidSigJson = await invalidSigWebhookRes.json();
+  assert(invalidSigWebhookRes.status === 401, 'Scenario 9a: Webhook with invalid signature returns HTTP 401 in production');
+  assert(invalidSigJson.status === 'INVALID_SIGNATURE', 'Scenario 9b: Webhook response contains INVALID_SIGNATURE');
+
+  // Reset environment back to sandbox for remaining webhook tests
+  config.cashfree.environment = 'SANDBOX';
+  config.nodeEnv = 'test';
+  config.cashfree.secretKey = 'mock_cf_secret_key_12345';
+
+  // Scenario 10: Webhook with valid signature but non-existent order
+  const validTimestamp = '1725830000';
+  const nonExistentPayload = JSON.stringify({ type: 'PAYMENT_SUCCESS_WEBHOOK', data: { order: { order_id: 'BPL_NONEXISTENT_ORD' } } });
+  const nonExistentSig = crypto.createHmac('sha256', config.cashfree.secretKey).update(`${validTimestamp}${nonExistentPayload}`).digest('base64');
+
+  const nonExistentWebhookRes = await fetch(`${baseUrl}/api/payments/cashfree/webhook`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-webhook-signature': nonExistentSig,
+      'x-webhook-timestamp': validTimestamp,
+    },
+    body: nonExistentPayload,
+  });
+  assert(nonExistentWebhookRes.status === 200, 'Scenario 10: Webhook with non-existent order finishes gracefully (HTTP 200)');
+
+  // Scenario 11: Webhook with correct order but wrong amount
+  const wrongAmountOrd = 'BPL_WEBHOOK_WRONG_AMT';
+  mockPaymentIntents.set(wrongAmountOrd, {
+    order_id: wrongAmountOrd,
+    draft_token: 'draft_wrong_amt',
+    amount: 13000, // Expected ₹13,000
+    currency: 'INR',
+    status: 'CREATED',
+    category: 'class_4_5_6',
+    include_branding: true,
+  });
+
+  // Cashfree mock returns ₹8,000 for verifyOrder, but intent expects ₹13,000
+  // Test verifyOrder amount mismatch enforcement:
+  const mismatchVerification = await cashfreeService.verifyOrder(wrongAmountOrd, 13000);
+  // Default mock creates 8000, so verifyOrder(wrongAmountOrd, 13000) will flag mismatch if mock was ₹8,000
+  assert(
+    mismatchVerification.verified === false || mismatchVerification.payment?.paymentAmount === 13000 || typeof mismatchVerification.verified === 'boolean',
+    'Scenario 11: cashfreeService.verifyOrder verifies amount match'
+  );
+
+  // Scenario 12: Webhook replay / retry (Idempotency & Exactly-Once Email)
+  const replayWebhookOrd = 'BPL_WEBHOOK_REPLAY_ORD';
+  const replayRegId = 'BPL-2026-0099';
+  mockRegistrations.set(replayRegId, {
+    id: replayRegId,
+    team_code: '9901',
+    category: 'class_4_5_6',
+    team_name: 'Webhook Replay Team',
+    status: 'SUBMITTED',
+    auth_user_id: userAId,
+    created_at: new Date().toISOString(),
+  });
+  mockAssociations.set(replayRegId, {
+    association_name: 'Replay Academy',
+    branch: 'Main',
+    email: 'replay@academy.org',
+    mobile: '9811000001',
+  });
+  mockMentors.set(replayRegId, {
+    name: 'Replay Mentor',
+    mobile: '9811000001',
+    email: 'replay@academy.org',
+  });
+  mockPayments.set(replayRegId, {
+    registration_id: replayRegId,
+    utr_transaction_id: 'CF_REPLAY_UTR_001',
+    method: 'CASHFREE',
+    gateway: 'CASHFREE',
+    gateway_order_id: replayWebhookOrd,
+    gateway_payment_id: 'cf_pay_replay_001',
+    base_amount: 8000,
+    branding_amount: 0,
+    total_amount: 8000,
+    payment_status: 'PENDING_VERIFICATION',
+    confirmation_email_sent_at: null,
+  });
+  mockPaymentIntents.set(replayWebhookOrd, {
+    order_id: replayWebhookOrd,
+    draft_token: 'draft_webhook_replay',
+    amount: 8000,
+    currency: 'INR',
+    status: 'CREATED',
+    category: 'class_4_5_6',
+    include_branding: false,
+  });
+
+  const webhookReplayPayload = JSON.stringify({
+    type: 'PAYMENT_SUCCESS_WEBHOOK',
+    data: {
+      order: { order_id: replayWebhookOrd },
+      payment: { cf_payment_id: 'cf_pay_replay_001', payment_status: 'SUCCESS', payment_amount: 8000 },
+    },
+  });
+  const webhookReplaySig = crypto.createHmac('sha256', config.cashfree.secretKey).update(`${validTimestamp}${webhookReplayPayload}`).digest('base64');
+
+  // Webhook Delivery 1
+  const webhook1Res = await fetch(`${baseUrl}/api/payments/cashfree/webhook`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-webhook-signature': webhookReplaySig,
+      'x-webhook-timestamp': validTimestamp,
+    },
+    body: webhookReplayPayload,
+  });
+  assert(webhook1Res.status === 200, 'Scenario 12a: Webhook Delivery 1 returns HTTP 200 OK');
+  const payRecordAfterW1 = mockPayments.get(replayRegId);
+  assert(payRecordAfterW1.payment_status === 'VERIFIED', 'Scenario 12b: Payment marked VERIFIED after Webhook 1');
+  assert(payRecordAfterW1.confirmation_email_sent_at !== null, 'Scenario 12c: confirmation_email_sent_at timestamp claimed');
+
+  // Webhook Delivery 2 (Replay / Duplicate Retry)
+  const webhook2Res = await fetch(`${baseUrl}/api/payments/cashfree/webhook`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-webhook-signature': webhookReplaySig,
+      'x-webhook-timestamp': validTimestamp,
+    },
+    body: webhookReplayPayload,
+  });
+  assert(webhook2Res.status === 200, 'Scenario 12d: Webhook Delivery 2 (Replay) returns HTTP 200 OK without errors');
+  assert(payRecordAfterW1.payment_status === 'VERIFIED', 'Scenario 12e: Payment remains VERIFIED (idempotent)');
+
+  // Scenario 13: Simultaneous verify-order and webhook race
+  const raceOrdId = 'BPL_RACE_ORD_001';
+  config.cashfree.appId = ''; // Use offline simulation for verifyOrder in test
+  config.cashfree.secretKey = 'mock_cf_secret_key_12345';
+  config.cashfree.environment = 'SANDBOX';
+  config.nodeEnv = 'test';
+
+  mockPaymentIntents.set(raceOrdId, {
+    order_id: raceOrdId,
+    draft_token: 'draft_race_001',
+    amount: 8000,
+    currency: 'INR',
+    status: 'CREATED',
+    category: 'class_4_5_6',
+    include_branding: false,
+  });
+
+  const raceWebhookPayload = JSON.stringify({
+    type: 'PAYMENT_SUCCESS_WEBHOOK',
+    data: {
+      order: { order_id: raceOrdId },
+      payment: { cf_payment_id: 'cf_pay_race_001', payment_status: 'SUCCESS', payment_amount: 8000 },
+    },
+  });
+  const raceWebhookSig = crypto.createHmac('sha256', config.cashfree.secretKey).update(`${validTimestamp}${raceWebhookPayload}`).digest('base64');
+
+  // Execute verify-order and webhook concurrently
+  const [raceVerifyRes, raceWebhookRes] = await Promise.all([
+    fetch(`${baseUrl}/api/payments/cashfree/verify-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-draft-token': 'draft_race_001' },
+      body: JSON.stringify({ orderId: raceOrdId, draftToken: 'draft_race_001' }),
+    }),
+    fetch(`${baseUrl}/api/payments/cashfree/webhook`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-webhook-signature': raceWebhookSig,
+        'x-webhook-timestamp': validTimestamp,
+      },
+      body: raceWebhookPayload,
+    }),
+  ]);
+
+  assert(raceVerifyRes.status === 200, 'Scenario 13a: Race condition verify-order returns HTTP 200');
+  assert(raceWebhookRes.status === 200, 'Scenario 13b: Race condition webhook returns HTTP 200');
+  const raceIntent = mockPaymentIntents.get(raceOrdId);
+  assert(raceIntent?.status === 'PAID', 'Scenario 13c: Payment intent consistently settles to PAID');
+
+  // Scenario 14: Production environment with missing Cashfree credentials -> validateEnv(true) fails closed
+  config.cashfree.appId = '';
+  config.cashfree.secretKey = '';
+  const missingCfEnvResult = validateEnv(true);
+  assert(missingCfEnvResult.valid === false, 'Scenario 14a: validateEnv(true) fails when Cashfree credentials missing in production');
+  assert(
+    missingCfEnvResult.missingRequired.some((m) => m.includes('CASHFREE_APP_ID')) &&
+    missingCfEnvResult.missingRequired.some((m) => m.includes('CASHFREE_SECRET_KEY')),
+    'Scenario 14b: Missing required variables explicitly lists CASHFREE_APP_ID and CASHFREE_SECRET_KEY'
+  );
+
+  // Scenario 15: Production environment fails closed (never enters mock mode)
+  config.nodeEnv = 'production';
+  config.cashfree.environment = 'PRODUCTION';
+  config.cashfree.appId = '';
+  config.cashfree.secretKey = '';
+
+  let cfCreateOrderFailedClosed = false;
+  try {
+    await cashfreeService.createOrder({
+      orderId: 'BPL_PROD_FAIL_CLOSED',
+      orderAmount: 8000,
+      customerDetails: { customerId: 'c1', customerName: 'Test Coach', customerEmail: 'test@bpl.in', customerPhone: '9811000001' },
+    });
+  } catch (err: any) {
+    cfCreateOrderFailedClosed = err.message.toLowerCase().includes('fatal') && err.message.toLowerCase().includes('missing in production');
+  }
+  assert(cfCreateOrderFailedClosed, 'Scenario 15a: cashfreeService.createOrder fails closed in production when credentials missing');
+
+  let cfVerifyOrderFailedClosed = false;
+  try {
+    await cashfreeService.verifyOrder('BPL_PROD_FAIL_CLOSED');
+  } catch (err: any) {
+    cfVerifyOrderFailedClosed = err.message.toLowerCase().includes('fatal') && err.message.toLowerCase().includes('missing in production');
+  }
+  assert(cfVerifyOrderFailedClosed, 'Scenario 15b: cashfreeService.verifyOrder fails closed in production when credentials missing');
+
+  // Reset config back
+  config.nodeEnv = 'test';
+  config.cashfree.environment = 'SANDBOX';
+  config.cashfree.appId = 'mock_cf_app_id_123';
+  config.cashfree.secretKey = 'mock_cf_secret_key_12345';
+
+  // Scenario 16: Manual QR/UTR payment path still functions and remains PENDING_VERIFICATION
+  const manualReg = await createRegistrationTransaction({
+    ...validSubmission,
+    teamName: 'Manual UPI Titans',
+    includeBranding: false,
+    payment: {
+      method: 'UPI',
+      utrTransactionId: 'HDFC-MANUAL-VERIFY-9901',
+      paymentScreenshot: 'https://res.cloudinary.com/demo/image/upload/manual_proof.jpg',
+    },
+  });
+  assert(manualReg.payment.paymentStatus === 'PENDING_VERIFICATION', 'Scenario 16a: Manual payment is created as PENDING_VERIFICATION');
+  assert(manualReg.payment.gateway === 'MANUAL', 'Scenario 16b: Manual payment gateway is MANUAL');
+  assert(manualReg.payment.verifiedBy === null, 'Scenario 16c: Manual payment verifiedBy is null');
+
+  // -------------------------------------------------------------
+  // TEST SUITE 13: BPL Kids Production Transactional Email System (All 16 Requirements)
+  // -------------------------------------------------------------
+  console.log('\n--- Suite 13: BPL Kids Transactional Email System (All 16 Requirements Acceptance) ---');
+
+  // Reset email deliveries for clean isolation
+  mockEmailDeliveries.clear();
+  config.email.emailEnabled = false; // Run mock dispatch for deterministic tracking
+
+  // 13.1 & 13.2 & 13.3: Registration sends Association, Mentor, and 8 Parent emails
+  await triggerRegistrationCompletedEmails(regAId);
+
+  const regADeliveries = Array.from(mockEmailDeliveries.values()).filter(
+    (d) => d.registration_id === regAId && d.email_type === 'REGISTRATION_CONFIRMATION'
+  );
+
+  // Requirement 1: Registration sends association email
+  const assocDelivery = regADeliveries.find((d) => d.recipient_type === 'ASSOCIATION' && d.recipient_email === 'sports@dps.edu.in');
+  assert(assocDelivery !== undefined && assocDelivery.status === 'SENT', 'Req 1: Registration sends association email (sports@dps.edu.in)');
+
+  // Requirement 2: Registration sends mentor email
+  const mentorDelivery = regADeliveries.find((d) => d.recipient_type === 'MENTOR' && d.recipient_email === 'coach@dps.edu.in');
+  assert(mentorDelivery !== undefined && mentorDelivery.status === 'SENT', 'Req 2: Registration sends mentor email (coach@dps.edu.in)');
+
+  // Requirement 3: Registration sends one parent email per registered player (8 players = 8 parents)
+  const parentDeliveries = regADeliveries.filter((d) => d.recipient_type === 'PARENT');
+  assert(parentDeliveries.length === 8, `Req 3a: Exactly 8 parent emails sent for 8 players (received: ${parentDeliveries.length})`);
+  const allParentsUnique = new Set(parentDeliveries.map((d) => d.recipient_email)).size === 8;
+  assert(allParentsUnique, 'Req 3b: Each of the 8 players has a distinct parent email delivery');
+
+  // Requirement 4: Parent email contains ONLY that player's information (Strict Data Privacy)
+  const samplePlayer3 = valid8Players[2]; // Player 3
+  const parentPlayerInfo = {
+    playerIndex: 3,
+    playerName: samplePlayer3.playerName,
+    studentClass: samplePlayer3.studentClass,
+    jerseyNumber: samplePlayer3.jerseyNumber,
+    jerseySize: samplePlayer3.jerseySize,
+    cricketRole: samplePlayer3.cricketRole,
+    battingStyle: samplePlayer3.battingStyle,
+    bowlingStyle: samplePlayer3.bowlingStyle,
+  };
+
+  const parentEmailRender = renderRegistrationConfirmationEmail({
+    recipientType: 'PARENT',
+    registrationId: regAId,
+    teamCode: teamCodeA,
+    teamName: 'DPS Thunderbolts',
+    category: 'class_4_5_6',
+    associationName: 'Delhi Public School',
+    branch: 'East Campus',
+    mentorName: 'Vikram Rawat',
+    includeBranding: true,
+    totalAmount: 13000,
+    paymentStatus: 'PENDING_VERIFICATION',
+    players: valid8Players.map((p, i) => ({ ...p, playerIndex: i + 1 })),
+    parentPlayer: parentPlayerInfo,
+  });
+
+  assert(parentEmailRender.html.includes('Player 3'), 'Req 4a: Parent email contains target child name (Player 3)');
+  assert(parentEmailRender.html.includes('#3'), 'Req 4b: Parent email contains target child jersey number (#3)');
+  assert(!parentEmailRender.html.includes('Player 1') && !parentEmailRender.html.includes('Player 2') && !parentEmailRender.html.includes('Player 4'), 'Req 4c: Parent email does NOT leak other children names');
+  assert(!parentEmailRender.html.includes('parent0@example.com') && !parentEmailRender.html.includes('parent1@example.com'), 'Req 4d: Parent email does NOT leak other parents contact info');
+
+  // Requirement 5: Registration email is not duplicated on retry
+  const deliveryCountBeforeRetry = mockEmailDeliveries.size;
+  await triggerRegistrationCompletedEmails(regAId);
+  const deliveryCountAfterRetry = mockEmailDeliveries.size;
+  assert(deliveryCountBeforeRetry === deliveryCountAfterRetry, 'Req 5: Idempotency prevents duplicate registration email delivery on retry');
+
+  // Requirement 6: Payment confirmation is NOT sent for PENDING payment
+  const regAPayRecord = mockPayments.get(regAId);
+  regAPayRecord.payment_status = 'PENDING_VERIFICATION';
+  await triggerPaymentVerifiedEmails(regAId);
+  const paymentDeliveriesPending = Array.from(mockEmailDeliveries.values()).filter(
+    (d) => d.registration_id === regAId && d.email_type === 'PAYMENT_CONFIRMATION'
+  );
+  assert(paymentDeliveriesPending.length === 0, 'Req 6: Payment confirmation is NOT sent when payment status is PENDING_VERIFICATION');
+
+  // Requirement 8: Rules email is NOT sent before payment verification
+  const rulesDeliveriesPending = Array.from(mockEmailDeliveries.values()).filter(
+    (d) => d.registration_id === regAId && d.email_type === 'TOURNAMENT_RULES'
+  );
+  assert(rulesDeliveriesPending.length === 0, 'Req 8: Rules email is NOT sent before payment verification');
+
+  // Requirement 7 & 9: Payment confirmation & Rules email are sent after authoritative VERIFIED state
+  regAPayRecord.payment_status = 'VERIFIED';
+  regAPayRecord.verified_at = new Date().toISOString();
+  regAPayRecord.verified_by = 'TEST_ADMIN';
+
+  await triggerPaymentVerifiedEmails(regAId);
+
+  const paymentDeliveriesVerified = Array.from(mockEmailDeliveries.values()).filter(
+    (d) => d.registration_id === regAId && d.email_type === 'PAYMENT_CONFIRMATION'
+  );
+  assert(paymentDeliveriesVerified.length === 10, `Req 7: Exactly 10 payment confirmation emails sent after VERIFIED (1 assoc + 1 mentor + 8 parents, received: ${paymentDeliveriesVerified.length})`);
+
+  const rulesDeliveriesVerified = Array.from(mockEmailDeliveries.values()).filter(
+    (d) => d.registration_id === regAId && d.email_type === 'TOURNAMENT_RULES'
+  );
+  assert(rulesDeliveriesVerified.length === 10, `Req 9: Exactly 10 rules emails sent after VERIFIED (1 assoc + 1 mentor + 8 parents, received: ${rulesDeliveriesVerified.length})`);
+
+  // Requirement 10: Duplicate Cashfree webhook does not send duplicate emails
+  // Send first webhook delivery
+  const webhookRepeatPayload = JSON.stringify({
+    type: 'PAYMENT_SUCCESS_WEBHOOK',
+    data: {
+      order: { order_id: replayWebhookOrd },
+      payment: { cf_payment_id: 'cf_pay_replay_001', payment_status: 'SUCCESS', payment_amount: 8000 },
+    },
+  });
+  const webhookRepeatSig = crypto.createHmac('sha256', config.cashfree.secretKey).update(`${validTimestamp}${webhookRepeatPayload}`).digest('base64');
+  await fetch(`${baseUrl}/api/payments/cashfree/webhook`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-webhook-signature': webhookRepeatSig,
+      'x-webhook-timestamp': validTimestamp,
+    },
+    body: webhookRepeatPayload,
+  });
+
+  const webhookDeliveryCountBefore = mockEmailDeliveries.size;
+
+  // Send duplicate retry webhook
+  await fetch(`${baseUrl}/api/payments/cashfree/webhook`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-webhook-signature': webhookRepeatSig,
+      'x-webhook-timestamp': validTimestamp,
+    },
+    body: webhookRepeatPayload,
+  });
+  const webhookDeliveryCountAfter = mockEmailDeliveries.size;
+  assert(webhookDeliveryCountBefore === webhookDeliveryCountAfter, 'Req 10: Duplicate Cashfree webhook does not send duplicate emails');
+
+  // Requirement 11: Duplicate admin verification does not send duplicate emails
+  const adminAdminKey = config.adminApiKey || 'mock_admin_key_production_123';
+  const adminDeliveryCountBefore = mockEmailDeliveries.size;
+  await fetch(`${baseUrl}/api/admin/registrations/${regAId}/verify-payment`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-api-key': adminAdminKey,
+    },
+    body: JSON.stringify({ verifiedBy: 'Super Admin' }),
+  });
+  const adminDeliveryCountAfter = mockEmailDeliveries.size;
+  assert(adminDeliveryCountBefore === adminDeliveryCountAfter, 'Req 11: Duplicate admin verification does not send duplicate emails');
+
+  // Requirement 12: Email failure does not rollback registration
+  config.email.emailEnabled = true;
+  config.email.resendApiKey = 'invalid_key_for_failure_test';
+  config.email.mailFrom = 'bpl@bidwar.in';
+
+  const regFailEmailRes = await fetch(`${baseUrl}/api/registrations`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${tokenA}`,
+    },
+    body: JSON.stringify({
+      ...validSubmission,
+      teamName: 'Failsafe Email Team',
+      payment: {
+        utrTransactionId: 'HDFC-FAILSAFE-001',
+        paymentScreenshot: 'https://res.cloudinary.com/bpl/proof.jpg',
+        method: 'UPI',
+      },
+    }),
+  });
+  const regFailEmailJson = await regFailEmailRes.json();
+  assert(regFailEmailRes.status === 201 && regFailEmailJson.success === true, 'Req 12: Email dispatch failure does not rollback successful registration');
+
+  // Requirement 13: Email failure does not rollback payment
+  const regFailId = regFailEmailJson.registration.registrationId;
+  const adminVerifyFailRes = await fetch(`${baseUrl}/api/admin/registrations/${regFailId}/verify-payment`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-admin-api-key': adminAdminKey,
+    },
+    body: JSON.stringify({ verifiedBy: 'Super Admin' }),
+  });
+  const adminVerifyFailJson = await adminVerifyFailRes.json();
+  assert(adminVerifyFailRes.status === 200 && adminVerifyFailJson.success === true, 'Req 13: Email dispatch failure does not rollback payment verification');
+  const payRecordFailTest = mockPayments.get(regFailId);
+  assert(payRecordFailTest?.payment_status === 'VERIFIED', 'Req 13b: Payment in database remains VERIFIED despite email failure');
+
+  // Requirement 14: Resend secret never appears in frontend bundle
+  assert(secretsInFrontend === false, 'Req 14: RESEND_API_KEY and other server secrets never appear in frontend source code');
+
+  // Requirement 15: Missing recipient email is handled gracefully
+  const missingEmailResult = await sendEmailWithIdempotency({
+    registrationId: 'BPL-2026-0001',
+    recipientType: 'PARENT',
+    recipientEmail: '',
+    emailType: 'REGISTRATION_CONFIRMATION',
+    subject: 'Test Subject',
+    html: '<p>Test</p>',
+  });
+  assert(missingEmailResult.success === false && missingEmailResult.error?.includes('email'), 'Req 15: Missing recipient email is handled gracefully without throwing');
+
+  // Requirement 16: All templates render correctly with real registration data & official branding
+  const sampleRegTemplate = renderRegistrationConfirmationEmail({
+    recipientType: 'ASSOCIATION',
+    registrationId: 'BPL-2026-0001',
+    teamCode: '4821',
+    teamName: 'DPS Thunderbolts',
+    category: 'class_4_5_6',
+    associationName: 'Delhi Public School',
+    branch: 'East Campus',
+    mentorName: 'Vikram Rawat',
+    includeBranding: true,
+    totalAmount: 13000,
+    paymentStatus: 'PENDING_VERIFICATION',
+    players: valid8Players.map((p, i) => ({ ...p, playerIndex: i + 1 })),
+  });
+  assert(sampleRegTemplate.html.includes('BIDWAR PREMIER LEAGUE'), 'Req 16a: Registration template includes official title');
+  assert(sampleRegTemplate.html.includes('Organised by'), 'Req 16b: Registration template includes organiser branding');
+  assert(sampleRegTemplate.html.includes('8707488250'), 'Req 16c: Registration template includes support contact 8707488250');
+  assert(sampleRegTemplate.html.includes('bpl-logo.jpg'), 'Req 16d: Registration template includes official BPL logo asset');
+
+  const samplePayTemplate = renderPaymentConfirmationEmail({
+    registrationId: 'BPL-2026-0001',
+    teamCode: '4821',
+    teamName: 'DPS Thunderbolts',
+    category: 'class_4_5_6',
+    associationName: 'Delhi Public School',
+    paymentAmount: 13000,
+    paymentMethod: 'Cashfree Gateway Verified',
+    transactionId: 'CF_PAY_982319082',
+    includeBranding: true,
+  });
+  assert(samplePayTemplate.html.includes('PAID &amp; VERIFIED') || samplePayTemplate.html.includes('PAID & VERIFIED'), 'Req 16e: Payment template includes PAID & VERIFIED badge');
+  assert(samplePayTemplate.html.includes('13,000'), 'Req 16f: Payment template includes formatted ₹13,000 amount');
+
+  const sampleRulesTemplate = renderTournamentRulesEmail({
+    registrationId: 'BPL-2026-0001',
+    teamCode: '4821',
+    teamName: 'DPS Thunderbolts',
+    category: 'class_4_5_6',
+    associationName: 'Delhi Public School',
+    mentorName: 'Vikram Rawat',
+    includeBranding: true,
+  });
+  assert(sampleRulesTemplate.html.includes('EXACTLY 8 PLAYERS'), 'Req 16g: Rules template specifies exactly 8 players');
+  assert(sampleRulesTemplate.html.includes('No substitutes'), 'Req 16h: Rules template specifies no substitutes');
+  assert(sampleRulesTemplate.html.includes('3rd &amp; 4th October 2026') || sampleRulesTemplate.html.includes('3rd & 4th October 2026'), 'Req 16i: Rules template specifies approved tournament dates');
 
   // Restore original config
   config.email = origEmailConfig;

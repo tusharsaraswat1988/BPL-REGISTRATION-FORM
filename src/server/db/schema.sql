@@ -85,16 +85,48 @@ CREATE TABLE IF NOT EXISTS payments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   registration_id VARCHAR(32) NOT NULL REFERENCES registrations(id) ON DELETE CASCADE,
   utr_transaction_id VARCHAR(100) UNIQUE NOT NULL,
-  payment_screenshot TEXT NOT NULL,
+  payment_screenshot TEXT NOT NULL DEFAULT 'CASHFREE_GATEWAY_VERIFIED',
   method VARCHAR(50) NOT NULL DEFAULT 'UPI',
+  gateway VARCHAR(50) NOT NULL DEFAULT 'MANUAL',
+  gateway_order_id VARCHAR(100),
+  gateway_payment_id VARCHAR(100),
+  gateway_raw_response JSONB,
   base_amount INTEGER NOT NULL DEFAULT 8000,
   branding_amount INTEGER NOT NULL DEFAULT 0,
   total_amount INTEGER NOT NULL,
   payment_status VARCHAR(50) NOT NULL DEFAULT 'PENDING_VERIFICATION' CHECK (payment_status IN ('PENDING_VERIFICATION', 'VERIFIED', 'PAYMENT_REJECTED')),
   verified_at TIMESTAMPTZ,
   verified_by VARCHAR(255),
+  confirmation_email_sent_at TIMESTAMPTZ,
   paid_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- 6B. Cashfree Payment Intents Table (Immutable order-to-draft binding)
+CREATE TABLE IF NOT EXISTS payment_intents (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  order_id VARCHAR(100) UNIQUE NOT NULL,
+  draft_token VARCHAR(64) NOT NULL,
+  amount INTEGER NOT NULL,
+  currency VARCHAR(10) NOT NULL DEFAULT 'INR',
+  status VARCHAR(32) NOT NULL DEFAULT 'CREATED' CHECK (status IN ('CREATED', 'PAID', 'FAILED', 'CANCELLED')),
+  category VARCHAR(32) NOT NULL,
+  include_branding BOOLEAN NOT NULL DEFAULT FALSE,
+  team_name VARCHAR(255),
+  cf_payment_id VARCHAR(100),
+  bank_reference VARCHAR(100),
+  payment_method VARCHAR(50),
+  auth_user_id VARCHAR(255),
+  raw_response JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Safe migration alters for existing databases
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS gateway VARCHAR(50) DEFAULT 'MANUAL';
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS gateway_order_id VARCHAR(100);
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS gateway_payment_id VARCHAR(100);
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS gateway_raw_response JSONB;
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS confirmation_email_sent_at TIMESTAMPTZ;
 
 -- 7. Autosave / Server-Side Drafts Table
 CREATE TABLE IF NOT EXISTS drafts (
@@ -118,6 +150,22 @@ CREATE TABLE IF NOT EXISTS otp_sessions (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 9. Transactional Email Delivery & Idempotency Tracking Table
+CREATE TABLE IF NOT EXISTS email_deliveries (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  registration_id VARCHAR(32) NOT NULL REFERENCES registrations(id) ON DELETE CASCADE,
+  recipient_type VARCHAR(32) NOT NULL CHECK (recipient_type IN ('ASSOCIATION', 'MENTOR', 'PARENT')),
+  recipient_email VARCHAR(255) NOT NULL,
+  email_type VARCHAR(50) NOT NULL CHECK (email_type IN ('REGISTRATION_CONFIRMATION', 'PAYMENT_CONFIRMATION', 'TOURNAMENT_RULES')),
+  status VARCHAR(32) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'SENT', 'FAILED')),
+  provider_message_id VARCHAR(255),
+  error_message TEXT,
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT unique_reg_recipient_email_type UNIQUE (registration_id, recipient_email, email_type)
+);
+
 -- Indexes for high performance & query optimization
 CREATE INDEX IF NOT EXISTS idx_registrations_category ON registrations(category);
 CREATE INDEX IF NOT EXISTS idx_registrations_auth_user ON registrations(auth_user_id);
@@ -126,7 +174,12 @@ CREATE INDEX IF NOT EXISTS idx_associations_registration_id ON associations(regi
 CREATE INDEX IF NOT EXISTS idx_mentors_registration_id ON mentors(registration_id);
 CREATE INDEX IF NOT EXISTS idx_players_registration_id ON players(registration_id);
 CREATE INDEX IF NOT EXISTS idx_payments_registration_id ON payments(registration_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_gateway_order_unique ON payments(gateway_order_id) WHERE gateway_order_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_payment_intents_order_id ON payment_intents(order_id);
+CREATE INDEX IF NOT EXISTS idx_payment_intents_draft_token ON payment_intents(draft_token);
 CREATE INDEX IF NOT EXISTS idx_drafts_token ON drafts(draft_token);
 CREATE INDEX IF NOT EXISTS idx_drafts_auth_user ON drafts(auth_user_id);
 CREATE INDEX IF NOT EXISTS idx_otp_sessions_mobile ON otp_sessions(mobile);
+CREATE INDEX IF NOT EXISTS idx_email_deliveries_reg_id ON email_deliveries(registration_id);
+CREATE INDEX IF NOT EXISTS idx_email_deliveries_status ON email_deliveries(status);
 

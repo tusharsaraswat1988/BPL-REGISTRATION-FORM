@@ -9,7 +9,7 @@ import {
 } from '../../types';
 import { 
   ShieldCheck, CreditCard, QrCode, Building, CheckCircle2, 
-  Trophy, Users, ArrowRight, Loader2, Copy, Check
+  Trophy, Users, ArrowRight, Loader2, Copy, Check, Zap, AlertCircle
 } from 'lucide-react';
 import { ImageUploadField } from '../ImageUploadField';
 import { TOURNAMENT_CONFIG } from '../../config/tournamentConfig';
@@ -43,15 +43,137 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
 }) => {
   const [agreedToTerms, setAgreedToTerms] = useState(true);
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [isInitiatingCashfree, setIsInitiatingCashfree] = useState(false);
+  const [cashfreeError, setCashfreeError] = useState<string | null>(null);
 
   const baseFee = TOURNAMENT_CONFIG.REGISTRATION_FEE;
   const brandingFee = includeBranding ? TOURNAMENT_CONFIG.BRANDING_FEE : 0;
   const totalAmount = baseFee + brandingFee;
 
+  const isCashfreePaid = Boolean(
+    payment.gateway === 'CASHFREE' && 
+    payment.paymentStatus === 'VERIFIED' && 
+    (payment.gatewayPaymentId || payment.transactionReference)
+  );
+
   const handleCopyUpi = () => {
     navigator.clipboard?.writeText(TOURNAMENT_CONFIG.PAYMENT_CONFIG.upiId);
     setCopiedUpi(true);
     setTimeout(() => setCopiedUpi(false), 2500);
+  };
+
+  /**
+   * Launch Cashfree Payment Gateway Flow
+   */
+  const handlePayWithCashfree = async () => {
+    setIsInitiatingCashfree(true);
+    setCashfreeError(null);
+
+    try {
+      // 1. Create order on backend
+      const res = await fetch('/api/payments/cashfree/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category,
+          includeBranding,
+          teamName,
+          mentor,
+          association,
+        }),
+      });
+
+      const orderData = await res.json();
+      if (!res.ok || !orderData.success) {
+        throw new Error(orderData.message || 'Failed to initialize payment session with Cashfree.');
+      }
+
+      const { orderId, paymentSessionId, environment, isMock } = orderData;
+
+      // 2. If sandbox mock / development without live keys, simulate instant checkout
+      if (isMock || !(window as any).Cashfree) {
+        console.log('[Cashfree] Simulating payment verification for order:', orderId);
+        
+        // Call backend verification
+        const verifyRes = await fetch('/api/payments/cashfree/verify-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId }),
+        });
+        const verifyData = await verifyRes.json();
+
+        if (verifyData.verified && verifyData.payment) {
+          const payId = verifyData.payment.paymentId || `cf_${orderId}`;
+          setPayment(prev => ({
+            ...prev,
+            method: 'CASHFREE',
+            gateway: 'CASHFREE',
+            gatewayOrderId: orderId,
+            gatewayPaymentId: payId,
+            transactionReference: verifyData.payment.bankReference || payId,
+            paymentProofUrl: 'CASHFREE_GATEWAY_VERIFIED',
+            paymentStatus: 'VERIFIED',
+            paymentDate: new Date().toISOString().split('T')[0],
+            paidAt: new Date().toISOString(),
+          }));
+        } else {
+          throw new Error('Payment verification failed.');
+        }
+        return;
+      }
+
+      // 3. Launch live Cashfree JS SDK Checkout Modal
+      const CashfreeSdk = (window as any).Cashfree;
+      const cashfree = CashfreeSdk({
+        mode: environment || 'sandbox',
+      });
+
+      cashfree.checkout({
+        paymentSessionId,
+        redirectTarget: '_modal',
+      }).then(async (result: any) => {
+        if (result?.error) {
+          console.warn('[Cashfree Checkout Dropped/Error]', result.error);
+          setCashfreeError(result.error.message || 'Payment cancelled or incomplete.');
+          return;
+        }
+
+        // Verify order on backend
+        const verifyRes = await fetch('/api/payments/cashfree/verify-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId }),
+        });
+        const verifyData = await verifyRes.json();
+
+        if (verifyData.verified) {
+          const payId = verifyData.payment?.paymentId || `cf_${orderId}`;
+          setPayment(prev => ({
+            ...prev,
+            method: 'CASHFREE',
+            gateway: 'CASHFREE',
+            gatewayOrderId: orderId,
+            gatewayPaymentId: payId,
+            transactionReference: verifyData.payment?.bankReference || payId,
+            paymentProofUrl: 'CASHFREE_GATEWAY_VERIFIED',
+            paymentStatus: 'VERIFIED',
+            paymentDate: new Date().toISOString().split('T')[0],
+            paidAt: new Date().toISOString(),
+          }));
+        } else {
+          setCashfreeError(verifyData.error || 'Payment was not marked as successful by Cashfree.');
+        }
+      }).catch((err: any) => {
+        console.error('[Cashfree Checkout Error]', err);
+        setCashfreeError(err?.message || 'Payment window encountered an error.');
+      });
+
+    } catch (err: any) {
+      console.error('[Cashfree Init Error]', err);
+      setCashfreeError(err.message || 'Could not connect to payment gateway. Please try again.');
+    } finally {
+      setIsInitiatingCashfree(false);
+    }
   };
 
   return (
@@ -122,7 +244,7 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           </p>
         </div>
 
-        {/* Team Identity Summary (NO KIT COLORS) */}
+        {/* Team Identity Summary */}
         <div className="p-4 rounded-xl bg-[#0A1230] border border-[#1A2C68] relative">
           <button
             type="button"
@@ -177,10 +299,10 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
         <div className="mb-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2 font-heading">
             <CreditCard className="w-5 h-5 text-[#FFB800]" />
-            Tournament Entry Fee & Payment
+            Tournament Entry Fee & Payment Gateway
           </h4>
           <p className="text-xs text-slate-400">
-            Calculated strictly according to official tournament pricing.
+            Secure payment processing powered by Cashfree Payment Gateway.
           </p>
         </div>
 
@@ -209,30 +331,132 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
             Select Payment Method <span className="text-[#FFB800]">*</span>
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {(['UPI', 'Bank Transfer (NEFT/RTGS/IMPS)', 'Cheque/Demand Draft'] as PaymentMethod[]).map(method => (
-              <button
-                key={method}
-                type="button"
-                onClick={() => setPayment(prev => ({ ...prev, method }))}
-                className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer select-none active:scale-[0.98] ${
-                  payment.method === method
-                    ? 'bg-[#0E1B48] border-[#FFB800] ring-2 ring-[#FFB800]/40 text-white shadow-md'
-                    : 'bg-[#0A1230] border-[#1A2C68] text-slate-400 hover:border-slate-700'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-1">
-                  {method === 'UPI' && <QrCode className="w-4 h-4 text-[#FFB800]" />}
-                  {method === 'Bank Transfer (NEFT/RTGS/IMPS)' && <Building className="w-4 h-4 text-sky-400" />}
-                  {method === 'Cheque/Demand Draft' && <CreditCard className="w-4 h-4 text-emerald-400" />}
-                  <span className="text-xs font-bold text-white">{method}</span>
-                </div>
-              </button>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { id: 'CASHFREE', label: 'Cashfree Online (Instant)', icon: Zap, popular: true },
+              { id: 'UPI', label: 'Manual UPI QR / VPA', icon: QrCode },
+              { id: 'Bank Transfer (NEFT/RTGS/IMPS)', label: 'Bank Transfer (NEFT/RTGS)', icon: Building },
+              { id: 'Cheque/Demand Draft', label: 'Cheque / DD', icon: CreditCard },
+            ].map(m => {
+              const Icon = m.icon;
+              const isSelected = payment.method === m.id;
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setPayment(prev => ({ ...prev, method: m.id as PaymentMethod }))}
+                  className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer select-none active:scale-[0.98] relative ${
+                    isSelected
+                      ? 'bg-[#0E1B48] border-[#FFB800] ring-2 ring-[#FFB800]/40 text-white shadow-md'
+                      : 'bg-[#0A1230] border-[#1A2C68] text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  {m.popular && (
+                    <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded bg-[#FFB800] text-slate-950 text-[9px] font-black uppercase tracking-wider font-mono-sport">
+                      Instant
+                    </span>
+                  )}
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon className={`w-4 h-4 ${isSelected ? 'text-[#FFB800]' : 'text-slate-400'}`} />
+                    <span className="text-xs font-bold text-white leading-tight">{m.label}</span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Method Instructions */}
+        {/* Cashfree Payment Flow */}
+        {payment.method === 'CASHFREE' && (
+          <div className="p-5 rounded-2xl bg-[#0A1230] border border-[#1A2C68] space-y-4 mb-6">
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#FFB800] font-mono-sport block">
+                  Official Online Payment Gateway
+                </span>
+                <h4 className="text-base font-bold text-white flex items-center gap-2 font-heading">
+                  <Zap className="w-4 h-4 text-[#FFB800]" />
+                  Cashfree Payments (UPI, Cards, NetBanking, GPay, Paytm)
+                </h4>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Instant registration confirmation upon successful payment. Zero manual verification delay.
+                </p>
+              </div>
+
+              {isCashfreePaid && (
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/50 text-emerald-400 text-xs font-bold font-mono">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>PAYMENT VERIFIED ✓</span>
+                </div>
+              )}
+            </div>
+
+            {cashfreeError && (
+              <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/40 text-xs text-red-300 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+                <span>{cashfreeError}</span>
+              </div>
+            )}
+
+            {!isCashfreePaid ? (
+              <div className="pt-2 space-y-3">
+                <div className="p-4 rounded-xl bg-[#070D24] border border-[#1A2C68] flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-left space-y-1">
+                    <span className="text-xs text-slate-400">Total Payable Amount:</span>
+                    <div className="text-2xl font-black text-[#FFB800] font-mono-sport">
+                      ₹{totalAmount.toLocaleString('en-IN')}
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Supports all UPI apps (GPay, PhonePe, Paytm), Debit/Credit Cards & Netbanking.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isInitiatingCashfree}
+                    onClick={handlePayWithCashfree}
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#FFB800] hover:bg-[#FBBF24] text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-[#FFB800]/20 flex items-center justify-center gap-2 cursor-pointer font-heading active:scale-95 transition-all select-none"
+                  >
+                    {isInitiatingCashfree ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                        <span>Connecting to Cashfree...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-4 h-4 text-slate-950 fill-current" />
+                        <span>Pay ₹{totalAmount.toLocaleString('en-IN')} with Cashfree</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/30 space-y-2 text-left">
+                <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Payment Completed & Authenticated via Cashfree Gateway</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-mono pt-1 text-slate-300">
+                  <div>
+                    <span className="text-slate-500 text-[10px] block">Payment Reference:</span>
+                    <strong className="text-white">{payment.gatewayPaymentId || payment.transactionReference}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 text-[10px] block">Amount Paid:</span>
+                    <strong className="text-emerald-400">₹{totalAmount.toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 text-[10px] block">Status:</span>
+                    <strong className="text-emerald-400">VERIFIED (Instant)</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Method Instructions: Manual UPI */}
         {payment.method === 'UPI' && (
           <div className="p-4 rounded-xl bg-[#0A1230] border border-[#1A2C68] space-y-4 mb-6">
             <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -265,6 +489,7 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           </div>
         )}
 
+        {/* Method Instructions: Bank Transfer */}
         {payment.method === 'Bank Transfer (NEFT/RTGS/IMPS)' && (
           <div className="p-4 rounded-xl bg-[#0A1230] border border-[#1A2C68] space-y-3 mb-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -288,6 +513,7 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           </div>
         )}
 
+        {/* Method Instructions: Cheque */}
         {payment.method === 'Cheque/Demand Draft' && (
           <div className="p-4 rounded-xl bg-[#0A1230] border border-[#1A2C68] space-y-2 text-xs text-slate-300 mb-6">
             <p>
@@ -299,46 +525,50 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           </div>
         )}
 
-        {/* Transaction Reference & Date */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-              Transaction Reference / UTR Number <span className="text-[#FFB800]">*</span>
-            </label>
-            <input
-              type="text"
-              value={payment.transactionReference}
-              onChange={e => setPayment(prev => ({ ...prev, transactionReference: e.target.value }))}
-              placeholder="e.g. 428198301982 or UTR number"
-              className="w-full px-4 py-3 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#FFB800] font-mono"
-            />
-          </div>
+        {/* Transaction Reference & Date (Required for manual methods) */}
+        {payment.method !== 'CASHFREE' && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Transaction Reference / UTR Number <span className="text-[#FFB800]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={payment.transactionReference}
+                  onChange={e => setPayment(prev => ({ ...prev, transactionReference: e.target.value }))}
+                  placeholder="e.g. 428198301982 or UTR number"
+                  className="w-full px-4 py-3 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#FFB800] font-mono"
+                />
+              </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-              Payment Date <span className="text-[#FFB800]">*</span>
-            </label>
-            <input
-              type="date"
-              value={payment.paymentDate}
-              onChange={e => setPayment(prev => ({ ...prev, paymentDate: e.target.value }))}
-              className="w-full px-4 py-3 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-xs text-white focus:outline-none focus:border-[#FFB800]"
-            />
-          </div>
-        </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                  Payment Date <span className="text-[#FFB800]">*</span>
+                </label>
+                <input
+                  type="date"
+                  value={payment.paymentDate}
+                  onChange={e => setPayment(prev => ({ ...prev, paymentDate: e.target.value }))}
+                  className="w-full px-4 py-3 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-xs text-white focus:outline-none focus:border-[#FFB800]"
+                />
+              </div>
+            </div>
 
-        {/* Payment Proof Upload via ImageUploadField */}
-        <div className="mb-6">
-          <ImageUploadField
-            label="Payment Screenshot / Receipt Proof"
-            required
-            tag="payment-proofs"
-            value={payment.paymentProofUrl}
-            onChange={url => setPayment(prev => ({ ...prev, paymentProofUrl: url }))}
-            aspectRatio="wide"
-            helperText="Screenshot or scanned receipt showing UTR / transaction ID and amount"
-          />
-        </div>
+            {/* Payment Proof Upload via ImageUploadField */}
+            <div className="mb-6">
+              <ImageUploadField
+                label="Payment Screenshot / Receipt Proof"
+                required
+                tag="payment-proofs"
+                value={payment.paymentProofUrl}
+                onChange={url => setPayment(prev => ({ ...prev, paymentProofUrl: url }))}
+                aspectRatio="wide"
+                helperText="Screenshot or scanned receipt showing UTR / transaction ID and amount"
+              />
+            </div>
+          </>
+        )}
 
         {/* Undertaking Declaration */}
         <div className="p-4 rounded-xl bg-[#0A1230] border border-[#1A2C68] flex items-start gap-3 mb-6">
@@ -355,14 +585,14 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           </label>
         </div>
 
-        {/* FINAL SUBMIT BUTTON (Distinct from auto-save) */}
+        {/* FINAL SUBMIT BUTTON */}
         <div>
           <button
             type="button"
-            disabled={!agreedToTerms || isSubmitting}
+            disabled={!agreedToTerms || isSubmitting || (payment.method === 'CASHFREE' && !isCashfreePaid)}
             onClick={onSubmit}
             className={`w-full py-4 rounded-xl text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg transition-all duration-200 flex items-center justify-center gap-2 font-heading cursor-pointer select-none active:scale-[0.99] ${
-              agreedToTerms && !isSubmitting
+              agreedToTerms && !isSubmitting && (payment.method !== 'CASHFREE' || isCashfreePaid)
                 ? 'bg-[#FFB800] hover:bg-[#FBBF24] shadow-[#FFB800]/25'
                 : 'bg-slate-800 text-slate-500 cursor-not-allowed'
             }`}

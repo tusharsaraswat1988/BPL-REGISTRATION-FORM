@@ -37,6 +37,14 @@ export interface ServerConfig {
     bulkSmsTemplateId?: string;
   };
 
+  // Cashfree Payment Gateway Integration
+  cashfree: {
+    appId?: string;
+    secretKey?: string;
+    environment: 'SANDBOX' | 'PRODUCTION';
+    apiVersion: string;
+  };
+
   // Resend Email Integration (BidWar Standard)
   email: {
     resendApiKey?: string;
@@ -81,6 +89,13 @@ export const config: ServerConfig = {
   otp: {
     bulkSmsKey: process.env.BULKSMS_KEY,
     bulkSmsTemplateId: process.env.BULKSMS_TEMPLATE_ID,
+  },
+
+  cashfree: {
+    appId: process.env.CASHFREE_APP_ID || process.env.CASHFREE_CLIENT_ID,
+    secretKey: process.env.CASHFREE_SECRET_KEY || process.env.CASHFREE_CLIENT_SECRET,
+    environment: (process.env.CASHFREE_ENV?.toUpperCase() === 'PRODUCTION' || process.env.CASHFREE_ENVIRONMENT?.toUpperCase() === 'PRODUCTION') ? 'PRODUCTION' : 'SANDBOX',
+    apiVersion: process.env.CASHFREE_API_VERSION || '2023-08-01',
   },
 
   email: {
@@ -130,6 +145,16 @@ export function validateEnv(isProduction: boolean = config.nodeEnv === 'producti
   if (!config.otp.bulkSmsTemplateId || config.otp.bulkSmsTemplateId.trim() === '') {
     if (isProduction) missingRequired.push('BULKSMS_TEMPLATE_ID');
     else warnings.push('BULKSMS_TEMPLATE_ID is not set; Fast2SMS OTP will be inactive.');
+  }
+
+  // Cashfree Payment Gateway Checks
+  if (!config.cashfree.appId || config.cashfree.appId.trim() === '') {
+    if (isProduction) missingRequired.push('CASHFREE_APP_ID (required in production for payment processing)');
+    else warnings.push('CASHFREE_APP_ID is not set; Cashfree payments will run in sandbox/mock simulation.');
+  }
+  if (!config.cashfree.secretKey || config.cashfree.secretKey.trim() === '') {
+    if (isProduction) missingRequired.push('CASHFREE_SECRET_KEY (required in production for payment processing)');
+    else warnings.push('CASHFREE_SECRET_KEY is not set; Cashfree payments will run in sandbox/mock simulation.');
   }
 
   if (isProduction) {

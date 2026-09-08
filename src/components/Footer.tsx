@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Shield, Instagram, Facebook, Lock, PlusCircle, Users, FileText } from 'lucide-react';
+import { ExternalLink, Shield, Instagram, Facebook, Lock, PlusCircle, Users, FileText, RefreshCw, Mail, CheckCircle2 } from 'lucide-react';
 import { BplLogo } from './BplLogo';
 import { TOURNAMENT_CONFIG } from '../config/tournamentConfig';
 
@@ -19,9 +19,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     <footer className="no-print bg-[#050A1C] border-t border-[#1A2C68] text-slate-400 text-xs mt-12 sm:mt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Multi-Column Horizontal Footer Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 py-8 sm:py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 py-8 sm:py-10">
           {/* Column 1: Brand & Tournament Identity */}
-          <div className="space-y-3">
+          <div className="space-y-3 sm:col-span-2 md:col-span-1 lg:col-span-1">
             <div className="flex items-center gap-3 select-none">
               <BplLogo size={42} className="flex-shrink-0" />
               <div>
@@ -40,12 +40,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 A BIDWAR.IN TOURNAMENT PROPERTY
               </p>
             </div>
+
+            <div className="pt-2">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#091230] border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-medium">
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Cashfree PG Verified</span>
+              </div>
+            </div>
           </div>
 
-          {/* Column 2: Organisers Information */}
+          {/* Column 2: Event Partner & Operations */}
           <div className="space-y-3">
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FFB800] font-mono block">
-              ORGANISED BY
+              EVENT PARTNER
             </span>
             <ul className="space-y-2 text-xs font-mono">
               <li>
@@ -55,25 +62,20 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors cursor-pointer group"
                 >
-                  <span className="font-semibold">Bidwar.in</span>
-                  <ExternalLink className="w-3 h-3 text-[#FFB800] group-hover:translate-x-0.5 transition-transform" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href={TOURNAMENT_CONFIG.KV_TECHMEDIA_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors cursor-pointer group"
-                >
-                  <span className="font-semibold">KV TechMedia</span>
+                  <span className="font-semibold text-white">bidwar.in</span>
                   <ExternalLink className="w-3 h-3 text-[#FFB800] group-hover:translate-x-0.5 transition-transform" />
                 </a>
               </li>
             </ul>
-            <p className="text-[10px] text-slate-500 font-mono">
-              Sports Tech, Scoring & Event Management
-            </p>
+            <div className="space-y-1 text-[11px] font-mono pt-1 text-slate-400">
+              <p className="text-white font-semibold">Varanasi Operations Desk</p>
+              <p>
+                Helpline:{' '}
+                <a href="tel:+918707488250" className="text-[#FFB800] hover:underline font-bold">
+                  8707488250
+                </a>
+              </p>
+            </div>
           </div>
 
           {/* Column 3: Quick Access Navigation */}
@@ -112,23 +114,74 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   <span>Rules & Format</span>
                 </button>
               </li>
-              <li className="flex items-center gap-1.5 text-slate-600 cursor-not-allowed select-none">
-                <Lock className="w-3 h-3 text-slate-600" />
-                <span>Team Pass</span>
-                <span className="text-[8px] font-bold uppercase tracking-wider px-1 py-0.2 rounded bg-[#FFB800]/10 text-[#FFB800] border border-[#FFB800]/30 font-mono">
-                  COMING SOON
-                </span>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => handleNav('/verify')}
+                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <Shield className="w-3 h-3 text-amber-400" />
+                  <span>Check Status</span>
+                </button>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Connect & Social */}
+          {/* Column 4: Legal & Policies (Cashfree Compliance) */}
+          <div className="space-y-3">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FFB800] font-mono block">
+              LEGAL & POLICIES
+            </span>
+            <ul className="space-y-1.5 text-xs font-mono">
+              <li>
+                <button
+                  type="button"
+                  onClick={() => handleNav('/terms')}
+                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <FileText className="w-3 h-3 text-[#FFB800]" />
+                  <span>Terms & Conditions</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => handleNav('/privacy')}
+                  className="text-slate-300 hover:text-emerald-400 transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <Lock className="w-3 h-3 text-emerald-400" />
+                  <span>Privacy Policy</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => handleNav('/refunds')}
+                  className="text-slate-300 hover:text-sky-400 transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3 h-3 text-sky-400" />
+                  <span>Refund & Cancellation</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => handleNav('/contact')}
+                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                >
+                  <Mail className="w-3 h-3 text-slate-400" />
+                  <span>Contact & Support</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 5: Connect & Security */}
           <div className="space-y-3">
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FFB800] font-mono block">
               CONNECT
             </span>
             <div className="flex flex-col gap-2">
-              {/* Instagram */}
               <a
                 href={TOURNAMENT_CONFIG.BIDWAR_INSTAGRAM_URL}
                 target="_blank"
@@ -142,7 +195,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <span>Instagram</span>
               </a>
 
-              {/* Facebook */}
               <a
                 href={TOURNAMENT_CONFIG.BIDWAR_FACEBOOK_URL}
                 target="_blank"
@@ -163,15 +215,42 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         </div>
 
         {/* Bottom Utility Bar */}
-        <div className="border-t border-white/5 py-3.5 flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono text-slate-400 gap-2.5">
-          <p>© 2026 BidWar Premier League</p>
+        <div className="border-t border-white/5 py-4 flex flex-col md:flex-row items-center justify-between text-[11px] font-mono text-slate-400 gap-3">
+          <p>© 2026 BidWar Premier League · All Rights Reserved</p>
           
-          <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center">
-            <span className="flex items-center gap-1.5 text-slate-300 font-medium">
-              <Shield className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Official Tournament Registration Portal</span>
-            </span>
-            <span className="text-slate-700 hidden sm:inline">•</span>
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center text-slate-400">
+            <button
+              type="button"
+              onClick={() => handleNav('/terms')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Terms & Conditions
+            </button>
+            <span className="text-slate-700">•</span>
+            <button
+              type="button"
+              onClick={() => handleNav('/privacy')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Privacy Policy
+            </button>
+            <span className="text-slate-700">•</span>
+            <button
+              type="button"
+              onClick={() => handleNav('/refunds')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Refund Policy
+            </button>
+            <span className="text-slate-700">•</span>
+            <button
+              type="button"
+              onClick={() => handleNav('/contact')}
+              className="hover:text-white transition-colors cursor-pointer"
+            >
+              Contact Us
+            </button>
+            <span className="text-slate-700">•</span>
             <a
               href={TOURNAMENT_CONFIG.BIDWAR_URL}
               target="_blank"
@@ -187,3 +266,4 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
     </footer>
   );
 };
+

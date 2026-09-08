@@ -15,6 +15,7 @@ export type JerseySize = '28' | '30' | '32' | '34' | '36' | '38' | '40' | 'S' | 
 export type CategoryId = 'class_4_5_6' | 'class_7_8_9';
 
 export type PaymentMethod =
+  | 'CASHFREE'
   | 'UPI'
   | 'Bank Transfer (NEFT/RTGS/IMPS)'
   | 'Cheque/Demand Draft'
@@ -85,6 +86,9 @@ export interface PaymentInfo {
   paidAt?: string;
   utrTransactionId?: string;
   paymentScreenshot?: string;
+  gateway?: 'CASHFREE' | 'MANUAL';
+  gatewayOrderId?: string;
+  gatewayPaymentId?: string;
 }
 
 export interface SponsorConfig {

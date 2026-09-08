@@ -29,7 +29,12 @@ export const TOURNAMENT_CONFIG = {
   TOURNAMENT_NAME: "BIDWAR PREMIER LEAGUE",
   TOURNAMENT_EDITION: "KIDS VERSION — SEASON 1",
   TOURNAMENT_DATES: "3rd & 4th October 2026",
-  ORGANISER_NAME: "Bidwar.in & KV TechMedia",
+  ORGANISER_NAME: "Bidwar.in",
+  EVENT_PARTNER: "bidwar.in",
+  OPERATIONS_ADDRESS: "Varanasi, Uttar Pradesh, India",
+  HELPLINE_PHONE: "8707488250",
+  HELPLINE_DISPLAY: "+91 87074 88250",
+  OFFICIAL_EMAIL: "bpl@bidwar.in",
   BIDWAR_URL: "https://bidwar.in",
   // Official KV TechMedia URL as mandated
   KV_TECHMEDIA_URL: (typeof process !== 'undefined' && process.env?.KV_TECHMEDIA_URL) || 
@@ -96,11 +101,12 @@ export const TOURNAMENT_CONFIG = {
   TEAM_PASS_ENABLED: false,
   TEAM_PASS_LABEL: "Team Pass — Coming Soon",
 
-  // Payment Banking & UPI Configuration
+  // Payment Banking & Cashfree Gateway Configuration
   PAYMENT_CONFIG: {
+    gateway: 'CASHFREE',
+    cashfreeMode: (typeof process !== 'undefined' && process.env?.CASHFREE_ENV === 'PRODUCTION') ? 'production' : 'sandbox',
     upiId: "bidwarsports@hdfcbank",
     upiQrImage: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&auto=format&fit=crop&q=80",
-    paymentLink: "https://pages.razorpay.com/bpl-kids-s1",
     bankAccountName: "BIDWAR SPORTS TECH SOLUTIONS PVT LTD",
     bankName: "HDFC Bank Ltd",
     accountNumber: "50200084918231",

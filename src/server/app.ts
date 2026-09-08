@@ -4,6 +4,7 @@ import { publicRoutes } from './routes/publicRoutes';
 import { uploadRoutes } from './routes/uploadRoutes';
 import { draftRoutes } from './routes/draftRoutes';
 import { registrationRoutes } from './routes/registrationRoutes';
+import { paymentRoutes } from './routes/paymentRoutes';
 import { adminRoutes } from './routes/adminRoutes';
 import { authRoutes } from './routes/authRoutes';
 import { errorHandler } from './middleware/errorHandler';
@@ -17,8 +18,13 @@ export function createApp(): Express {
     credentials: true,
   }));
 
-  // Body Parsing (Strict JSON, 10MB limit)
-  app.use(express.json({ limit: '10mb' }));
+  // Body Parsing (Strict JSON, 10MB limit, capture rawBody for webhook signatures)
+  app.use(express.json({
+    limit: '10mb',
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    }
+  }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // API Routes
@@ -26,6 +32,8 @@ export function createApp(): Express {
   app.use('/api', uploadRoutes);
   app.use('/api', draftRoutes);
   app.use('/api', registrationRoutes);
+  app.use('/api/payments', paymentRoutes);
+  app.use('/api', paymentRoutes);
   app.use('/api', adminRoutes);
   app.use('/api', authRoutes);
 

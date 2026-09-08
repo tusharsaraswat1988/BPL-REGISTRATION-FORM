@@ -7,6 +7,7 @@ import { RegisterPage } from './components/pages/RegisterPage';
 import { VerifyPage } from './components/pages/VerifyPage';
 import { TeamsPage } from './components/pages/TeamsPage';
 import { RulesPage } from './components/pages/RulesPage';
+import { LegalPage, LegalTab } from './components/pages/LegalPage';
 import { TournamentCategory, PublicTeamDTO, RegistrationConfirmationDTO } from './types';
 
 const defaultCategories: TournamentCategory[] = [
@@ -136,6 +137,22 @@ export default function App() {
 
         {currentPath === '/rules' && (
           <RulesPage />
+        )}
+
+        {currentPath === '/terms' && (
+          <LegalPage initialTab="terms" onNavigate={navigate} />
+        )}
+
+        {currentPath === '/privacy' && (
+          <LegalPage initialTab="privacy" onNavigate={navigate} />
+        )}
+
+        {currentPath === '/refunds' && (
+          <LegalPage initialTab="refunds" onNavigate={navigate} />
+        )}
+
+        {currentPath === '/contact' && (
+          <LegalPage initialTab="contact" onNavigate={navigate} />
         )}
       </main>
 

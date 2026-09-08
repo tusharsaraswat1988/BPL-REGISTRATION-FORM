@@ -47,9 +47,10 @@ export const PUBLIC_TOURNAMENT_CONFIG = {
   ],
   whatsappCommunityUrl: 'https://chat.whatsapp.com/bidwar-kids-bpl2026',
   paymentConfig: {
+    gateway: 'CASHFREE',
+    cashfreeMode: config.cashfree.environment === 'PRODUCTION' ? 'production' : 'sandbox',
     upiId: 'bidwarsports@hdfcbank',
     upiQrImage: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&auto=format&fit=crop&q=80',
-    paymentLink: 'https://pages.razorpay.com/bpl-kids-s1',
     bankAccountName: 'BIDWAR SPORTS TECH SOLUTIONS PVT LTD',
     bankName: 'HDFC Bank Ltd',
     accountNumber: '50200084918231',

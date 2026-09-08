@@ -82,7 +82,7 @@ export function requireAdminKey(
   res: Response,
   next: NextFunction
 ): void {
-  const apiKey = req.headers['x-admin-api-key'] || req.headers['admin-api-key'];
+  const apiKey = req.headers['x-admin-api-key'] || req.headers['admin-api-key'] || req.headers['x-admin-key'];
 
   if (!config.adminApiKey || !apiKey || apiKey !== config.adminApiKey) {
     res.status(403).json({
