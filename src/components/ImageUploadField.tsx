@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Upload, Check, AlertCircle, Loader2, Image as ImageIcon, X } from 'lucide-react';
+import { Upload, Check, AlertCircle, Loader2, RefreshCw } from 'lucide-react';
 
 interface ImageUploadFieldProps {
   label: string;
   value: string;
   onChange: (url: string) => void;
+  tag?: 'associations' | 'players' | 'mentors' | 'payment-proofs';
   required?: boolean;
   aspectRatio?: 'square' | 'wide';
   helperText?: string;
@@ -16,6 +17,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   label,
   value,
   onChange,
+  tag = 'associations',
   required = false,
   aspectRatio = 'square',
   helperText = 'PNG, JPG, or WEBP up to 5MB',
@@ -31,56 +33,43 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setUploadStatus('error');
-      setErrorMessage('File size exceeds 5MB limit');
+      setErrorMessage('File size exceeds the 5MB limit.');
       return;
     }
 
-    // Validate type
+    // Validate MIME type
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/jpg'].includes(file.type)) {
       setUploadStatus('error');
-      setErrorMessage('Please upload a valid image (JPG, PNG, WEBP)');
+      setErrorMessage('Please select a valid image file (JPG, PNG, or WEBP).');
       return;
     }
 
     setUploadStatus('uploading');
     setErrorMessage('');
 
-    // Instant local preview via FileReader
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const localDataUrl = e.target?.result as string;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('tag', tag);
 
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
+      const data = await response.json();
 
-        if (response.ok) {
-          const data = await response.json();
-          onChange(data.url || localDataUrl);
-          setUploadStatus('success');
-        } else {
-          // Fallback to local Data URL if server upload returns non-200
-          onChange(localDataUrl);
-          setUploadStatus('success');
-        }
-      } catch (err) {
-        // Fallback gracefully so user registration is never blocked
-        onChange(localDataUrl);
+      if (response.ok && data.success && data.url) {
+        onChange(data.url);
         setUploadStatus('success');
+      } else {
+        setUploadStatus('error');
+        setErrorMessage(data.message || 'Image upload failed. Please try again.');
       }
-    };
-
-    reader.onerror = () => {
+    } catch (err) {
       setUploadStatus('error');
-      setErrorMessage('Upload failed — Try again');
-    };
-
-    reader.readAsDataURL(file);
+      setErrorMessage('Network error during upload. Please check connection and retry.');
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -112,12 +101,12 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
     <div className="space-y-1.5" id={id}>
       <div className="flex items-center justify-between">
         <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-          {label} {required && <span className="text-amber-400">*</span>}
+          {label} {required && <span className="text-[#FFB800]">*</span>}
         </label>
         {uploadStatus === 'uploading' && (
-          <span className="text-[11px] text-amber-400 flex items-center gap-1 font-medium animate-pulse">
+          <span className="text-[11px] text-[#FFB800] flex items-center gap-1 font-medium animate-pulse">
             <Loader2 className="w-3 h-3 animate-spin" />
-            Uploading...
+            Uploading image...
           </span>
         )}
         {uploadStatus === 'success' && (
@@ -139,10 +128,10 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
         }}
         className={`relative group border-2 border-dashed rounded-xl p-3 sm:p-4 text-center cursor-pointer transition-all duration-200 ${
           isDragging
-            ? 'border-amber-400 bg-amber-500/10'
+            ? 'border-[#FFB800] bg-[#FFB800]/10'
             : value
-            ? 'border-slate-700 bg-slate-900/60 hover:border-amber-500/50'
-            : 'border-slate-800 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/80'
+            ? 'border-[#1A2C68] bg-[#0A1230]/60 hover:border-[#FFB800]/50'
+            : 'border-[#1A2C68] bg-[#070D24]/60 hover:border-slate-700 hover:bg-[#0A1230]'
         } ${uploadStatus === 'uploading' ? 'opacity-70 cursor-not-allowed pointer-events-none' : ''}`}
       >
         <input
@@ -157,7 +146,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
         {value ? (
           <div className="flex items-center gap-3">
             <div
-              className={`relative overflow-hidden rounded-lg bg-slate-950 border border-slate-700 flex-shrink-0 flex items-center justify-center ${
+              className={`relative overflow-hidden rounded-lg bg-[#070D24] border border-[#1A2C68] flex-shrink-0 flex items-center justify-center ${
                 aspectRatio === 'wide' ? 'w-24 h-16' : 'w-14 h-14'
               }`}
             >
@@ -174,7 +163,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
             <div className="flex-1 text-left min-w-0">
               <p className="text-xs font-semibold text-white truncate flex items-center gap-1.5">
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-400"></span>
-                Photo Selected
+                Photo Ready
               </p>
               <p className="text-[11px] text-slate-400">
                 Click or drag another image to replace
@@ -187,18 +176,18 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
                 e.stopPropagation();
                 fileInputRef.current?.click();
               }}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition-colors"
+              className="px-3 py-1.5 rounded-lg bg-[#0E1B48] hover:bg-[#1A2C68] text-slate-200 text-xs font-medium border border-[#1A2C68] transition-colors"
             >
               Change
             </button>
           </div>
         ) : (
           <div className="py-2 flex flex-col items-center justify-center gap-1.5">
-            <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-amber-400 group-hover:border-amber-500/40 transition-colors">
+            <div className="w-9 h-9 rounded-full bg-[#0A1230] border border-[#1A2C68] flex items-center justify-center text-slate-400 group-hover:text-[#FFB800] group-hover:border-[#FFB800]/40 transition-colors">
               <Upload className="w-4 h-4" />
             </div>
             <p className="text-xs font-semibold text-slate-300">
-              <span className="text-amber-400 font-bold underline decoration-amber-400/50 underline-offset-2">
+              <span className="text-[#FFB800] font-bold underline decoration-[#FFB800]/50 underline-offset-2">
                 Choose File
               </span>{' '}
               or drag & drop here
@@ -209,10 +198,22 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
       </div>
 
       {(error || errorMessage) && (
-        <p className="text-[11px] text-red-400 flex items-center gap-1 mt-1">
-          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-          {errorMessage || error}
-        </p>
+        <div className="flex items-center justify-between text-[11px] text-red-400 mt-1">
+          <span className="flex items-center gap-1">
+            <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+            {errorMessage || error}
+          </span>
+          {uploadStatus === 'error' && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="text-[#FFB800] hover:underline flex items-center gap-1 text-[10px] font-semibold"
+            >
+              <RefreshCw className="w-3 h-3" />
+              Retry
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

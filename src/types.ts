@@ -58,7 +58,7 @@ export interface MentorDetails {
 }
 
 export interface PlayerDetails {
-  id: string;
+  id?: string;
   playerName: string; // Required *
   studentClass: number; // Required * (4, 5, 6 for class_4_5_6, or 7, 8, 9 for class_7_8_9)
   dateOfBirth: string; // Required *
@@ -81,7 +81,7 @@ export interface PaymentInfo {
   baseAmount?: number; // ₹8,000
   brandingAmount?: number; // ₹0 or ₹5,000
   totalAmount?: number; // Authoritative from backend: ₹8,000 or ₹13,000
-  paymentStatus?: 'VERIFIED' | 'PENDING_VERIFICATION';
+  paymentStatus?: 'VERIFIED' | 'PENDING_VERIFICATION' | 'PAYMENT_REJECTED';
   paidAt?: string;
   utrTransactionId?: string;
   paymentScreenshot?: string;
@@ -89,7 +89,7 @@ export interface PaymentInfo {
 
 export interface SponsorConfig {
   id: string;
-  type: string; // e.g. "OFFICIAL SPONSOR", "TITLE SPONSOR", "POWERED BY"
+  type: string;
   name: string;
   logoUrl?: string;
   websiteUrl?: string;
@@ -98,7 +98,7 @@ export interface SponsorConfig {
 export type RegistrationStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'CONFIRMED' | 'REJECTED';
 
 export interface DraftRecord {
-  draftId: string;
+  draftToken: string;
   currentStep: number;
   category: CategoryId;
   association: AssociationDetails;
@@ -108,9 +108,9 @@ export interface DraftRecord {
   teamTagline: string;
   players: PlayerDetails[];
   payment: PaymentInfo;
-  status: 'DRAFT' | 'SUBMITTED' | 'CONFIRMED';
+  status: 'DRAFT' | 'SUBMITTED';
   updatedAt: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface TeamBrandingDetails {
@@ -124,7 +124,7 @@ export interface RegistrationRecord {
   id: string; // Format: BPL-2026-XXXX (e.g. BPL-2026-0001)
   teamCode: string; // Format: exactly 4 numeric digits (e.g. "1027")
   createdAt: string;
-  status: 'Confirmed' | 'Verification Pending' | RegistrationStatus;
+  status: 'SUBMITTED' | 'Confirmed' | 'Verification Pending' | RegistrationStatus;
   category: CategoryId;
   association: AssociationDetails;
   mentor: MentorDetails;
@@ -134,13 +134,13 @@ export interface RegistrationRecord {
   players: PlayerDetails[]; // Strictly 8 players
   payment: {
     method: PaymentMethod;
-    transactionReference: string;
+    transactionReference?: string;
     paymentDate?: string;
-    paymentProofUrl: string;
+    paymentProofUrl?: string;
     baseAmount: number;
     brandingAmount: number;
     totalAmount: number;
-    paymentStatus: 'VERIFIED' | 'PENDING_VERIFICATION';
+    paymentStatus: 'VERIFIED' | 'PENDING_VERIFICATION' | 'PAYMENT_REJECTED';
     paidAt?: string;
     utrTransactionId?: string;
     paymentScreenshot?: string;
@@ -149,31 +149,18 @@ export interface RegistrationRecord {
   notes?: string;
 }
 
-export interface TournamentConfig {
-  tournamentName: string;
-  secondaryLabel: string;
-  dates: string;
-  organizers: string[];
-  format: string;
-  registrationWindow: {
-    start: string; // "2026-09-08T00:00:00+05:30"
-    end: string;   // "2026-10-15T23:59:59+05:30"
-    enabled: boolean;
-  };
-  fees: {
-    baseRegistrationFee: 8000;
-    brandingAddonFee: 5000;
-    withoutBrandingTotal: 8000;
-    withBrandingTotal: 13000;
-  };
-  whatsappCommunityUrl: string;
-  paymentConfig: {
-    upiId: string;
-    upiQrImage: string;
-    paymentLink: string;
-    bankAccountName: string;
-    bankName: string;
-    accountNumber: string;
-    ifscCode: string;
-  };
+export interface RegistrationConfirmationDTO {
+  registrationId: string;
+  teamCode: string;
+  teamName: string;
+  category: CategoryId | string;
+  paymentStatus: string;
+}
+
+// Strict Public Registered Teams DTO (ONLY 4 FIELDS)
+export interface PublicTeamDTO {
+  teamName: string;
+  associationName: string;
+  associationLogo: string;
+  category: string;
 }

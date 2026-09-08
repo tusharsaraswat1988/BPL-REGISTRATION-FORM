@@ -1,22 +1,31 @@
 import React, { useState } from 'react';
-import { RegistrationRecord } from '../types';
+import { PublicTeamDTO } from '../types';
 import { Search, Trophy, Shield } from 'lucide-react';
 
 interface DirectoryProps {
-  registrations: RegistrationRecord[];
+  teams: PublicTeamDTO[];
 }
 
-export const TeamsDirectory: React.FC<DirectoryProps> = ({ registrations }) => {
+export const TeamsDirectory: React.FC<DirectoryProps> = ({ teams }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredTeams = registrations.filter(team => {
-    const matchesCategory = selectedCategory === 'all' || team.category === selectedCategory;
+  const filteredTeams = (teams || []).filter(team => {
+    const isCat1 = team.category.includes('4') || team.category === 'class_4_5_6';
+    const isCat2 = team.category.includes('7') || team.category === 'class_7_8_9';
+
+    let matchesCategory = true;
+    if (selectedCategory === 'class_4_5_6') {
+      matchesCategory = isCat1;
+    } else if (selectedCategory === 'class_7_8_9') {
+      matchesCategory = isCat2;
+    }
+
     const q = searchQuery.toLowerCase().trim();
     const matchesSearch =
       !q ||
-      team.branding.teamName.toLowerCase().includes(q) ||
-      team.association.associationName.toLowerCase().includes(q);
+      team.teamName.toLowerCase().includes(q) ||
+      team.associationName.toLowerCase().includes(q);
 
     return matchesCategory && matchesSearch;
   });
@@ -71,28 +80,28 @@ export const TeamsDirectory: React.FC<DirectoryProps> = ({ registrations }) => {
         <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
       </div>
 
-      {/* Simplified Showcase Teams Grid (Strict Privacy Enforced) */}
+      {/* Simplified Showcase Teams Grid (Strict Privacy Enforced - ONLY 4 PUBLIC FIELDS) */}
       {filteredTeams.length === 0 ? (
         <div className="p-12 text-center bg-[#0B1538]/60 rounded-2xl border border-[#1A2C68]">
           <p className="text-sm text-slate-400">No teams match your search.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredTeams.map(record => {
-            const isCategory1 = record.category === 'class_4_5_6';
+          {filteredTeams.map((team, idx) => {
+            const isCategory1 = team.category.includes('4') || team.category === 'class_4_5_6';
             const categoryLabel = isCategory1 ? 'Class 4–5–6' : 'Class 7–8–9';
 
             return (
               <div
-                key={record.id}
+                key={`${team.teamName}-${idx}`}
                 className="bg-[#0B1538] border border-[#1A2C68] hover:border-[#FFB800]/60 rounded-2xl p-6 transition-all duration-200 hover:shadow-xl hover:shadow-[#FFB800]/10 flex flex-col items-center text-center group"
               >
                 {/* 1. LARGE ASSOCIATION LOGO (Visual Focal Point) */}
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-[#070D24] border border-[#1A2C68] group-hover:border-[#FFB800]/40 p-2 flex items-center justify-center mb-5 shadow-lg relative overflow-hidden transition-colors">
-                  {record.association.associationLogo ? (
+                  {team.associationLogo ? (
                     <img
-                      src={record.association.associationLogo}
-                      alt={record.association.associationName}
+                      src={team.associationLogo}
+                      alt={team.associationName}
                       className="w-full h-full object-contain"
                       loading="lazy"
                     />
@@ -100,7 +109,7 @@ export const TeamsDirectory: React.FC<DirectoryProps> = ({ registrations }) => {
                     <div className="flex flex-col items-center justify-center text-[#FFB800]">
                       <Shield className="w-10 h-10 stroke-1" />
                       <span className="text-[10px] font-black uppercase font-mono-sport mt-1 text-slate-400">
-                        {record.association.associationName?.slice(0, 3).toUpperCase() || 'BPL'}
+                        {team.associationName?.slice(0, 3).toUpperCase() || 'BPL'}
                       </span>
                     </div>
                   )}
@@ -108,12 +117,12 @@ export const TeamsDirectory: React.FC<DirectoryProps> = ({ registrations }) => {
 
                 {/* 2. TEAM NAME */}
                 <h3 className="text-lg sm:text-xl font-black text-white font-heading tracking-wide uppercase leading-tight line-clamp-2">
-                  {record.branding.teamName}
+                  {team.teamName}
                 </h3>
 
                 {/* 3. ASSOCIATION NAME */}
                 <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1.5 mb-5 line-clamp-2">
-                  {record.association.associationName}
+                  {team.associationName}
                 </p>
 
                 {/* 4. CATEGORY BADGE */}

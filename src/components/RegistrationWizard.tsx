@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   AssociationDetails, MentorDetails, PlayerDetails, 
-  PaymentInfo, TournamentCategory, RegistrationRecord, CategoryId 
+  PaymentInfo, TournamentCategory, RegistrationRecord, RegistrationConfirmationDTO, CategoryId 
 } from '../types';
 import { StepCategoryAssociation } from './steps/StepCategoryAssociation';
 import { StepMentor } from './steps/StepMentor';
@@ -17,8 +17,9 @@ import { TOURNAMENT_CONFIG } from '../config/tournamentConfig';
 
 interface WizardProps {
   categories: TournamentCategory[];
-  onRegistrationSuccess: (record: RegistrationRecord) => void;
+  onRegistrationSuccess: (record: RegistrationConfirmationDTO) => void;
   onNavigateToLookup: () => void;
+  authToken?: string;
 }
 
 const stepsList = [
@@ -29,21 +30,22 @@ const stepsList = [
   { title: 'Review & Payment', shortTitle: 'Payment' },
 ];
 
-const LOCAL_STORAGE_DRAFT_KEY = 'bpl_kids_draft_id';
+const LOCAL_STORAGE_DRAFT_KEY = 'bpl_kids_draft_token';
 
 export const RegistrationWizard: React.FC<WizardProps> = ({
   categories,
   onRegistrationSuccess,
-  onNavigateToLookup
+  onNavigateToLookup,
+  authToken
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionSuccess, setSubmissionSuccess] = useState<RegistrationRecord | null>(null);
+  const [submissionSuccess, setSubmissionSuccess] = useState<RegistrationConfirmationDTO | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Auto-Save State (subtle, non-intrusive)
-  const [draftId, setDraftId] = useState<string | null>(() => {
+  const [draftToken, setDraftToken] = useState<string | null>(() => {
     return localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY);
   });
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
@@ -191,17 +193,22 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
   // 5. Payment Details
   const [payment, setPayment] = useState<PaymentInfo>({
     method: 'UPI',
-    transactionReference: `BPL-${Math.floor(100000000 + Math.random() * 900000000)}`,
+    transactionReference: '',
     paymentDate: new Date().toISOString().split('T')[0],
     paymentProofUrl: ''
   });
 
   // Restore draft from backend on mount if one exists
   useEffect(() => {
-    const existingDraftId = localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY);
-    if (!existingDraftId) return;
+    const existingDraftToken = localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY);
+    if (!existingDraftToken) return;
 
-    fetch(`/api/drafts/${encodeURIComponent(existingDraftId)}`)
+    fetch(`/api/drafts/${encodeURIComponent(existingDraftToken)}`, {
+      headers: {
+        'x-draft-token': existingDraftToken,
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+      }
+    })
       .then(res => {
         if (!res.ok) throw new Error('Draft not found');
         return res.json();
@@ -225,18 +232,18 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         }
       })
       .catch(() => {
-        // Stale or invalid draft ID, clean up
+        // Stale or invalid draft token, clean up
         localStorage.removeItem(LOCAL_STORAGE_DRAFT_KEY);
-        setDraftId(null);
+        setDraftToken(null);
       });
-  }, []);
+  }, [authToken]);
 
   // Server-Side Auto-Save Function
   const persistDraftToServer = useCallback(async (stepToSave = currentStep) => {
     setSaveStatus('saving');
 
     const payload = {
-      draftId,
+      draftToken,
       currentStep: stepToSave,
       category,
       association,
@@ -252,15 +259,19 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
     try {
       const res = await fetch('/api/drafts', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(draftToken ? { 'x-draft-token': draftToken } : {}),
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
         body: JSON.stringify(payload)
       });
 
       if (res.ok) {
         const data = await res.json();
-        if (data.draftId) {
-          setDraftId(data.draftId);
-          localStorage.setItem(LOCAL_STORAGE_DRAFT_KEY, data.draftId);
+        if (data.draftToken) {
+          setDraftToken(data.draftToken);
+          localStorage.setItem(LOCAL_STORAGE_DRAFT_KEY, data.draftToken);
         }
         setSaveStatus('saved');
         setLastSavedTime(new Date());
@@ -278,7 +289,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
       setSaveStatus('idle');
     }
   }, [
-    draftId, currentStep, category, association, 
+    draftToken, currentStep, category, association, 
     mentor, teamName, includeBranding, teamTagline, 
     players, payment
   ]);
@@ -430,7 +441,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
     setIsSubmitting(true);
     try {
       const payload = {
-        draftId,
+        draftToken,
         category,
         association,
         mentor,
@@ -443,7 +454,11 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
 
       const response = await fetch('/api/registrations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(draftToken ? { 'x-draft-token': draftToken } : {}),
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
         body: JSON.stringify(payload)
       });
 
@@ -454,7 +469,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
 
         // Clean up draft from local storage
         localStorage.removeItem(LOCAL_STORAGE_DRAFT_KEY);
-        setDraftId(null);
+        setDraftToken(null);
 
         confetti({
           particleCount: 120,
@@ -477,7 +492,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
     setCurrentStep(0);
     setTeamName('');
     setIncludeBranding(false);
-    setDraftId(null);
+    setDraftToken(null);
     localStorage.removeItem(LOCAL_STORAGE_DRAFT_KEY);
   };
 
@@ -507,7 +522,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
                 Registration Confirmed!
               </h2>
               <p className="text-slate-300 text-sm max-w-xl mx-auto">
-                Your team <strong className="text-white">{submissionSuccess.branding.teamName}</strong> has been successfully submitted to the official tournament roster.
+                Your team <strong className="text-white">{submissionSuccess.teamName}</strong> has been successfully submitted to the official tournament roster.
               </p>
             </div>
 
@@ -528,7 +543,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
                   Registration ID
                 </span>
                 <span className="text-2xl font-black text-white font-mono-sport tracking-wider">
-                  {submissionSuccess.id}
+                  {submissionSuccess.registrationId}
                 </span>
                 <p className="text-[11px] text-slate-500 mt-1">Official tournament pass reference</p>
               </div>
@@ -547,12 +562,12 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
                 <strong className="text-white">8 Players (Exact)</strong>
               </div>
               <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68] text-left">
-                <span className="text-slate-500 block text-[10px] uppercase font-semibold">Mentor</span>
-                <strong className="text-white truncate block">{submissionSuccess.mentor.name}</strong>
+                <span className="text-slate-500 block text-[10px] uppercase font-semibold">Status</span>
+                <strong className="text-emerald-400">SUBMITTED</strong>
               </div>
               <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68] text-left">
-                <span className="text-slate-500 block text-[10px] uppercase font-semibold">Fee Paid</span>
-                <strong className="text-[#FFB800] font-mono">₹{submissionSuccess.payment.totalAmount.toLocaleString('en-IN')}</strong>
+                <span className="text-slate-500 block text-[10px] uppercase font-semibold">Payment</span>
+                <strong className="text-[#FFB800] font-mono">{submissionSuccess.paymentStatus || 'PENDING_VERIFICATION'}</strong>
               </div>
             </div>
 

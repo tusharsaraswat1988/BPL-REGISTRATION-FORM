@@ -130,6 +130,7 @@ export const StepMentor: React.FC<StepMentorProps> = ({ mentor, setMentor, error
         <ImageUploadField
           label="Mentor Photo"
           required
+          tag="mentors"
           value={mentor.photo}
           onChange={url => handleChange('photo', url)}
           error={errors.mentorPhoto}

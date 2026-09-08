@@ -2,10 +2,13 @@ import { CategoryId } from '../types';
 
 export interface SponsorConfig {
   id: string;
-  type: string; // e.g. "OFFICIAL SPONSOR", "TITLE SPONSOR", "ASSOCIATE SPONSOR", "POWERED BY"
   name: string;
+  type: string; // e.g. "TITLE SPONSOR", "OFFICIAL SPONSOR", "BROADCAST PARTNER", "POWERED BY"
   logoUrl?: string;
   websiteUrl?: string;
+  tagline?: string;
+  order?: number;
+  active?: boolean;
 }
 
 export interface TournamentCategoryConfig {

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useRouter } from './hooks/useRouter';
 import { Header } from './components/Header';
-import { TournamentHero } from './components/TournamentHero';
-import { RegistrationWizard } from './components/RegistrationWizard';
-import { LookupRegistration } from './components/LookupRegistration';
-import { TeamsDirectory } from './components/TeamsDirectory';
-import { RulesAndFaq } from './components/RulesAndFaq';
 import { Footer } from './components/Footer';
-import { RegistrationRecord, TournamentCategory } from './types';
+import { HomePage } from './components/pages/HomePage';
+import { RegisterPage } from './components/pages/RegisterPage';
+import { VerifyPage } from './components/pages/VerifyPage';
+import { TeamsPage } from './components/pages/TeamsPage';
+import { RulesPage } from './components/pages/RulesPage';
+import { TournamentCategory, PublicTeamDTO, RegistrationConfirmationDTO } from './types';
 
 const defaultCategories: TournamentCategory[] = [
   {
@@ -34,18 +35,17 @@ const defaultCategories: TournamentCategory[] = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'register' | 'lookup' | 'teams' | 'rules'>('register');
+  const { currentPath, navigate } = useRouter();
   const [categories, setCategories] = useState<TournamentCategory[]>(defaultCategories);
-  const [registrations, setRegistrations] = useState<RegistrationRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [teams, setTeams] = useState<PublicTeamDTO[]>([]);
 
-  // Load tournament info & existing registrations from backend API
+  // Load tournament info & public teams from backend API
   useEffect(() => {
     async function loadData() {
       try {
-        const [tournRes, regRes] = await Promise.all([
+        const [tournRes, teamsRes] = await Promise.all([
           fetch('/api/tournament-info').catch(() => null),
-          fetch('/api/registrations').catch(() => null)
+          fetch('/api/public/teams').catch(() => null)
         ]);
 
         if (tournRes && tournRes.ok) {
@@ -55,79 +55,92 @@ export default function App() {
           }
         }
 
-        if (regRes && regRes.ok) {
-          const regData = await regRes.json();
-          if (regData.registrations && Array.isArray(regData.registrations)) {
-            setRegistrations(regData.registrations);
+        if (teamsRes && teamsRes.ok) {
+          const teamsData = await teamsRes.json();
+          if (teamsData.teams && Array.isArray(teamsData.teams)) {
+            setTeams(teamsData.teams);
           }
         }
       } catch (err) {
         console.warn('Backend API fetch error, using default categories:', err);
-      } finally {
-        setIsLoading(false);
       }
     }
 
     loadData();
   }, []);
 
-  const handleRegistrationSuccess = (newRecord: RegistrationRecord) => {
-    setRegistrations(prev => [newRecord, ...prev]);
-    // update category slots remaining
-    setCategories(prev =>
-      prev.map(cat =>
-        cat.id === newRecord.category && cat.slotsRemaining > 0
-          ? { ...cat, slotsRemaining: cat.slotsRemaining - 1 }
-          : cat
-      )
-    );
+  const handleRegistrationSuccess = async (newRecord: RegistrationConfirmationDTO) => {
+    // Refresh public registered teams list from backend API
+    try {
+      const teamsRes = await fetch('/api/public/teams');
+      if (teamsRes && teamsRes.ok) {
+        const teamsData = await teamsRes.json();
+        if (teamsData.teams && Array.isArray(teamsData.teams)) {
+          setTeams(teamsData.teams);
+        }
+      }
+    } catch (err) {
+      console.warn('Could not refresh teams list:', err);
+    }
+
+    // Update category slots remaining
+    if (newRecord?.category) {
+      setCategories(prev =>
+        prev.map(cat =>
+          cat.id === newRecord.category && (cat.slotsRemaining ?? 0) > 0
+            ? { ...cat, slotsRemaining: (cat.slotsRemaining ?? 1) - 1 }
+            : cat
+        )
+      );
+    }
   };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950">
       {/* Official Sticky Sports Header */}
       <Header
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        registeredCount={registrations.length}
+        currentPath={currentPath}
+        onNavigate={navigate}
+        registeredCount={teams.length}
       />
 
-      {/* Main Content Area */}
+      {/* Main Routed Content Area */}
       <main className="flex-1">
-        {activeTab === 'register' && (
-          <div>
-            <TournamentHero
-              onStartRegistration={() => {
-                const el = document.getElementById('registration-flow');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              onCheckStatus={() => setActiveTab('lookup')}
-            />
-            <div id="registration-flow">
-              <RegistrationWizard
-                categories={categories}
-                onRegistrationSuccess={handleRegistrationSuccess}
-                onNavigateToLookup={() => setActiveTab('lookup')}
-              />
-            </div>
-          </div>
+        {currentPath === '/' && (
+          <HomePage
+            categories={categories}
+            teams={teams}
+            onNavigate={navigate}
+          />
         )}
 
-        {activeTab === 'lookup' && (
-          <LookupRegistration />
+        {currentPath === '/register' && (
+          <RegisterPage
+            categories={categories}
+            onRegistrationSuccess={handleRegistrationSuccess}
+            onNavigate={navigate}
+          />
         )}
 
-        {activeTab === 'teams' && (
-          <TeamsDirectory registrations={registrations} />
+        {currentPath === '/verify' && (
+          <VerifyPage
+            onNavigate={navigate}
+          />
         )}
 
-        {activeTab === 'rules' && (
-          <RulesAndFaq />
+        {currentPath === '/teams' && (
+          <TeamsPage
+            teams={teams}
+          />
+        )}
+
+        {currentPath === '/rules' && (
+          <RulesPage />
         )}
       </main>
 
       {/* Footer */}
-      <Footer onSelectTab={setActiveTab} />
+      <Footer onNavigate={navigate} />
     </div>
   );
 }

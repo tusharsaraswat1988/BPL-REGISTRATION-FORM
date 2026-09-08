@@ -332,6 +332,7 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           <ImageUploadField
             label="Payment Screenshot / Receipt Proof"
             required
+            tag="payment-proofs"
             value={payment.paymentProofUrl}
             onChange={url => setPayment(prev => ({ ...prev, paymentProofUrl: url }))}
             aspectRatio="wide"

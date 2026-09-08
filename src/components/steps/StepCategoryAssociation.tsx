@@ -200,6 +200,7 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
           <ImageUploadField
             label="Association / School Logo"
             required
+            tag="associations"
             value={association.associationLogo}
             onChange={url => handleChange('associationLogo', url)}
             error={errors.associationLogo}

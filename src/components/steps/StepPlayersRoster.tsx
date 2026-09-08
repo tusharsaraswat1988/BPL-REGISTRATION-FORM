@@ -365,6 +365,7 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
             <ImageUploadField
               label={`Player #${activePlayerIndex + 1} Photo`}
               required
+              tag="players"
               value={activePlayer.playerPhoto}
               onChange={url => handlePlayerChange(activePlayerIndex, 'playerPhoto', url)}
               aspectRatio="square"
