@@ -145,7 +145,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
       const sanitizedMethod = (initialDraft.payment.method === 'Cheque/Demand Draft' || initialDraft.payment.method === 'CASHFREE')
         ? 'UPI'
         : (initialDraft.payment.method || 'UPI');
-      const isManual = sanitizedMethod === 'UPI' || sanitizedMethod.includes('Bank Transfer') || sanitizedMethod !== 'CASHFREE';
+      const isManual = (sanitizedMethod as string) === 'UPI' || (sanitizedMethod as string).includes('Bank Transfer') || (sanitizedMethod as string) !== 'CASHFREE';
       const utr = initialDraft.payment.transactionReference || initialDraft.payment.utrTransactionId || '';
       const proof = initialDraft.payment.paymentProofUrl || initialDraft.payment.paymentScreenshot || '';
       return {

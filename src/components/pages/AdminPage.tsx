@@ -56,6 +56,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
   // Action states
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -242,6 +243,31 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       showToast(`Rejection error: ${err.message}`);
     } finally {
       setRejectingId(null);
+    }
+  };
+
+  // Resend official confirmation & tournament emails
+  const handleResendEmails = async (regId: string) => {
+    setResendingId(regId);
+    try {
+      const res = await fetch(`/api/admin/registrations/${regId}/resend-emails`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': apiKey,
+        },
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        showToast(data.message || 'Confirmation emails resent successfully!');
+      } else {
+        showToast(`Email resend failed: ${data.message || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      showToast(`Network error resending emails: ${err.message}`);
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -1020,6 +1046,20 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                               <span>Print</span>
                             </button>
 
+                            <button
+                              onClick={() => handleResendEmails(reg.id)}
+                              disabled={resendingId === reg.id}
+                              className="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
+                              title="Resend Official Confirmation & Rules Emails"
+                            >
+                              {resendingId === reg.id ? (
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Mail className="w-3.5 h-3.5" />
+                              )}
+                              <span>Email</span>
+                            </button>
+
                             {isPending && (
                               <button
                                 onClick={() => handleVerifyPayment(reg.id)}
@@ -1357,6 +1397,20 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                           <Check className="w-4 h-4" />
                         )}
                         <span>{selectedReg.payment.paymentStatus === 'VERIFIED' ? 'Verified' : 'Verify Payment & Send Confirmation Email'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleResendEmails(selectedReg.id)}
+                        disabled={resendingId === selectedReg.id}
+                        className="px-4 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5 disabled:opacity-50 cursor-pointer shadow-md transition-colors"
+                        title="Resend official registration and payment emails to Association, Mentor, and Parents"
+                      >
+                        {resendingId === selectedReg.id ? (
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Mail className="w-4 h-4" />
+                        )}
+                        <span>Resend All Emails</span>
                       </button>
 
                       {selectedReg.payment.paymentStatus !== 'PAYMENT_REJECTED' && (

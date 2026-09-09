@@ -1,3 +1,4 @@
+import React from 'react';
 import { ExternalLink, Shield, Instagram, Facebook, Youtube, Lock, PlusCircle, Users, FileText, RefreshCw, Mail, Phone, MapPin, MessageCircle } from 'lucide-react';
 import { BplLogo } from './BplLogo';
 import { TOURNAMENT_CONFIG } from '../config/tournamentConfig';

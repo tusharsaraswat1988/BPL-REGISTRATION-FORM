@@ -37,7 +37,7 @@ export interface RegistrationEmailData {
 /**
  * Atomic Claim and Send Email via Resend with PostgreSQL Idempotency Protection
  */
-export async function sendEmailWithIdempotency(options: SendEmailOptions): Promise<{
+export async function sendEmailWithIdempotency(options: SendEmailOptions, forceResend: boolean = false): Promise<{
   success: boolean;
   alreadySent?: boolean;
   providerMessageId?: string;
@@ -53,16 +53,26 @@ export async function sendEmailWithIdempotency(options: SendEmailOptions): Promi
 
   // 1. Atomic claim via PostgreSQL email_deliveries table
   try {
-    const claimRes = await query(
-      `INSERT INTO email_deliveries (
-        registration_id, recipient_type, recipient_email, email_type, status
-      ) VALUES ($1, $2, $3, $4, 'PENDING')
-      ON CONFLICT (registration_id, recipient_email, email_type)
-      DO UPDATE SET updated_at = NOW()
-      WHERE email_deliveries.status != 'SENT'
-      RETURNING id, status`,
-      [options.registrationId, options.recipientType, email, options.emailType]
-    );
+    const claimRes = forceResend
+      ? await query(
+          `INSERT INTO email_deliveries (
+            registration_id, recipient_type, recipient_email, email_type, status
+          ) VALUES ($1, $2, $3, $4, 'PENDING')
+          ON CONFLICT (registration_id, recipient_email, email_type)
+          DO UPDATE SET status = 'PENDING', updated_at = NOW(), error_message = NULL
+          RETURNING id, status`,
+          [options.registrationId, options.recipientType, email, options.emailType]
+        )
+      : await query(
+          `INSERT INTO email_deliveries (
+            registration_id, recipient_type, recipient_email, email_type, status
+          ) VALUES ($1, $2, $3, $4, 'PENDING')
+          ON CONFLICT (registration_id, recipient_email, email_type)
+          DO UPDATE SET updated_at = NOW()
+          WHERE email_deliveries.status != 'SENT'
+          RETURNING id, status`,
+          [options.registrationId, options.recipientType, email, options.emailType]
+        );
 
     if (claimRes.rows.length === 0) {
       console.log(`[Email Service - Idempotent Skip] Email '${options.emailType}' already SENT to ${email} for registration ${options.registrationId}.`);
@@ -168,7 +178,7 @@ export async function sendEmailWithIdempotency(options: SendEmailOptions): Promi
  * 2. Mentor email
  * 3. Each registered player's parent email (child-specific view)
  */
-export async function triggerRegistrationCompletedEmails(registrationId: string): Promise<void> {
+export async function triggerRegistrationCompletedEmails(registrationId: string, forceResend: boolean = false): Promise<void> {
   try {
     const reg = await getRegistrationById(registrationId);
     if (!reg) {
@@ -211,7 +221,7 @@ export async function triggerRegistrationCompletedEmails(registrationId: string)
         emailType: 'REGISTRATION_CONFIRMATION',
         subject: assocTpl.subject,
         html: assocTpl.html,
-      });
+      }, forceResend);
     }
 
     // 2. Send to Mentor
@@ -238,7 +248,7 @@ export async function triggerRegistrationCompletedEmails(registrationId: string)
         emailType: 'REGISTRATION_CONFIRMATION',
         subject: mentorTpl.subject,
         html: mentorTpl.html,
-      });
+      }, forceResend);
     }
 
     // 3. Send to each Parent (STRICT PRIVACY: Parent sees ONLY their child's info)
@@ -280,7 +290,7 @@ export async function triggerRegistrationCompletedEmails(registrationId: string)
         emailType: 'REGISTRATION_CONFIRMATION',
         subject: parentTpl.subject,
         html: parentTpl.html,
-      });
+      }, forceResend);
     }
   } catch (err: any) {
     console.error(`[Email Service - Registration Workflow Exception] ${err.message}`);
@@ -294,7 +304,7 @@ export async function triggerRegistrationCompletedEmails(registrationId: string)
  * 1. PAYMENT CONFIRMATION EMAIL (Association, Mentor, All Parents)
  * 2. TOURNAMENT RULES EMAIL (Association, Mentor, All Parents)
  */
-export async function triggerPaymentVerifiedEmails(registrationId: string): Promise<void> {
+export async function triggerPaymentVerifiedEmails(registrationId: string, forceResend: boolean = false): Promise<void> {
   try {
     const reg = await getRegistrationById(registrationId);
     if (!reg) {
@@ -352,7 +362,7 @@ export async function triggerPaymentVerifiedEmails(registrationId: string): Prom
         emailType: 'PAYMENT_CONFIRMATION',
         subject: paymentTpl.subject,
         html: paymentTpl.html,
-      });
+      }, forceResend);
     }
 
     // --- STEP 2: TOURNAMENT RULES & IMPORTANT INFORMATION EMAIL ---
@@ -374,10 +384,29 @@ export async function triggerPaymentVerifiedEmails(registrationId: string): Prom
         emailType: 'TOURNAMENT_RULES',
         subject: rulesTpl.subject,
         html: rulesTpl.html,
-      });
+      }, forceResend);
     }
   } catch (err: any) {
     console.error(`[Email Service - Payment Verified Workflow Exception] ${err.message}`);
+  }
+}
+
+/**
+ * Force resend all transactional emails for a registration
+ */
+export async function resendAllRegistrationEmails(registrationId: string): Promise<boolean> {
+  try {
+    const reg = await getRegistrationById(registrationId);
+    if (!reg) return false;
+
+    await triggerRegistrationCompletedEmails(registrationId, true);
+    if (reg.payment.paymentStatus === 'VERIFIED') {
+      await triggerPaymentVerifiedEmails(registrationId, true);
+    }
+    return true;
+  } catch (err: any) {
+    console.error('[Email Resend Exception]', err.message);
+    return false;
   }
 }
 

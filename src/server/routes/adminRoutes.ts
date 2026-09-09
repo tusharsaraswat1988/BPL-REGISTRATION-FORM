@@ -8,7 +8,7 @@ import {
 } from '../db/registrations';
 import { requireAdminKey } from '../middleware/auth';
 import { adminLimiter } from '../middleware/rateLimiter';
-import { triggerPaymentVerifiedEmails } from '../services/emailService';
+import { triggerPaymentVerifiedEmails, resendAllRegistrationEmails } from '../services/emailService';
 
 export const adminRoutes = Router();
 
@@ -167,4 +167,42 @@ adminRoutes.post(
     }
   }
 );
+
+// Admin Resend All Emails (Registration + Payment Confirmation)
+adminRoutes.post(
+  '/admin/registrations/:id/resend-emails',
+  adminLimiter,
+  requireAdminKey,
+  async (req, res, next) => {
+    try {
+      const registrationId = req.params.id;
+      const reg = await getRegistrationById(registrationId);
+      if (!reg) {
+        res.status(404).json({
+          success: false,
+          error: 'RegistrationNotFound',
+          message: `Registration ${registrationId} not found.`,
+        });
+        return;
+      }
+
+      const success = await resendAllRegistrationEmails(registrationId);
+      if (!success) {
+        res.status(500).json({
+          success: false,
+          message: `Failed to dispatch emails for ${reg.teamName}. Check Resend API configuration.`,
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: `Official confirmation & tournament emails re-dispatched successfully for ${reg.teamName} (${reg.teamCode})!`,
+      });
+    } catch (err: any) {
+      next(err);
+    }
+  }
+);
+
 

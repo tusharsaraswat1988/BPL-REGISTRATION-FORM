@@ -131,7 +131,7 @@ export const config: ServerConfig = {
 
   email: {
     resendApiKey: process.env.RESEND_API_KEY,
-    mailFrom: process.env.MAIL_FROM || 'BidWar Premier League <bpl@bidwar.in>',
+    mailFrom: process.env.MAIL_FROM || 'BidWar Premier League <bpl@mail.bidwar.in>',
     emailEnabled: process.env.EMAIL_ENABLED !== 'false',
     adminNotificationEmail: process.env.ADMIN_NOTIFICATION_EMAIL,
   },
