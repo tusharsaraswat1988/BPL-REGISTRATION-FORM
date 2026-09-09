@@ -9,7 +9,7 @@ import {
 } from '../../types';
 import { 
   ShieldCheck, CreditCard, QrCode, Building, CheckCircle2, 
-  Trophy, Users, ArrowRight, Loader2, Copy, Check, Zap, AlertCircle
+  Trophy, Users, ArrowRight, Loader2, Copy, Check, Zap, AlertCircle, ExternalLink
 } from 'lucide-react';
 import { ImageUploadField } from '../ImageUploadField';
 import { TOURNAMENT_CONFIG } from '../../config/tournamentConfig';
