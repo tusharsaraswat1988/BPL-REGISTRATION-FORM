@@ -345,7 +345,11 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
                   key={m.id}
                   type="button"
                   disabled={isDisabled}
-                  onClick={() => !isDisabled && setPayment(prev => ({ ...prev, method: m.id as PaymentMethod }))}
+                  onClick={() => !isDisabled && setPayment(prev => ({ 
+                    ...prev, 
+                    method: m.id as PaymentMethod,
+                    gateway: m.id === 'CASHFREE' ? 'CASHFREE' : 'MANUAL'
+                  }))}
                   className={`p-3.5 rounded-xl border text-left transition-all duration-200 relative ${
                     isDisabled
                       ? 'bg-[#070D24]/60 border-slate-800/80 text-slate-500 cursor-not-allowed opacity-75'
@@ -389,7 +393,7 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
                 </p>
                 <button
                   type="button"
-                  onClick={() => setPayment(prev => ({ ...prev, method: 'UPI' }))}
+                  onClick={() => setPayment(prev => ({ ...prev, method: 'UPI', gateway: 'MANUAL' }))}
                   className="mt-2 px-3 py-1.5 rounded-lg bg-[#FFB800] text-slate-950 font-bold text-xs cursor-pointer hover:bg-[#FBBF24]"
                 >
                   Switch to UPI QR / VPA
@@ -406,7 +410,7 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
               {/* Dynamic QR Code */}
               <div className="w-36 h-36 bg-white p-2.5 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 shadow-lg border border-slate-200">
                 <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=8707488250@ybl&pn=Tushar Saraswat&am=${totalAmount}&cu=INR&tn=BPL ${teamName || 'Registration'}`)}`}
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=${TOURNAMENT_CONFIG.PAYMENT_CONFIG.upiId}&pn=${encodeURIComponent(TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName)}&am=${totalAmount}&cu=INR&tn=BPL ${teamName || 'Registration'}`)}`}
                   alt="UPI QR Code"
                   className="w-28 h-28 object-contain"
                 />
@@ -450,7 +454,7 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
                 {/* Direct UPI App Payment Link */}
                 <div>
                   <a
-                    href={`upi://pay?pa=8707488250@ybl&pn=Tushar%20Saraswat&am=${totalAmount}&cu=INR&tn=BPL%20Registration`}
+                    href={`upi://pay?pa=${TOURNAMENT_CONFIG.PAYMENT_CONFIG.upiId}&pn=${encodeURIComponent(TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName)}&am=${totalAmount}&cu=INR&tn=BPL%20Registration`}
                     className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0E1B48] hover:bg-[#1A2C68] border border-[#1A2C68] text-xs font-bold text-[#FFB800] transition-colors active:scale-[0.98]"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
@@ -499,8 +503,12 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
                 </label>
                 <input
                   type="text"
-                  value={payment.transactionReference}
-                  onChange={e => setPayment(prev => ({ ...prev, transactionReference: e.target.value }))}
+                  value={payment.transactionReference || payment.utrTransactionId || ''}
+                  onChange={e => setPayment(prev => ({ 
+                    ...prev, 
+                    transactionReference: e.target.value,
+                    utrTransactionId: e.target.value
+                  }))}
                   placeholder="e.g. 428198301982 or UTR number"
                   className="w-full px-4 py-3 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#FFB800] font-mono"
                 />
@@ -525,8 +533,12 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
                 label="Payment Screenshot / Receipt Proof"
                 required
                 tag="payment-proofs"
-                value={payment.paymentProofUrl}
-                onChange={url => setPayment(prev => ({ ...prev, paymentProofUrl: url }))}
+                value={payment.paymentProofUrl || payment.paymentScreenshot || ''}
+                onChange={url => setPayment(prev => ({ 
+                  ...prev, 
+                  paymentProofUrl: url,
+                  paymentScreenshot: url
+                }))}
                 aspectRatio="wide"
                 helperText="Screenshot or scanned receipt showing UTR / transaction ID and amount"
               />

@@ -144,19 +144,29 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
     if (initialDraft?.payment) {
       const sanitizedMethod = (initialDraft.payment.method === 'Cheque/Demand Draft' || initialDraft.payment.method === 'CASHFREE')
         ? 'UPI'
-        : initialDraft.payment.method;
+        : (initialDraft.payment.method || 'UPI');
+      const isManual = sanitizedMethod === 'UPI' || sanitizedMethod.includes('Bank Transfer') || sanitizedMethod !== 'CASHFREE';
+      const utr = initialDraft.payment.transactionReference || initialDraft.payment.utrTransactionId || '';
+      const proof = initialDraft.payment.paymentProofUrl || initialDraft.payment.paymentScreenshot || '';
       return {
         ...initialDraft.payment,
         method: sanitizedMethod,
-        gateway: sanitizedMethod === 'UPI' ? 'MANUAL_UPI' : initialDraft.payment.gateway || 'MANUAL_BANK_TRANSFER'
+        gateway: isManual ? 'MANUAL' : (initialDraft.payment.gateway || 'MANUAL'),
+        transactionReference: utr,
+        utrTransactionId: utr,
+        paymentProofUrl: proof,
+        paymentScreenshot: proof,
+        paymentDate: initialDraft.payment.paymentDate || new Date().toISOString().split('T')[0]
       };
     }
     return {
       method: 'UPI',
-      gateway: 'MANUAL_UPI',
+      gateway: 'MANUAL',
       transactionReference: '',
+      utrTransactionId: '',
       paymentDate: new Date().toISOString().split('T')[0],
-      paymentProofUrl: ''
+      paymentProofUrl: '',
+      paymentScreenshot: ''
     };
   });
 
@@ -323,7 +333,21 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
           if (typeof d.includeBranding === 'boolean') setIncludeBranding(d.includeBranding);
           if (d.teamTagline) setTeamTagline(d.teamTagline);
           if (Array.isArray(d.players) && d.players.length === 8) setPlayers(d.players);
-          if (d.payment) setPayment(prev => ({ ...prev, ...d.payment }));
+          if (d.payment) {
+            const isManual = d.payment.method === 'UPI' || d.payment.method?.includes('Bank Transfer') || d.payment.method !== 'CASHFREE';
+            const utr = d.payment.transactionReference || d.payment.utrTransactionId || '';
+            const proof = d.payment.paymentProofUrl || d.payment.paymentScreenshot || '';
+            setPayment(prev => ({
+              ...prev,
+              ...d.payment,
+              method: d.payment.method || 'UPI',
+              gateway: isManual ? 'MANUAL' : (d.payment.gateway || 'MANUAL'),
+              transactionReference: utr,
+              utrTransactionId: utr,
+              paymentProofUrl: proof,
+              paymentScreenshot: proof
+            }));
+          }
           if (typeof d.currentStep === 'number' && d.currentStep >= 0 && d.currentStep < stepsList.length) {
             setCurrentStep(d.currentStep);
           }
@@ -462,14 +486,16 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
       }
     } else if (stepIndex === 4) {
       if (payment.method === 'CASHFREE') {
-        if (!payment.gatewayPaymentId && !payment.transactionReference) {
+        if (!payment.gatewayPaymentId && !payment.transactionReference && !payment.utrTransactionId) {
           newErrors.payment = 'Please complete your online payment with Cashfree before final submission.';
         }
       } else {
-        if (!payment.transactionReference?.trim()) {
+        const utr = (payment.transactionReference || payment.utrTransactionId || '').trim();
+        const proof = (payment.paymentProofUrl || payment.paymentScreenshot || '').trim();
+        if (!utr) {
           newErrors.payment = 'UTR / Transaction Reference number is required.';
         }
-        if (!payment.paymentProofUrl?.trim()) {
+        if (!proof) {
           newErrors.payment = 'Payment receipt / screenshot is required.';
         }
       }
@@ -507,6 +533,20 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
 
     setIsSubmitting(true);
     try {
+      const isCashfree = payment.method === 'CASHFREE';
+      const refNumber = (payment.transactionReference || payment.utrTransactionId || '').trim();
+      const proofUrl = (payment.paymentProofUrl || payment.paymentScreenshot || '').trim();
+
+      const normalizedPayment = {
+        ...payment,
+        method: payment.method || 'UPI',
+        gateway: isCashfree ? 'CASHFREE' : 'MANUAL',
+        transactionReference: refNumber,
+        utrTransactionId: refNumber,
+        paymentProofUrl: proofUrl,
+        paymentScreenshot: proofUrl,
+      };
+
       const payload = {
         draftToken,
         category,
@@ -516,7 +556,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         includeBranding,
         teamTagline,
         players,
-        payment
+        payment: normalizedPayment
       };
 
       const response = await fetch('/api/registrations', {

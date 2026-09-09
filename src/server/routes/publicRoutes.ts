@@ -51,9 +51,9 @@ export const PUBLIC_TOURNAMENT_CONFIG = {
   paymentConfig: {
     gateway: 'CASHFREE',
     cashfreeMode: config.cashfree.environment === 'PRODUCTION' ? 'production' : 'sandbox',
-    upiId: '8707488250@ybl',
+    upiId: 'carwashparlour@ybl',
     upiPayeeName: 'Tushar Saraswat',
-    upiQrImage: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi%3A%2F%2Fpay%3Fpa%3D8707488250%40ybl%26pn%3DTushar%2520Saraswat%26cu%3DINR',
+    upiQrImage: 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi%3A%2F%2Fpay%3Fpa%3Dcarwashparlour%40ybl%26pn%3DTushar%2520Saraswat%26cu%3DINR',
     bankAccountName: 'TUSHAR SARASWAT',
     bankName: 'SBI, Bhelupura',
     accountNumber: '20057482976',

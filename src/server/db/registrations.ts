@@ -300,15 +300,16 @@ export function validateRegistrationPayload(input: RegistrationSubmissionInput):
     return { valid: false, error: 'Payment details are required.' };
   }
 
-  const isCashfree = input.payment.gateway === 'CASHFREE' || input.payment.method === 'CASHFREE';
-  const rawRef = input.payment.gatewayPaymentId || input.payment.utrTransactionId || input.payment.gatewayOrderId || '';
+  const isCashfree = input.payment.method === 'CASHFREE' || (input.payment.gateway === 'CASHFREE' && input.payment.method !== 'UPI' && !input.payment.method?.includes('Bank Transfer'));
+  const rawRef = input.payment.gatewayPaymentId || input.payment.utrTransactionId || (input.payment as any).transactionReference || input.payment.gatewayOrderId || '';
   const utr = normalizeUtr(rawRef);
+  const screenshot = (input.payment.paymentScreenshot || (input.payment as any).paymentProofUrl || '').trim();
 
   if (!utr) {
     return { valid: false, error: isCashfree ? 'Cashfree payment reference is required.' : 'Payment UTR / Transaction Reference number is required.' };
   }
 
-  if (!isCashfree && !input.payment.paymentScreenshot?.trim()) {
+  if (!isCashfree && !screenshot) {
     return { valid: false, error: 'Payment screenshot proof is required.' };
   }
 
@@ -333,7 +334,7 @@ export async function createRegistrationTransaction(
     throw new Error(validation.error || 'Invalid registration payload.');
   }
 
-  const isCashfree = input.payment.gateway === 'CASHFREE' || input.payment.method === 'CASHFREE';
+  const isCashfree = input.payment.method === 'CASHFREE' || (input.payment.gateway === 'CASHFREE' && input.payment.method !== 'UPI' && !input.payment.method?.includes('Bank Transfer'));
 
   // 3. Execute atomic transaction
   return withTransaction(async (client) => {
@@ -365,7 +366,7 @@ export async function createRegistrationTransaction(
     let rawResponse: string | null = null;
 
     if (isCashfree) {
-      const orderIdToLookup = input.payment.gatewayOrderId || input.payment.utrTransactionId;
+      const orderIdToLookup = input.payment.gatewayOrderId || input.payment.utrTransactionId || (input.payment as any).transactionReference;
       if (!orderIdToLookup) {
         throw new Error('Cashfree registration requires a valid Cashfree order ID.');
       }
@@ -416,15 +417,16 @@ export async function createRegistrationTransaction(
       rawResponse = intent.raw_response ? JSON.stringify(intent.raw_response) : null;
     } else {
       // Manual payment path (UPI QR / Bank Transfer / Cheque)
-      const rawRef = input.payment.utrTransactionId || '';
+      const rawRef = input.payment.utrTransactionId || (input.payment as any).transactionReference || '';
       normalizedUtr = normalizeUtr(rawRef);
       if (!normalizedUtr) {
         throw new Error('Payment UTR / Transaction Reference number is required.');
       }
-      if (!input.payment.paymentScreenshot?.trim()) {
+      const screenshot = (input.payment.paymentScreenshot || (input.payment as any).paymentProofUrl || '').trim();
+      if (!screenshot) {
         throw new Error('Payment screenshot proof is required for manual payment verification.');
       }
-      paymentScreenshot = input.payment.paymentScreenshot.trim();
+      paymentScreenshot = screenshot;
       paymentStatus = 'PENDING_VERIFICATION';
       verifiedBy = null;
       gateway = 'MANUAL';
