@@ -5,10 +5,12 @@ import {
   PaymentDetailsCard,
   PlayerTable,
   ParentChildCard,
+  MentorDetailsCard,
   CTAButton,
   PlayerInfo,
   TeamCardData,
   PaymentCardData,
+  MentorInfo,
 } from './components';
 
 export interface RegistrationEmailTemplateData {
@@ -20,6 +22,10 @@ export interface RegistrationEmailTemplateData {
   associationName: string;
   branch: string;
   mentorName: string;
+  mentorMobile?: string;
+  mentorSecondMobile?: string;
+  mentorEmail?: string;
+  mentorDesignation?: string;
   includeBranding: boolean;
   totalAmount: number;
   paymentStatus: string;
@@ -47,15 +53,17 @@ export interface RulesEmailTemplateData {
   category: string;
   associationName: string;
   mentorName: string;
+  mentorMobile?: string;
+  mentorEmail?: string;
   includeBranding: boolean;
 }
 
 /**
  * 1. Registration Confirmation Email Template
- * Subject: "🏏 Team Registration Confirmed | BidWar Premier League — Kids Season 1"
  */
 export function renderRegistrationConfirmationEmail(data: RegistrationEmailTemplateData): { subject: string; html: string } {
   const isParent = data.recipientType === 'PARENT';
+  const isMentor = data.recipientType === 'MENTOR';
   const categoryLabel = data.category === 'class_4_5_6' ? 'Category 1: Class 4–5–6' : 'Category 2: Class 7–8–9';
   const brandingStatus = data.includeBranding ? 'Included' : 'Standard';
   const tournamentDates = TOURNAMENT_CONFIG.TOURNAMENT_DATES;
@@ -71,36 +79,84 @@ export function renderRegistrationConfirmationEmail(data: RegistrationEmailTempl
     squadSize: data.players.length || 8,
     brandingStatus,
     tournamentDates,
-    paymentStatus: data.paymentStatus,
+    paymentStatus: isMentor ? undefined : data.paymentStatus, // Do not show billing status to mentor
+  };
+
+  const mentorInfo: MentorInfo = {
+    name: data.mentorName,
+    designation: data.mentorDesignation || 'Head Coach / In-Charge',
+    mobile: data.mentorMobile || 'Contact Academy',
+    secondMobile: data.mentorSecondMobile,
+    email: data.mentorEmail || '',
   };
 
   let contentHtml = '';
+  let subject = '';
 
   if (isParent && data.parentPlayer) {
-    // Strict Child-Specific Parent View
+    // Strict Child-Specific Parent View with Welcome Message and Mentor Details
+    subject = `🏏 Welcome to BPL Season 1 | Registration Confirmed — ${data.parentPlayer.playerName}`;
     contentHtml = `
       <h2 style="font-size: 18px; color: #ffffff; margin-top: 0; font-weight: 800; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        Player Registration Confirmed!
+        Welcome to BidWar Premier League — Kids Season 1!
       </h2>
       <p style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 16px;">
-        Dear Parent, your child <strong>${data.parentPlayer.playerName}</strong> has been successfully registered to represent team <strong>${data.teamName}</strong> (${data.associationName}) in the <strong>BidWar Premier League — Kids Version (Season 1)</strong>.
+        Dear Parent, we are delighted to welcome your young champion <strong>${data.parentPlayer.playerName}</strong> to <strong>BidWar Premier League (Kids Season 1)</strong>! Your child has been officially registered in squad <strong>${data.teamName}</strong> representing <strong>${data.associationName} (${data.branch})</strong>.
       </p>
 
       ${ParentChildCard(data.parentPlayer)}
 
+      ${MentorDetailsCard(mentorInfo)}
+
       ${TeamDetailsCard(teamData)}
 
-      <p style="font-size: 12px; color: #94a3b8; line-height: 1.6; margin-top: 16px;">
-        Our tournament committee will verify class eligibility and player documentation. You will receive tournament schedule updates and information prior to match days.
+      <div style="background-color: #0A1230; border: 1px solid #1A2C68; border-radius: 12px; padding: 16px; margin: 16px 0;">
+        <h4 style="font-size: 12px; font-weight: 800; color: #FFB800; text-transform: uppercase; margin: 0 0 6px 0; font-family: monospace;">
+          Important Instructions for Match Days
+        </h4>
+        <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #cbd5e1; line-height: 1.7;">
+          <li>Matches will be played on <strong>${tournamentDates}</strong> in Varanasi.</li>
+          <li>Please ensure your child brings a valid <strong>School Photo ID or Bonafide certificate</strong> for age & class verification.</li>
+          <li>For team reporting time and coordination, please contact your designated Mentor: <strong style="color: #ffffff;">${mentorInfo.name} (${mentorInfo.mobile})</strong>.</li>
+        </ul>
+      </div>
+
+      ${CTAButton('Join Official Tournament WhatsApp Community', TOURNAMENT_CONFIG.WHATSAPP_LINK)}
+    `;
+  } else if (isMentor) {
+    // Mentor Welcome & Team Roster View (No billing info)
+    subject = `🏏 Welcome Mentor! Team Registration Confirmed — ${data.teamName} | BPL Season 1`;
+    contentHtml = `
+      <h2 style="font-size: 18px; color: #ffffff; margin-top: 0; font-weight: 800; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        Welcome Mentor! Team Registration Confirmed
+      </h2>
+      <p style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 16px;">
+        Dear <strong>${data.mentorName}</strong>, welcome to <strong>BidWar Premier League — Kids Version (Season 1)</strong>! Your team <strong>${data.teamName}</strong> (${data.associationName}) has been successfully registered under your leadership.
       </p>
+
+      ${TeamDetailsCard(teamData)}
+
+      ${PlayerTable(data.players)}
+
+      <div style="background-color: #0A1230; border: 1px solid #1A2C68; border-radius: 12px; padding: 16px; margin: 16px 0;">
+        <h4 style="font-size: 12px; font-weight: 800; color: #38BDF8; text-transform: uppercase; margin: 0 0 6px 0; font-family: monospace;">
+          Mentor Responsibilities & Briefing
+        </h4>
+        <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #cbd5e1; line-height: 1.7;">
+          <li>As Mentor In-Charge, you are the official liaison between the tournament committee and player parents.</li>
+          <li>Your Team Code is <strong style="color: #FFB800; font-family: monospace;">${data.teamCode}</strong> (used for official toss and digital desk entries).</li>
+          <li>Match fixtures, toss timings, and ground reporting rules will be notified to you before match days.</li>
+        </ul>
+      </div>
 
       ${CTAButton('Join Official Tournament WhatsApp Community', TOURNAMENT_CONFIG.WHATSAPP_LINK)}
     `;
   } else {
-    // Association & Mentor View (Complete 8-Player Roster)
+    // Association Official View
+    subject = `🏏 Team Registration Received | ${data.teamName} — BidWar Premier League`;
     contentHtml = `
       <h2 style="font-size: 18px; color: #ffffff; margin-top: 0; font-weight: 800; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-        Team Registration Confirmed!
+        Team Registration Received
       </h2>
       <p style="font-size: 13px; color: #cbd5e1; line-height: 1.6; margin-bottom: 16px;">
         Your team <strong>${data.teamName}</strong> (${data.associationName}) has been successfully submitted for the <strong>BidWar Premier League — Kids Version (Season 1)</strong>.
@@ -118,9 +174,7 @@ export function renderRegistrationConfirmationEmail(data: RegistrationEmailTempl
     `;
   }
 
-  const subject = `🏏 Team Registration Confirmed | BidWar Premier League — Kids Season 1`;
   const html = EmailLayout(contentHtml, 'Official Tournament Registration');
-
   return { subject, html };
 }
 

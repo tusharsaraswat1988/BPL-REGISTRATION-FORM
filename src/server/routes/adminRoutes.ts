@@ -8,7 +8,11 @@ import {
 } from '../db/registrations';
 import { requireAdminKey } from '../middleware/auth';
 import { adminLimiter } from '../middleware/rateLimiter';
-import { triggerPaymentVerifiedEmails, resendAllRegistrationEmails } from '../services/emailService';
+import {
+  triggerPaymentVerifiedEmails,
+  resendAllRegistrationEmails,
+  resendSinglePlayerEmail,
+} from '../services/emailService';
 
 export const adminRoutes = Router();
 
@@ -204,5 +208,43 @@ adminRoutes.post(
     }
   }
 );
+
+// Admin Resend Emails Specifically for a Single Player's Parent
+adminRoutes.post(
+  '/admin/registrations/:id/players/:index/resend-email',
+  adminLimiter,
+  requireAdminKey,
+  async (req, res, next) => {
+    try {
+      const registrationId = req.params.id;
+      const playerIndex = parseInt(req.params.index, 10);
+
+      if (isNaN(playerIndex)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid player index.',
+        });
+        return;
+      }
+
+      const result = await resendSinglePlayerEmail(registrationId, playerIndex);
+      if (!result.success) {
+        res.status(400).json({
+          success: false,
+          message: result.error || 'Failed to dispatch player confirmation email.',
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: `Official confirmation & rulebook emails dispatched to parent of ${result.playerName} (${result.parentEmail})!`,
+      });
+    } catch (err: any) {
+      next(err);
+    }
+  }
+);
+
 
 

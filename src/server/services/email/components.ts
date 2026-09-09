@@ -40,6 +40,14 @@ export interface PaymentCardData {
   tournamentDates: string;
 }
 
+export interface MentorInfo {
+  name: string;
+  designation?: string;
+  mobile: string;
+  secondMobile?: string;
+  email: string;
+}
+
 export function StatusBadge(status: string): string {
   const norm = (status || '').toUpperCase().trim();
   let bg = '#1E293B';
@@ -77,8 +85,7 @@ export function StatusBadge(status: string): string {
 }
 
 export function EmailHeader(badgeText: string = 'Official Tournament Registration'): string {
-  const appBaseUrl = TOURNAMENT_CONFIG.BIDWAR_URL || 'https://bidwar.in';
-  const logoUrl = `${appBaseUrl}/bpl-logo.jpg`;
+  const logoUrl = 'https://bpl.bidwar.in/bpl-logo.jpg';
 
   return `
     <div style="background-color: #0A1230; padding: 28px 24px; text-align: center; border-bottom: 2px solid #FFB800;">
@@ -86,7 +93,7 @@ export function EmailHeader(badgeText: string = 'Official Tournament Registratio
         <tr>
           <td align="center" style="padding-bottom: 12px;">
             <!-- Official BPL Tournament Logo Asset -->
-            <img src="${logoUrl}" alt="BidWar Premier League Logo" width="80" height="80" style="display: block; width: 80px; height: 80px; margin: 0 auto; border-radius: 12px; border: 1px solid #1A2C68; background-color: #070D24; object-fit: contain;" />
+            <img src="${logoUrl}" alt="BidWar Premier League" width="80" height="80" style="display: block; width: 80px; height: 80px; margin: 0 auto; border-radius: 12px; border: 1px solid #1A2C68; background-color: #070D24; object-fit: contain;" />
           </td>
         </tr>
       </table>
@@ -95,6 +102,35 @@ export function EmailHeader(badgeText: string = 'Official Tournament Registratio
       <p style="font-size: 12px; color: #94a3b8; margin: 0; font-weight: 600;">Kids Version — Season 1 • ${TOURNAMENT_CONFIG.TOURNAMENT_DATES}</p>
     </div>
   `;
+}
+
+export function MentorDetailsCard(mentor: MentorInfo): string {
+  return InfoCard('Designated Team Mentor & Coach', `
+    <table style="width: 100%; border-collapse: collapse; font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <tr>
+        <td style="color: #94a3b8; padding: 6px 0;">Mentor / Coach Name:</td>
+        <td style="color: #ffffff; font-weight: 700; font-size: 14px; text-align: right; padding: 6px 0;">${mentor.name}</td>
+      </tr>
+      <tr>
+        <td style="color: #94a3b8; padding: 6px 0;">Designation / Role:</td>
+        <td style="color: #38bdf8; font-weight: 600; text-align: right; padding: 6px 0;">${mentor.designation || 'Head Coach / In-Charge'}</td>
+      </tr>
+      <tr>
+        <td style="color: #94a3b8; padding: 6px 0;">Contact Mobile:</td>
+        <td style="color: #FFB800; font-weight: 800; font-family: monospace; text-align: right; padding: 6px 0;">${mentor.mobile}</td>
+      </tr>
+      ${mentor.secondMobile ? `
+      <tr>
+        <td style="color: #94a3b8; padding: 6px 0;">Alternate Mobile:</td>
+        <td style="color: #ffffff; font-family: monospace; text-align: right; padding: 6px 0;">${mentor.secondMobile}</td>
+      </tr>
+      ` : ''}
+      <tr>
+        <td style="color: #94a3b8; padding: 6px 0;">Official Email:</td>
+        <td style="color: #cbd5e1; font-family: monospace; text-align: right; padding: 6px 0;">${mentor.email}</td>
+      </tr>
+    </table>
+  `);
 }
 
 export function EmailFooter(): string {

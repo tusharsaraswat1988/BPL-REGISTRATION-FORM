@@ -57,6 +57,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
+  const [resendingPlayerKey, setResendingPlayerKey] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -268,6 +269,41 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       showToast(`Network error resending emails: ${err.message}`);
     } finally {
       setResendingId(null);
+    }
+  };
+
+  // Resend official emails specifically to a single player's parent
+  const handleResendPlayerEmail = async (
+    regId: string,
+    playerIndex: number,
+    playerName: string,
+    parentEmail?: string
+  ) => {
+    if (!parentEmail || !parentEmail.includes('@')) {
+      showToast(`No valid parent email found for ${playerName}.`);
+      return;
+    }
+    const key = `${regId}-${playerIndex}`;
+    setResendingPlayerKey(key);
+    try {
+      const res = await fetch(`/api/admin/registrations/${regId}/players/${playerIndex}/resend-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': apiKey,
+        },
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        showToast(data.message || `Confirmation email sent to ${playerName}'s parent!`);
+      } else {
+        showToast(`Email dispatch failed: ${data.message || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      showToast(`Network error sending player email: ${err.message}`);
+    } finally {
+      setResendingPlayerKey(null);
     }
   };
 
@@ -1298,8 +1334,23 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                         {player.bowlingStyle && (
                           <div>Bowling: <strong className="text-slate-300">{player.bowlingStyle}</strong></div>
                         )}
-                        <div className="truncate">Parent: <strong className="text-slate-300 font-mono">{player.parentMobile}</strong></div>
+                        <div className="truncate">Parent Mob: <strong className="text-slate-300 font-mono">{player.parentMobile}</strong></div>
+                        <div className="truncate">Parent Email: <strong className="text-slate-300 font-mono">{player.parentEmail || 'Not provided'}</strong></div>
                       </div>
+
+                      <button
+                        onClick={() => handleResendPlayerEmail(selectedReg.id, idx, player.playerName, player.parentEmail)}
+                        disabled={resendingPlayerKey === `${selectedReg.id}-${idx}` || !player.parentEmail}
+                        className="w-full mt-2 py-1 px-2 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40"
+                        title={player.parentEmail ? `Send/Resend confirmation & rulebook email directly to ${player.parentEmail}` : 'No parent email provided'}
+                      >
+                        {resendingPlayerKey === `${selectedReg.id}-${idx}` ? (
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Mail className="w-3 h-3 text-amber-400" />
+                        )}
+                        <span>Email Parent</span>
+                      </button>
                     </div>
                   ))}
                 </div>
