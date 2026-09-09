@@ -71,11 +71,11 @@ export const config: ServerConfig = {
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   },
 
-  adminApiKey: process.env.ADMIN_API_KEY,
+  adminApiKey: process.env.ADMIN_API_KEY || (process.env.NODE_ENV === 'production' ? undefined : 'bpl-admin-2026'),
 
   registrationWindow: {
     start: process.env.REGISTRATION_START_TIME || '2026-09-08T00:00:00+05:30',
-    end: process.env.REGISTRATION_END_TIME || '2026-10-15T23:59:59+05:30',
+    end: process.env.REGISTRATION_END_TIME || '2026-09-15T23:59:59+05:30',
     enabled: process.env.REGISTRATION_ENABLED !== 'false',
   },
 

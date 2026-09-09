@@ -1,5 +1,8 @@
-import React from 'react';
-import { Trophy, Shield, Users, FileText, PlusCircle, Lock, ExternalLink } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Trophy, Shield, Users, FileText, PlusCircle, 
+  ExternalLink, Menu, X, ShieldCheck, MapPin, Calendar
+} from 'lucide-react';
 import { BplLogo } from './BplLogo';
 import { TOURNAMENT_CONFIG, SponsorConfig } from '../config/tournamentConfig';
 
@@ -16,33 +19,86 @@ export const Header: React.FC<HeaderProps> = ({
   registeredCount,
   sponsors = TOURNAMENT_CONFIG.SPONSORS
 }) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const activeSponsor = sponsors && sponsors.length > 0 ? sponsors[0] : null;
+
+  const handleNav = (path: string) => {
+    onNavigate(path);
+    setMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const menuItems = [
+    {
+      id: 'register',
+      label: 'Register Team',
+      path: '/register',
+      icon: PlusCircle,
+      isPrimary: true
+    },
+    {
+      id: 'teams',
+      label: `Registered Teams (${registeredCount})`,
+      path: '/teams',
+      icon: Users,
+      isPrimary: false
+    },
+    {
+      id: 'rules',
+      label: 'Rules & Format',
+      path: '/rules',
+      icon: FileText,
+      isPrimary: false
+    },
+    {
+      id: 'verify',
+      label: 'Verify Status',
+      path: '/verify',
+      icon: ShieldCheck,
+      isPrimary: false
+    }
+  ];
 
   return (
     <header className="sticky top-0 z-50 bg-[#070D24]/95 backdrop-blur-md border-b border-[#1A2C68]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Top Utility Bar — Streamlined Technical Monospace Bar */}
-        <div className="flex items-center justify-between py-1 border-b border-white/5 text-[10px] sm:text-[11px] font-mono">
-          <div className="flex items-center gap-2 sm:gap-3 text-slate-400">
-            <span className="flex items-center gap-1.5 text-[#FFB800] font-semibold tracking-wider uppercase">
+        {/* Top Utility Bar */}
+        <div className="flex items-center justify-between py-1.5 border-b border-white/5 text-[11px] font-sans">
+          <div className="flex items-center gap-2 sm:gap-3 text-slate-300">
+            <span className="flex items-center gap-1.5 text-[#FFB800] font-bold tracking-wide uppercase">
               <span className="live-dot" />
-              OFFICIAL TOURNAMENT PORTAL
+              KIDS VERSION · SEASON 1
             </span>
-            <span className="text-slate-700 hidden xs:inline">•</span>
-            <span className="text-slate-300 font-semibold tracking-wide hidden xs:inline">
+            <span className="text-slate-600 hidden xs:inline">•</span>
+            <span className="flex items-center gap-1 text-slate-300 font-medium hidden sm:inline-flex">
+              <Calendar className="w-3 h-3 text-[#FFB800]" />
               3–4 OCTOBER 2026
+            </span>
+            <span className="text-slate-600 hidden md:inline">•</span>
+            <span className="flex items-center gap-1 text-slate-300 font-medium hidden md:inline-flex">
+              <MapPin className="w-3 h-3 text-red-400" />
+              VARANASI, U.P.
             </span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4 text-slate-400">
-            <span className="hidden md:inline text-slate-400">
-              ORGANISED BY <strong className="text-slate-200 font-semibold">BIDWAR.IN & KV TECHMEDIA</strong>
+          <div className="flex items-center gap-3 sm:gap-4 text-slate-400">
+            <span className="hidden lg:inline text-slate-400">
+              Organised by <strong className="text-slate-200 font-semibold">BidWar.in & KV TechMedia</strong>
             </span>
+            <button
+              type="button"
+              onClick={() => handleNav('/admin')}
+              className="text-slate-400 hover:text-amber-400 transition-colors flex items-center gap-1 text-[11px] cursor-pointer"
+              title="Admin Portal"
+            >
+              <ShieldCheck className="w-3 h-3 text-amber-500" />
+              <span>Admin</span>
+            </button>
             <a 
               href="https://bidwar.in" 
               target="_blank" 
               rel="noopener noreferrer"
-              className="text-[#FFB800] hover:text-[#FFE066] font-medium transition-colors flex items-center gap-1 active:scale-95 text-[10px] sm:text-[11px]"
+              className="text-[#FFB800] hover:text-[#FFE066] font-semibold transition-colors flex items-center gap-1 active:scale-95 text-xs"
             >
               <span>bidwar.in</span>
               <ExternalLink className="w-3 h-3" />
@@ -50,156 +106,144 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Main Brand & Compact Sponsor Row */}
-        <div className="flex items-center justify-between py-2 sm:py-2.5 gap-4">
-          {/* Left: Official BPL Tournament Logo + Hierarchy Metadata -> Navigates to Home (/) */}
+        {/* Main Brand & Navigation Row */}
+        <div className="flex items-center justify-between py-3 gap-4">
+          {/* Left: Official Tournament Logo + Exact Required Title/Subtitle */}
           <div 
-            className="flex items-center gap-3 sm:gap-4 cursor-pointer group select-none min-w-0"
-            onClick={() => onNavigate('/')}
+            className="flex items-center gap-3.5 cursor-pointer group select-none min-w-0"
+            onClick={() => handleNav('/')}
             title="BidWar Premier League — Home"
           >
-            {/* Level 1: Official BPL Tournament Logo Asset */}
-            <div className="flex-shrink-0 transition-transform duration-200 group-hover:scale-[1.02]">
-              <BplLogo size={52} className="sm:w-[58px] sm:h-[58px]" />
+            {/* Logo */}
+            <div className="flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
+              <BplLogo size={48} className="sm:w-[54px] sm:h-[54px]" />
             </div>
 
-            {/* Level 2 & 3: Tournament Metadata & Parent Brand Attribution */}
+            {/* Titles */}
             <div className="min-w-0 flex flex-col justify-center">
-              {/* Level 2: Tournament Edition & Dates */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs sm:text-sm font-display text-white tracking-wider uppercase leading-none">
-                  KIDS VERSION
-                </span>
-                <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#FFB800]/15 text-[#FFB800] border border-[#FFB800]/30 font-mono leading-none">
-                  SEASON 1
+              <div className="flex items-center gap-2">
+                <span className="text-base sm:text-xl font-display font-extrabold text-white tracking-tight uppercase leading-tight group-hover:text-[#FFB800] transition-colors">
+                  BIDWAR PREMIER LEAGUE
                 </span>
               </div>
-
-              {/* Tournament Dates */}
-              <div className="text-[10px] sm:text-[11px] text-slate-300 font-mono font-medium tracking-wide mt-1 leading-tight">
-                3–4 OCTOBER 2026
-              </div>
-
-              {/* Level 3: Platform / Parent Brand Subtle Attribution */}
-              <div className="text-[9px] text-slate-400 font-mono tracking-widest uppercase mt-0.5 leading-none">
-                A BIDWAR.IN TOURNAMENT PROPERTY
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-xs sm:text-sm font-semibold text-[#FFB800] tracking-wide">
+                  Registration Portal
+                </span>
+                <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-slate-300 border border-white/15">
+                  Varanasi
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Right: Compact Header Sponsor Indicator */}
-          <div className="flex-shrink-0">
-            <div 
-              className="w-32 sm:w-44 h-11 sm:h-12 rounded-lg border border-[#1A2C68] bg-[#091230]/90 px-2 py-1 flex flex-col justify-center items-center text-center shadow-inner relative overflow-hidden transition-all duration-200"
-              title={activeSponsor ? `${activeSponsor.type}: ${activeSponsor.name}` : 'Official Tournament Sponsor Area'}
-            >
-              {activeSponsor ? (
-                activeSponsor.websiteUrl ? (
-                  <a 
-                    href={activeSponsor.websiteUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="w-full h-full flex flex-col justify-center items-center hover:opacity-90 transition-opacity"
-                  >
-                    <span className="text-[8px] font-extrabold uppercase tracking-widest text-[#FFB800] font-mono block leading-none mb-0.5 truncate max-w-full">
-                      {activeSponsor.type}
-                    </span>
-                    {activeSponsor.logoUrl ? (
-                      <img 
-                        src={activeSponsor.logoUrl} 
-                        alt={activeSponsor.name} 
-                        className="max-h-5 max-w-[90%] object-contain" 
-                      />
-                    ) : (
-                      <span className="text-[11px] sm:text-xs font-bold text-white truncate max-w-full leading-tight">
-                        {activeSponsor.name}
-                      </span>
-                    )}
-                  </a>
-                ) : (
-                  <div className="w-full h-full flex flex-col justify-center items-center">
-                    <span className="text-[8px] font-extrabold uppercase tracking-widest text-[#FFB800] font-mono block leading-none mb-0.5 truncate max-w-full">
-                      {activeSponsor.type}
-                    </span>
-                    <span className="text-[11px] sm:text-xs font-bold text-white truncate max-w-full leading-tight">
-                      {activeSponsor.name}
-                    </span>
-                  </div>
-                )
-              ) : (
-                <div className="flex flex-col items-center justify-center w-full">
-                  <div className="flex items-center gap-1 text-[8px] sm:text-[9px] font-bold uppercase tracking-widest text-slate-400 font-mono leading-none">
-                    <Shield className="w-2.5 h-2.5 text-[#FFB800]" />
-                    <span>OFFICIAL SPONSOR</span>
-                  </div>
-                  <div className="mt-0.5 flex items-center gap-1 px-1.5 py-0.2 rounded bg-[#0D1840] border border-[#1A2C68] text-[8px] sm:text-[9px] text-slate-300 font-medium font-mono">
-                    <span className="w-1 h-1 rounded-full bg-[#FFB800]/70"></span>
-                    <span>Partnership Area</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+          {/* Center/Right: Desktop Menu of all 4 core options */}
+          <nav className="hidden lg:flex items-center gap-1.5 bg-[#091230] p-1.5 rounded-xl border border-[#1A2C68]">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentPath === item.path;
 
-        {/* Navigation Bar — Slim, Professional Sports League Bar */}
-        <div className="flex items-center justify-between pb-2 pt-0.5 gap-2 overflow-x-auto scrollbar-none">
-          <div className="flex items-center gap-1 bg-[#091230] p-0.5 sm:p-1 rounded-lg border border-[#1A2C68] text-xs font-semibold">
-            {/* Register Team Tab */}
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleNav(item.path)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all duration-150 whitespace-nowrap cursor-pointer select-none ${
+                    isActive
+                      ? 'gold-button gold-button-hover shadow-md shadow-[#FFB800]/25 text-[#070D24]'
+                      : item.isPrimary
+                        ? 'bg-[#FFB800]/15 text-[#FFB800] hover:bg-[#FFB800]/25 border border-[#FFB800]/30'
+                        : 'text-slate-300 hover:text-white hover:bg-[#0E1B48]'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Right: Mobile Menu Hamburger Button */}
+          <div className="flex items-center gap-2 lg:hidden">
             <button
               type="button"
-              onClick={() => onNavigate('/register')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150 whitespace-nowrap cursor-pointer select-none focus:outline-none uppercase tracking-wider text-[11px] sm:text-xs ${
-                currentPath === '/register'
-                  ? 'gold-button gold-button-hover font-bold shadow-sm shadow-[#FFB800]/20'
-                  : 'text-slate-300 hover:text-white hover:bg-[#0E1B48]'
-              }`}
+              onClick={() => handleNav('/register')}
+              className="gold-button gold-button-hover px-3 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
             >
               <PlusCircle className="w-3.5 h-3.5" />
-              <span>Register Team</span>
+              <span>Register</span>
             </button>
 
-            {/* Registered Teams Tab */}
             <button
               type="button"
-              onClick={() => onNavigate('/teams')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150 whitespace-nowrap cursor-pointer select-none focus:outline-none uppercase tracking-wider text-[11px] sm:text-xs ${
-                currentPath === '/teams'
-                  ? 'gold-button gold-button-hover font-bold shadow-sm shadow-[#FFB800]/20'
-                  : 'text-slate-300 hover:text-white hover:bg-[#0E1B48]'
-              }`}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-lg bg-[#091230] border border-[#1A2C68] text-slate-200 hover:text-white hover:border-[#FFB800] transition-colors"
+              aria-label="Toggle navigation menu"
             >
-              <Users className="w-3.5 h-3.5" />
-              <span>Registered Teams ({registeredCount})</span>
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
-
-            {/* Rules & Format Tab */}
-            <button
-              type="button"
-              onClick={() => onNavigate('/rules')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-150 whitespace-nowrap cursor-pointer select-none focus:outline-none uppercase tracking-wider text-[11px] sm:text-xs ${
-                currentPath === '/rules'
-                  ? 'gold-button gold-button-hover font-bold shadow-sm shadow-[#FFB800]/20'
-                  : 'text-slate-300 hover:text-white hover:bg-[#0E1B48]'
-              }`}
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>Rules & Format</span>
-            </button>
-
-            {/* Team Pass Tab — VISIBLY DISABLED & MARKED COMING SOON */}
-            <div 
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-slate-500 bg-[#070D24]/60 border border-slate-800/60 cursor-not-allowed select-none opacity-80 uppercase tracking-wider text-[11px] sm:text-xs"
-              title="Team Pass system will be activated after committee credential verification"
-            >
-              <Lock className="w-3 h-3 text-slate-600" />
-              <span className="text-slate-400">Team Pass</span>
-              <span className="text-[8px] sm:text-[9px] font-bold uppercase tracking-wider px-1 py-0.2 rounded bg-[#FFB800]/10 text-[#FFB800] border border-[#FFB800]/30 font-mono">
-                COMING SOON
-              </span>
-            </div>
           </div>
         </div>
+
+        {/* Medium Screen Horizontal Sub-Nav (for tablets & smaller desktops) */}
+        <div className="hidden sm:flex lg:hidden items-center justify-center pb-2.5 pt-0.5 gap-1.5 overflow-x-auto scrollbar-none">
+          <div className="flex items-center gap-1 bg-[#091230] p-1 rounded-xl border border-[#1A2C68]">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentPath === item.path;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleNav(item.path)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-150 whitespace-nowrap cursor-pointer select-none ${
+                    isActive
+                      ? 'gold-button font-bold text-[#070D24]'
+                      : 'text-slate-300 hover:text-white hover:bg-[#0E1B48]'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Mobile Dropdown Menu Drawer */}
+        {mobileMenuOpen && (
+          <div className="sm:hidden border-t border-[#1A2C68] py-3 space-y-1.5">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = currentPath === item.path;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => handleNav(item.path)}
+                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold transition-colors text-left ${
+                    isActive
+                      ? 'bg-[#FFB800] text-[#070D24]'
+                      : 'bg-[#091230] text-slate-200 hover:bg-[#0E1B48] border border-[#1A2C68]'
+                  }`}
+                >
+                  <span className="flex items-center gap-2.5">
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </span>
+                  {isActive && <span className="text-[10px] font-extrabold uppercase">Active</span>}
+                </button>
+              );
+            })}
+
+            <div className="pt-2 px-1 text-[11px] text-slate-400 flex items-center justify-between border-t border-white/5 mt-2 font-sans">
+              <span>Venue: <strong>Varanasi Arena</strong></span>
+              <span>Dates: <strong>3–4 Oct 2026</strong></span>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

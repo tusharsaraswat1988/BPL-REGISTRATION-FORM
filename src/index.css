@@ -33,10 +33,10 @@
     radial-gradient(ellipse at 90% 0%, rgba(56, 189, 248, 0.2), transparent 60%),
     linear-gradient(180deg, #091230 0%, #070D24 100%);
   
-  --font-display: "Space Grotesk", "Outfit", -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Outfit", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --font-sport: "Space Grotesk", sans-serif;
+  --font-sport: "Outfit", sans-serif;
 }
 
 @layer base {
@@ -44,15 +44,15 @@
     font-family: var(--font-sans);
     background-color: var(--bidwar-bg);
     color: var(--bidwar-text);
-    font-feature-settings: "ss01", "cv11";
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   /* Clean, highly readable display headings */
-  h1, h2, h3, .font-display, .font-heading {
+  h1, h2, h3, h4, .font-display, .font-heading {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
     font-weight: 700;
   }
 
@@ -70,16 +70,16 @@
 .text-hero {
   font-family: var(--font-display);
   font-size: clamp(2.25rem, 5.5vw, 4.25rem);
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
   font-weight: 800;
 }
 
 .text-display-lg {
   font-family: var(--font-display);
   font-size: clamp(1.75rem, 3.5vw, 2.75rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
   font-weight: 700;
 }
 
@@ -87,7 +87,7 @@
   font-family: var(--font-display);
   font-size: clamp(1.25rem, 2.2vw, 1.85rem);
   line-height: 1.25;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   font-weight: 700;
 }
 

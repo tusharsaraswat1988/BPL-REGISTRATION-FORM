@@ -8,6 +8,7 @@ import { VerifyPage } from './components/pages/VerifyPage';
 import { TeamsPage } from './components/pages/TeamsPage';
 import { RulesPage } from './components/pages/RulesPage';
 import { LegalPage, LegalTab } from './components/pages/LegalPage';
+import { AdminPage } from './components/pages/AdminPage';
 import { TournamentCategory, PublicTeamDTO, RegistrationConfirmationDTO } from './types';
 
 const defaultCategories: TournamentCategory[] = [
@@ -15,23 +16,25 @@ const defaultCategories: TournamentCategory[] = [
     id: 'class_4_5_6',
     name: 'Class 4–5–6 Division',
     classes: 'Class 4, 5, 6',
+    ageEligibility: '8 Years to 11 Years 11 Months 29 Days',
     description: 'Fast-action box cricket for students currently enrolled in classes 4th, 5th, and 6th.',
     exactSquadSize: 8,
     baseEntryFee: 8000,
     brandingPackageFee: 5000,
-    slotsRemaining: 6,
-    totalSlots: 16
+    slotsRemaining: 8,
+    totalSlots: 8
   },
   {
     id: 'class_7_8_9',
     name: 'Class 7–8–9 Division',
     classes: 'Class 7, 8, 9',
+    ageEligibility: '12 Years to 14 Years 11 Months 29 Days',
     description: 'Competitive youth box cricket for students currently enrolled in classes 7th, 8th, and 9th.',
     exactSquadSize: 8,
     baseEntryFee: 8000,
     brandingPackageFee: 5000,
-    slotsRemaining: 4,
-    totalSlots: 16
+    slotsRemaining: 8,
+    totalSlots: 8
   }
 ];
 
@@ -136,7 +139,7 @@ export default function App() {
         )}
 
         {currentPath === '/rules' && (
-          <RulesPage />
+          <RulesPage onNavigate={navigate} />
         )}
 
         {currentPath === '/terms' && (
@@ -153,6 +156,10 @@ export default function App() {
 
         {currentPath === '/contact' && (
           <LegalPage initialTab="contact" onNavigate={navigate} />
+        )}
+
+        {currentPath === '/admin' && (
+          <AdminPage onNavigate={navigate} />
         )}
       </main>
 

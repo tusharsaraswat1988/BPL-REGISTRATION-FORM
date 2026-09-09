@@ -706,3 +706,237 @@ export async function verifyPaymentByAdmin(
 
   return res.rows.length > 0;
 }
+
+/**
+ * Admin Payment Rejection Operation
+ */
+export async function rejectPaymentByAdmin(
+  registrationId: string,
+  rejectedBy: string,
+  reason?: string
+): Promise<boolean> {
+  const res = await query(
+    `UPDATE payments
+     SET payment_status = 'PAYMENT_REJECTED',
+         verified_at = NOW(),
+         verified_by = $1
+     WHERE registration_id = $2
+     RETURNING 1`,
+    [`${rejectedBy}${reason ? ` (Reason: ${reason})` : ''}`, registrationId]
+  );
+
+  return res.rows.length > 0;
+}
+
+export interface AdminDashboardStats {
+  totalRegistrations: number;
+  totalPlayers: number;
+  categoryClass456: number;
+  categoryClass789: number;
+  verifiedPayments: number;
+  pendingPayments: number;
+  rejectedPayments: number;
+  totalRevenueCollected: number;
+  totalRevenueVerified: number;
+}
+
+/**
+ * Get Aggregate Dashboard Statistics for Admin
+ */
+export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
+  const res = await query(`
+    SELECT 
+      COUNT(r.id)::int AS total_registrations,
+      COUNT(r.id)::int * 8 AS total_players,
+      COALESCE(SUM(CASE WHEN r.category = 'class_4_5_6' THEN 1 ELSE 0 END), 0)::int AS category_class_4_5_6,
+      COALESCE(SUM(CASE WHEN r.category = 'class_7_8_9' THEN 1 ELSE 0 END), 0)::int AS category_class_7_8_9,
+      COALESCE(SUM(CASE WHEN p.payment_status = 'VERIFIED' THEN 1 ELSE 0 END), 0)::int AS verified_payments,
+      COALESCE(SUM(CASE WHEN p.payment_status = 'PENDING_VERIFICATION' THEN 1 ELSE 0 END), 0)::int AS pending_payments,
+      COALESCE(SUM(CASE WHEN p.payment_status = 'PAYMENT_REJECTED' THEN 1 ELSE 0 END), 0)::int AS rejected_payments,
+      COALESCE(SUM(p.total_amount), 0)::int AS total_revenue_collected,
+      COALESCE(SUM(CASE WHEN p.payment_status = 'VERIFIED' THEN p.total_amount ELSE 0 END), 0)::int AS total_revenue_verified
+    FROM registrations r
+    LEFT JOIN payments p ON r.id = p.registration_id
+  `);
+
+  const row = res.rows[0] || {};
+  return {
+    totalRegistrations: row.total_registrations || 0,
+    totalPlayers: row.total_players || 0,
+    categoryClass456: row.category_class_4_5_6 || 0,
+    categoryClass789: row.category_class_7_8_9 || 0,
+    verifiedPayments: row.verified_payments || 0,
+    pendingPayments: row.pending_payments || 0,
+    rejectedPayments: row.rejected_payments || 0,
+    totalRevenueCollected: row.total_revenue_collected || 0,
+    totalRevenueVerified: row.total_revenue_verified || 0,
+  };
+}
+
+/**
+ * Get All Registrations for Admin with Full Details and Filtering
+ */
+export async function getAllRegistrationsForAdmin(filter?: {
+  category?: string;
+  paymentStatus?: string;
+  search?: string;
+}): Promise<RegistrationFullRecord[]> {
+  let sql = `
+    SELECT 
+      r.id,
+      r.team_code,
+      r.created_at,
+      r.status,
+      r.category,
+      r.team_name,
+      r.include_branding,
+      r.team_tagline,
+      r.team_short_code,
+      a.association_name,
+      a.branch AS association_branch,
+      a.email AS association_email,
+      a.mobile AS association_mobile,
+      a.association_logo,
+      a.association_type,
+      a.city AS association_city,
+      m.name AS mentor_name,
+      m.mobile AS mentor_mobile,
+      m.second_mobile AS mentor_second_mobile,
+      m.email AS mentor_email,
+      m.photo AS mentor_photo,
+      m.designation AS mentor_designation,
+      p.utr_transaction_id,
+      p.payment_screenshot,
+      p.method AS payment_method,
+      p.gateway AS payment_gateway,
+      p.gateway_order_id,
+      p.gateway_payment_id,
+      p.base_amount,
+      p.branding_amount,
+      p.total_amount,
+      p.payment_status,
+      p.paid_at,
+      p.verified_by,
+      p.verified_at
+    FROM registrations r
+    LEFT JOIN associations a ON r.id = a.registration_id
+    LEFT JOIN mentors m ON r.id = m.registration_id
+    LEFT JOIN payments p ON r.id = p.registration_id
+    WHERE 1=1
+  `;
+
+  const params: any[] = [];
+
+  if (filter?.category && filter.category !== 'all') {
+    params.push(filter.category);
+    sql += ` AND r.category = $${params.length}`;
+  }
+
+  if (filter?.paymentStatus && filter.paymentStatus !== 'all') {
+    params.push(filter.paymentStatus);
+    sql += ` AND p.payment_status = $${params.length}`;
+  }
+
+  if (filter?.search && filter.search.trim()) {
+    const s = `%${filter.search.trim()}%`;
+    params.push(s);
+    const pIndex = params.length;
+    sql += ` AND (
+      r.id ILIKE $${pIndex} OR
+      r.team_code ILIKE $${pIndex} OR
+      r.team_name ILIKE $${pIndex} OR
+      a.association_name ILIKE $${pIndex} OR
+      a.email ILIKE $${pIndex} OR
+      a.mobile ILIKE $${pIndex} OR
+      m.name ILIKE $${pIndex} OR
+      m.email ILIKE $${pIndex} OR
+      m.mobile ILIKE $${pIndex} OR
+      p.utr_transaction_id ILIKE $${pIndex}
+    )`;
+  }
+
+  sql += ` ORDER BY r.created_at DESC`;
+
+  const regResult = await query(sql, params);
+  if (regResult.rows.length === 0) {
+    return [];
+  }
+
+  const regIds = regResult.rows.map((r: any) => r.id);
+
+  // Fetch all players for these registrations in a single query
+  const playersResult = await query(
+    `SELECT * FROM players WHERE registration_id = ANY($1::varchar[]) ORDER BY player_index ASC`,
+    [regIds]
+  );
+
+  const playersByRegId: Record<string, PlayerInput[]> = {};
+  for (const p of playersResult.rows) {
+    if (!playersByRegId[p.registration_id]) {
+      playersByRegId[p.registration_id] = [];
+    }
+    playersByRegId[p.registration_id].push({
+      playerName: p.player_name,
+      studentClass: p.student_class,
+      dateOfBirth: p.date_of_birth instanceof Date ? p.date_of_birth.toISOString().split('T')[0] : String(p.date_of_birth),
+      parentMobile: p.parent_mobile,
+      parentEmail: p.parent_email,
+      playerPhoto: p.player_photo,
+      jerseyNumber: p.jersey_number,
+      jerseySize: p.jersey_size,
+      cricketRole: p.cricket_role,
+      battingStyle: p.batting_style,
+      bowlingStyle: p.bowling_style,
+    });
+  }
+
+  return regResult.rows.map((row: any) => ({
+    id: row.id,
+    teamCode: row.team_code,
+    createdAt: row.created_at,
+    status: row.status,
+    category: row.category,
+    teamName: row.team_name,
+    includeBranding: Boolean(row.include_branding),
+    branding: {
+      teamName: row.team_name,
+      includeBranding: Boolean(row.include_branding),
+      teamTagline: row.team_tagline || '',
+      teamShortCode: row.team_short_code || 'BPL',
+    },
+    association: {
+      associationName: row.association_name || '',
+      branch: row.association_branch || '',
+      email: row.association_email || '',
+      mobile: row.association_mobile || '',
+      associationLogo: row.association_logo || '',
+      associationType: row.association_type || 'School',
+      city: row.association_city || '',
+    },
+    mentor: {
+      name: row.mentor_name || '',
+      mobile: row.mentor_mobile || '',
+      secondMobile: row.mentor_second_mobile || '',
+      email: row.mentor_email || '',
+      photo: row.mentor_photo || '',
+      designation: row.mentor_designation || '',
+    },
+    players: playersByRegId[row.id] || [],
+    payment: {
+      utrTransactionId: row.utr_transaction_id || '',
+      paymentScreenshot: row.payment_screenshot || '',
+      method: row.payment_method || 'UPI',
+      gateway: row.payment_gateway,
+      gatewayOrderId: row.gateway_order_id,
+      gatewayPaymentId: row.gateway_payment_id,
+      baseAmount: row.base_amount ?? 8000,
+      brandingAmount: row.branding_amount ?? 0,
+      totalAmount: row.total_amount ?? 8000,
+      paymentStatus: row.payment_status || 'PENDING_VERIFICATION',
+      paidAt: row.paid_at,
+      verifiedBy: row.verified_by,
+      verifiedAt: row.verified_at,
+    },
+  }));
+}
+

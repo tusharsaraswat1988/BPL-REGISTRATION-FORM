@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 
-export type AppRoute = '/' | '/register' | '/verify' | '/teams' | '/rules' | '/terms' | '/privacy' | '/refunds' | '/contact';
+export type AppRoute = '/' | '/register' | '/verify' | '/teams' | '/rules' | '/terms' | '/privacy' | '/refunds' | '/contact' | '/admin';
 
 export function normalizePath(pathname: string): AppRoute {
   const clean = pathname.toLowerCase().replace(/\/+$/, '') || '/';
+  if (clean === '/admin') return '/admin';
   if (clean === '/register') return '/register';
   if (clean === '/verify') return '/verify';
   if (clean === '/teams') return '/teams';

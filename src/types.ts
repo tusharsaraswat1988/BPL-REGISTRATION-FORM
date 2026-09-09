@@ -28,6 +28,7 @@ export interface TournamentCategory {
   name: string;
   classes?: string;
   allowedClasses?: number[];
+  ageEligibility?: string;
   description: string;
   exactSquadSize?: number;
   squadSize?: number;

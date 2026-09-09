@@ -1,10 +1,14 @@
 import React from 'react';
 import { RulesAndFaq } from '../RulesAndFaq';
 
-export const RulesPage: React.FC = () => {
+interface RulesPageProps {
+  onNavigate?: (path: string) => void;
+}
+
+export const RulesPage: React.FC<RulesPageProps> = ({ onNavigate }) => {
   return (
     <div className="py-4">
-      <RulesAndFaq />
+      <RulesAndFaq onNavigate={onNavigate} />
     </div>
   );
 };

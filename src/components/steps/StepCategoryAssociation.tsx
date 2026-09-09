@@ -43,8 +43,8 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
               There are strictly two categories based on player school class. Every squad must have exactly 8 players.
             </p>
           </div>
-          <span className="text-xs text-[#FFB800] font-semibold hidden sm:inline font-mono-sport">
-            Oct 3-4, 2026 • NCR
+          <span className="text-xs text-[#FFB800] font-semibold hidden sm:inline">
+            Oct 3-4, 2026 • Varanasi
           </span>
         </div>
 
@@ -87,6 +87,14 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
                   {cat.name}
                 </h4>
 
+                {/* Age Eligibility Callout */}
+                <div className="mb-3 px-3 py-1.5 rounded-lg bg-[#070D24] border border-[#1A2C68] text-[11px] text-slate-300 space-y-0.5">
+                  <div className="text-[10px] font-bold text-[#FFB800] uppercase tracking-wider">Age Eligibility:</div>
+                  <div className="font-bold text-white font-mono-sport">
+                    {cat.ageEligibility || (cat.id === 'class_4_5_6' ? '8 Years to 11 Years 11 Months 29 Days' : '12 Years to 14 Years 11 Months 29 Days')}
+                  </div>
+                </div>
+
                 <p className="text-xs text-slate-300 leading-relaxed mb-4">
                   {cat.description}
                 </p>
@@ -94,7 +102,7 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
                 <div className="pt-3 border-t border-[#1A2C68] flex items-center justify-between text-xs">
                   <span className="text-slate-400">Squad Requirement:</span>
                   <span className="font-bold text-[#FFB800] font-mono-sport">
-                    EXACTLY 8 PLAYERS
+                    EXACTLY 8 PLAYERS (₹1,000 / Player)
                   </span>
                 </div>
               </div>

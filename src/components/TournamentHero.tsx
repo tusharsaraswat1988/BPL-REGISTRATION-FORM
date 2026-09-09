@@ -17,39 +17,39 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-3xl mx-auto">
           {/* Top Brand Badges */}
-          <div className="inline-flex flex-wrap items-center justify-center gap-2 mb-4">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/30 text-[10px] font-bold tracking-wider uppercase font-mono">
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 mb-4 font-sans">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/30 text-xs font-bold uppercase">
               <span className="live-dot" />
-              Official Registration Window Open • Season 1
+              Official Registration Open · Deadline 15 Sept 2026
             </span>
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#0B1538] text-slate-300 border border-[#1A2C68] text-[10px] font-mono font-semibold">
-              <span className="text-slate-400">Organised by</span>
-              <strong className="text-white">Bidwar.in & KV TechMedia</strong>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B1538] text-slate-300 border border-[#1A2C68] text-xs font-semibold">
+              <span className="text-slate-400">Varanasi, UP • Organised by</span>
+              <strong className="text-white">BidWar.in & KV TechMedia</strong>
             </span>
           </div>
 
           {/* Tournament Title */}
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight uppercase font-display leading-tight mb-2">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl text-white tracking-tight uppercase font-display leading-tight mb-2 font-extrabold">
             BIDWAR PREMIER LEAGUE
           </h1>
-          <div className="inline-block px-4 py-1 rounded bg-[#FFB800]/15 border border-[#FFB800]/30 text-[#FFB800] font-bold text-xs sm:text-sm tracking-widest uppercase mb-4 font-mono">
-            KIDS VERSION — SEASON 1 • BOX CRICKET TOURNAMENT
+          <div className="inline-block px-4 py-1.5 rounded-lg bg-[#FFB800]/15 border border-[#FFB800]/30 text-[#FFB800] font-bold text-xs sm:text-sm tracking-wider uppercase mb-4 font-sans">
+            KIDS BOX CRICKET — SEASON 1 • VARANASI TOURNAMENT
           </div>
 
           <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed mb-8">
-            The premier youth box cricket championship bringing schools, academies, and clubs together. Exactly 8 players per squad across two official school class divisions.
+            The premier youth box cricket championship bringing school and academy players together in Varanasi. 8 teams per division, 2 groups of 4, knockout Semi-Finals, and Grand Final with live digital scoring.
           </p>
 
           {/* Tournament Vital Badges */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-8 text-left">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-8 text-left font-sans">
             <div className="scoreboard-tile p-3.5 flex items-start gap-3">
               <div className="p-2 rounded-lg bg-[#FFB800]/10 text-[#FFB800] border border-[#FFB800]/20">
                 <Calendar className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider font-mono">Tournament Dates</p>
-                <p className="text-sm font-display text-white">3RD & 4TH OCTOBER 2026</p>
-                <p className="text-[10px] text-[#FFB800] font-mono">Saturday & Sunday</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Tournament Dates</p>
+                <p className="text-sm font-display font-bold text-white">3RD & 4TH OCTOBER 2026</p>
+                <p className="text-xs text-[#FFB800] font-medium">Deadline: 15 September 2026</p>
               </div>
             </div>
 
@@ -58,9 +58,9 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
                 <Trophy className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider font-mono">Two Categories</p>
-                <p className="text-sm font-display text-white">CLASS 4–6 & CLASS 7–9</p>
-                <p className="text-[10px] text-slate-400 font-mono">Exactly 8 Players / Team</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Two Age Divisions</p>
+                <p className="text-sm font-display font-bold text-white">CLASS 4–6 & CLASS 7–9</p>
+                <p className="text-xs text-slate-400">8 to 11.9 yrs & 12 to 14.9 yrs</p>
               </div>
             </div>
 
@@ -69,9 +69,9 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
                 <Tv className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider font-mono">BidWar Tech</p>
-                <p className="text-sm font-display text-white">LIVE SCORING & OBS</p>
-                <p className="text-[10px] text-slate-400 font-mono">LED Displays & Broadcast</p>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Match Format</p>
+                <p className="text-sm font-display font-bold text-white">2 GROUPS · 3 MATCHES / TEAM</p>
+                <p className="text-xs text-slate-400">Top 2 to Semis · Final</p>
               </div>
             </div>
           </div>
@@ -96,7 +96,7 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
           </div>
 
           {/* Key Trust highlights for School/Academy Principals & Coordinators */}
-          <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-xs text-slate-400 font-mono">
+          <div className="mt-8 pt-6 border-t border-white/10 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-xs text-slate-400 font-sans">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
               Strict Class & ID Verification

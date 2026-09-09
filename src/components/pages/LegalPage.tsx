@@ -308,7 +308,7 @@ export const LegalPage: React.FC<LegalPageProps> = ({ initialTab = 'terms', onNa
                 <span>1. General Registration Fee Policy</span>
               </h3>
               <p className="text-sm text-slate-300">
-                The registration fee of <strong>₹8,000 (Standard Entry)</strong> or <strong>₹13,000 (Branded Entry)</strong> is committed directly toward ground reservation, customized team jersey printing, official scoring infrastructure, and live event production upon registration confirmation. Due to the limited slot availability (strictly 16 teams per division), confirmed team registrations are generally <strong>non-cancellable and non-refundable</strong> once tournament fixtures are finalized.
+                The registration fee of <strong>₹8,000 (Standard Entry)</strong> or <strong>₹13,000 (Branded Entry)</strong> is committed directly toward ground reservation, customized team jersey printing, official scoring infrastructure, and live event production upon registration confirmation. Due to the limited slot availability (strictly 8 teams per division), confirmed team registrations are generally <strong>non-cancellable and non-refundable</strong> once tournament fixtures are finalized.
               </p>
             </section>
 

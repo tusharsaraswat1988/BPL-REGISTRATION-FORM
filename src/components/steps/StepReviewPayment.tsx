@@ -580,8 +580,8 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
             className="mt-0.5 w-4 h-4 rounded border-slate-700 text-[#FFB800] focus:ring-[#FFB800] bg-slate-800 cursor-pointer"
           />
           <label htmlFor="terms-check" className="text-xs text-slate-300 cursor-pointer leading-relaxed select-none">
-            <strong className="text-white block font-medium mb-0.5">Tournament Undertaking & Age Verification</strong>
-            I certify that all 8 players meet the school class requirement for Division <strong>{category === 'class_4_5_6' ? 'Class 4, 5, 6' : 'Class 7, 8, 9'}</strong> for BidWar Premier League Kids Season 1 (3rd & 4th October 2026).
+            <strong className="text-white block font-medium mb-0.5">Tournament Undertaking & Age Eligibility Verification</strong>
+            I certify that all 8 players meet the official school class and age eligibility requirements for Category <strong>{category === 'class_4_5_6' ? 'Class 4–6 (8 Years to 11 Years 11 Months 29 Days)' : 'Class 7–9 (12 Years to 14 Years 11 Months 29 Days)'}</strong> for BidWar Premier League Kids Season 1 (3rd & 4th October 2026).
           </label>
         </div>
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Shield, Instagram, Facebook, Lock, PlusCircle, Users, FileText, RefreshCw, Mail, CheckCircle2 } from 'lucide-react';
+import { ExternalLink, Shield, Instagram, Facebook, Lock, PlusCircle, Users, FileText, RefreshCw, Mail, Phone, MapPin } from 'lucide-react';
 import { BplLogo } from './BplLogo';
 import { TOURNAMENT_CONFIG } from '../config/tournamentConfig';
 
@@ -16,45 +16,41 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
   };
 
   return (
-    <footer className="no-print bg-[#050A1C] border-t border-[#1A2C68] text-slate-400 text-xs mt-12 sm:mt-16">
+    <footer className="no-print bg-[#050A1C] border-t border-[#1A2C68] text-slate-400 text-xs mt-12 sm:mt-16 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Multi-Column Horizontal Footer Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 py-8 sm:py-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 py-8 sm:py-12">
           {/* Column 1: Brand & Tournament Identity */}
-          <div className="space-y-3 sm:col-span-2 md:col-span-1 lg:col-span-1">
+          <div className="space-y-3.5 sm:col-span-2 md:col-span-1 lg:col-span-1">
             <div className="flex items-center gap-3 select-none">
               <BplLogo size={42} className="flex-shrink-0" />
               <div>
-                <h3 className="text-xs font-bold tracking-widest text-[#FFB800] uppercase font-mono leading-none">
+                <h3 className="text-xs font-bold text-[#FFB800] uppercase tracking-wide leading-tight">
                   BIDWAR PREMIER LEAGUE
                 </h3>
-                <p className="text-sm font-display text-white tracking-wide mt-1 leading-none">
+                <p className="text-sm font-display font-bold text-white tracking-wide mt-0.5 leading-none">
                   KIDS VERSION · SEASON 01
                 </p>
               </div>
             </div>
             
-            <div className="space-y-1 text-[11px] font-mono">
-              <p className="text-slate-300 font-medium">3–4 OCTOBER 2026</p>
-              <p className="text-[10px] text-slate-500 uppercase tracking-widest">
+            <div className="space-y-1 text-xs text-slate-300">
+              <p className="font-semibold text-white">3–4 OCTOBER 2026</p>
+              <p className="text-[11px] text-slate-400">
+                Varanasi, Uttar Pradesh, India
+              </p>
+              <p className="text-[10px] text-slate-500 uppercase tracking-wider pt-1">
                 A BIDWAR.IN TOURNAMENT PROPERTY
               </p>
-            </div>
-
-            <div className="pt-2">
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#091230] border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-medium">
-                <CheckCircle2 className="w-3 h-3" />
-                <span>Cashfree PG Verified</span>
-              </div>
             </div>
           </div>
 
           {/* Column 2: Event Partner & Operations */}
           <div className="space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FFB800] font-mono block">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#FFB800] block">
               EVENT PARTNER
             </span>
-            <ul className="space-y-2 text-xs font-mono">
+            <ul className="space-y-2 text-xs">
               <li>
                 <a
                   href={TOURNAMENT_CONFIG.BIDWAR_URL}
@@ -62,17 +58,21 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors cursor-pointer group"
                 >
-                  <span className="font-semibold text-white">bidwar.in</span>
+                  <span className="font-bold text-white">bidwar.in</span>
                   <ExternalLink className="w-3 h-3 text-[#FFB800] group-hover:translate-x-0.5 transition-transform" />
                 </a>
               </li>
             </ul>
-            <div className="space-y-1 text-[11px] font-mono pt-1 text-slate-400">
-              <p className="text-white font-semibold">Varanasi Operations Desk</p>
-              <p>
-                Helpline:{' '}
+            <div className="space-y-1 text-xs pt-1 text-slate-400">
+              <p className="text-white font-semibold flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-[#FFB800]" />
+                <span>Varanasi Operations Desk</span>
+              </p>
+              <p className="flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-[#FFB800]" />
+                <span>Helpline: </span>
                 <a href="tel:+918707488250" className="text-[#FFB800] hover:underline font-bold">
-                  8707488250
+                  +91 87074 88250
                 </a>
               </p>
             </div>
@@ -80,17 +80,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
           {/* Column 3: Quick Access Navigation */}
           <div className="space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FFB800] font-mono block">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#FFB800] block">
               QUICK ACCESS
             </span>
-            <ul className="space-y-1.5 text-xs font-mono">
+            <ul className="space-y-2 text-xs">
               <li>
                 <button
                   type="button"
                   onClick={() => handleNav('/register')}
-                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-2"
                 >
-                  <PlusCircle className="w-3 h-3 text-[#FFB800]" />
+                  <PlusCircle className="w-3.5 h-3.5 text-[#FFB800]" />
                   <span>Register Team</span>
                 </button>
               </li>
@@ -98,9 +98,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <button
                   type="button"
                   onClick={() => handleNav('/teams')}
-                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-2"
                 >
-                  <Users className="w-3 h-3 text-sky-400" />
+                  <Users className="w-3.5 h-3.5 text-sky-400" />
                   <span>Registered Teams</span>
                 </button>
               </li>
@@ -108,9 +108,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <button
                   type="button"
                   onClick={() => handleNav('/rules')}
-                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-2"
                 >
-                  <FileText className="w-3 h-3 text-emerald-400" />
+                  <FileText className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Rules & Format</span>
                 </button>
               </li>
@@ -118,28 +118,38 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <button
                   type="button"
                   onClick={() => handleNav('/verify')}
-                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-2"
                 >
-                  <Shield className="w-3 h-3 text-amber-400" />
-                  <span>Check Status</span>
+                  <Shield className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Verify Status</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => handleNav('/admin')}
+                  className="text-slate-400 hover:text-amber-400 transition-colors cursor-pointer text-left flex items-center gap-2 text-[11px]"
+                >
+                  <Lock className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Admin Control Portal</span>
                 </button>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Legal & Policies (Cashfree Compliance) */}
+          {/* Column 4: Legal & Policies */}
           <div className="space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FFB800] font-mono block">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#FFB800] block">
               LEGAL & POLICIES
             </span>
-            <ul className="space-y-1.5 text-xs font-mono">
+            <ul className="space-y-2 text-xs">
               <li>
                 <button
                   type="button"
                   onClick={() => handleNav('/terms')}
-                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-2"
                 >
-                  <FileText className="w-3 h-3 text-[#FFB800]" />
+                  <FileText className="w-3.5 h-3.5 text-[#FFB800]" />
                   <span>Terms & Conditions</span>
                 </button>
               </li>
@@ -147,9 +157,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <button
                   type="button"
                   onClick={() => handleNav('/privacy')}
-                  className="text-slate-300 hover:text-emerald-400 transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                  className="text-slate-300 hover:text-emerald-400 transition-colors cursor-pointer text-left flex items-center gap-2"
                 >
-                  <Lock className="w-3 h-3 text-emerald-400" />
+                  <Lock className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Privacy Policy</span>
                 </button>
               </li>
@@ -157,9 +167,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <button
                   type="button"
                   onClick={() => handleNav('/refunds')}
-                  className="text-slate-300 hover:text-sky-400 transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                  className="text-slate-300 hover:text-sky-400 transition-colors cursor-pointer text-left flex items-center gap-2"
                 >
-                  <RefreshCw className="w-3 h-3 text-sky-400" />
+                  <RefreshCw className="w-3.5 h-3.5 text-sky-400" />
                   <span>Refund & Cancellation</span>
                 </button>
               </li>
@@ -167,18 +177,18 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <button
                   type="button"
                   onClick={() => handleNav('/contact')}
-                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                  className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-2"
                 >
-                  <Mail className="w-3 h-3 text-slate-400" />
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
                   <span>Contact & Support</span>
                 </button>
               </li>
             </ul>
           </div>
 
-          {/* Column 5: Connect & Security */}
+          {/* Column 5: Connect & Socials */}
           <div className="space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#FFB800] font-mono block">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#FFB800] block">
               CONNECT
             </span>
             <div className="flex flex-col gap-2">
@@ -187,7 +197,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Official BidWar Instagram"
-                className="inline-flex items-center gap-2 text-slate-300 hover:text-[#FFB800] font-mono text-xs transition-colors group cursor-pointer"
+                className="inline-flex items-center gap-2 text-slate-300 hover:text-[#FFB800] text-xs transition-colors group cursor-pointer"
               >
                 <div className="w-7 h-7 rounded-lg bg-[#091230] border border-[#1A2C68] group-hover:border-[#FFB800]/40 flex items-center justify-center text-slate-400 group-hover:text-[#FFB800] transition-colors">
                   <Instagram className="w-3.5 h-3.5" />
@@ -200,7 +210,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Official BidWar Facebook"
-                className="inline-flex items-center gap-2 text-slate-300 hover:text-[#FFB800] font-mono text-xs transition-colors group cursor-pointer"
+                className="inline-flex items-center gap-2 text-slate-300 hover:text-[#FFB800] text-xs transition-colors group cursor-pointer"
               >
                 <div className="w-7 h-7 rounded-lg bg-[#091230] border border-[#1A2C68] group-hover:border-[#FFB800]/40 flex items-center justify-center text-slate-400 group-hover:text-[#FFB800] transition-colors">
                   <Facebook className="w-3.5 h-3.5" />
@@ -208,14 +218,14 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                 <span>Facebook</span>
               </a>
             </div>
-            <p className="text-[10px] text-slate-500 font-mono">
-              Official tournament updates & coverage
+            <p className="text-[11px] text-slate-500 pt-1">
+              Official tournament updates & match coverage
             </p>
           </div>
         </div>
 
         {/* Bottom Utility Bar */}
-        <div className="border-t border-white/5 py-4 flex flex-col md:flex-row items-center justify-between text-[11px] font-mono text-slate-400 gap-3">
+        <div className="border-t border-white/5 py-4 flex flex-col md:flex-row items-center justify-between text-xs text-slate-400 gap-3">
           <p>© 2026 BidWar Premier League · All Rights Reserved</p>
           
           <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-center text-slate-400">
