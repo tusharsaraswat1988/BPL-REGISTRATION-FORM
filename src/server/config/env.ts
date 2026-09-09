@@ -66,24 +66,37 @@ export const config: ServerConfig = {
   databaseUrl: process.env.DATABASE_URL,
 
   cloudinary: (() => {
-    const fromUrl = (() => {
-      const rawUrl = process.env.CLOUDINARY_URL;
-      if (!rawUrl || !rawUrl.startsWith('cloudinary://')) return {};
-      const match = rawUrl.match(/^cloudinary:\/\/([^:]+):([^@]+)@(.+)$/);
-      if (match) {
-        return {
-          apiKey: match[1],
-          apiSecret: match[2],
-          cloudName: match[3],
-        };
+    const clean = (val?: string) => {
+      if (!val) return undefined;
+      const trimmed = val.trim().replace(/^['"]|['"]$/g, '');
+      return trimmed.length > 0 ? trimmed : undefined;
+    };
+
+    const rawUrl = clean(process.env.CLOUDINARY_URL);
+    let urlCloudName: string | undefined;
+    let urlApiKey: string | undefined;
+    let urlApiSecret: string | undefined;
+
+    if (rawUrl && rawUrl.startsWith('cloudinary://')) {
+      try {
+        const urlObj = new URL(rawUrl);
+        urlApiKey = clean(decodeURIComponent(urlObj.username));
+        urlApiSecret = clean(decodeURIComponent(urlObj.password));
+        urlCloudName = clean(urlObj.hostname);
+      } catch {
+        const match = rawUrl.match(/^cloudinary:\/\/([^:]+):([^@]+)@(.+)$/);
+        if (match) {
+          urlApiKey = clean(match[1]);
+          urlApiSecret = clean(match[2]);
+          urlCloudName = clean(match[3]);
+        }
       }
-      return {};
-    })();
+    }
 
     return {
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME || fromUrl.cloudName,
-      apiKey: process.env.CLOUDINARY_API_KEY || fromUrl.apiKey,
-      apiSecret: process.env.CLOUDINARY_API_SECRET || fromUrl.apiSecret,
+      cloudName: clean(process.env.CLOUDINARY_CLOUD_NAME) || urlCloudName,
+      apiKey: clean(process.env.CLOUDINARY_API_KEY) || urlApiKey,
+      apiSecret: clean(process.env.CLOUDINARY_API_SECRET) || urlApiSecret,
     };
   })(),
 

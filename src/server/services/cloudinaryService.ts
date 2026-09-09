@@ -94,12 +94,7 @@ export async function uploadToCloudinary(
         folder,
         resource_type: 'image',
         public_id: `${cleanFilename}_${Date.now()}`,
-        type: isPrivate ? 'authenticated' : 'upload',
         overwrite: true,
-        transformation: [
-          { quality: 'auto:good' },
-          { fetch_format: 'auto' }
-        ]
       },
       (error, result) => {
         if (error || !result) {
