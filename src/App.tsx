@@ -163,8 +163,10 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer */}
-      <Footer onNavigate={navigate} />
+      {/* Footer (Omitted on Admin Panel) */}
+      {currentPath !== '/admin' && (
+        <Footer onNavigate={navigate} />
+      )}
     </div>
   );
 }
