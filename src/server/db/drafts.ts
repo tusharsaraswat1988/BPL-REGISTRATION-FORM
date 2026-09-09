@@ -83,8 +83,37 @@ export async function getDraft(
   };
 }
 
+export async function getLatestDraftByAuthUserId(
+  authUserId: string
+): Promise<DraftRecord | null> {
+  if (!authUserId || !authUserId.trim()) return null;
+
+  const res = await query(
+    `SELECT draft_token AS "draftToken", current_step AS "currentStep", data, auth_user_id AS "authUserId",
+            created_at AS "createdAt", updated_at AS "updatedAt"
+     FROM drafts
+     WHERE auth_user_id = $1
+     ORDER BY updated_at DESC
+     LIMIT 1`,
+    [authUserId.trim()]
+  );
+
+  if (res.rows.length === 0) return null;
+  const row = res.rows[0];
+
+  return {
+    draftToken: row.draftToken,
+    currentStep: row.currentStep,
+    data: typeof row.data === 'string' ? JSON.parse(row.data) : row.data,
+    authUserId: row.authUserId,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
 export async function deleteDraft(draftToken: string): Promise<boolean> {
   if (!draftToken) return false;
   const res = await query(`DELETE FROM drafts WHERE draft_token = $1`, [draftToken]);
   return (res.rowCount ?? 0) > 0;
 }
+

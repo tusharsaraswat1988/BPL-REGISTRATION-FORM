@@ -299,10 +299,10 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
         <div className="mb-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2 font-heading">
             <CreditCard className="w-5 h-5 text-[#FFB800]" />
-            Tournament Entry Fee & Payment Gateway
+            Tournament Entry Fee & Payment Method
           </h4>
           <p className="text-xs text-slate-400">
-            Secure payment processing powered by Cashfree Payment Gateway.
+            Select your preferred payment method and submit verification details.
           </p>
         </div>
 
@@ -331,128 +331,71 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
             Select Payment Method <span className="text-[#FFB800]">*</span>
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { id: 'CASHFREE', label: 'Cashfree Online (Instant)', icon: Zap, popular: true },
-              { id: 'UPI', label: 'Manual UPI QR / VPA', icon: QrCode },
+              { id: 'UPI', label: 'Manual UPI QR / VPA', icon: QrCode, isRecommended: true },
               { id: 'Bank Transfer (NEFT/RTGS/IMPS)', label: 'Bank Transfer (NEFT/RTGS)', icon: Building },
-              { id: 'Cheque/Demand Draft', label: 'Cheque / DD', icon: CreditCard },
+              { id: 'CASHFREE', label: 'Pay Online', icon: Zap, isComingSoon: true },
             ].map(m => {
               const Icon = m.icon;
               const isSelected = payment.method === m.id;
+              const isDisabled = !!m.isComingSoon;
               return (
                 <button
                   key={m.id}
                   type="button"
-                  onClick={() => setPayment(prev => ({ ...prev, method: m.id as PaymentMethod }))}
-                  className={`p-3.5 rounded-xl border text-left transition-all duration-200 cursor-pointer select-none active:scale-[0.98] relative ${
-                    isSelected
-                      ? 'bg-[#0E1B48] border-[#FFB800] ring-2 ring-[#FFB800]/40 text-white shadow-md'
-                      : 'bg-[#0A1230] border-[#1A2C68] text-slate-400 hover:border-slate-700'
+                  disabled={isDisabled}
+                  onClick={() => !isDisabled && setPayment(prev => ({ ...prev, method: m.id as PaymentMethod }))}
+                  className={`p-3.5 rounded-xl border text-left transition-all duration-200 relative ${
+                    isDisabled
+                      ? 'bg-[#070D24]/60 border-slate-800/80 text-slate-500 cursor-not-allowed opacity-75'
+                      : isSelected
+                      ? 'bg-[#0E1B48] border-[#FFB800] ring-2 ring-[#FFB800]/40 text-white shadow-md cursor-pointer select-none active:scale-[0.98]'
+                      : 'bg-[#0A1230] border-[#1A2C68] text-slate-400 hover:border-slate-700 cursor-pointer select-none active:scale-[0.98]'
                   }`}
                 >
-                  {m.popular && (
+                  {m.isRecommended && (
                     <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded bg-[#FFB800] text-slate-950 text-[9px] font-black uppercase tracking-wider font-mono-sport">
-                      Instant
+                      Recommended
+                    </span>
+                  )}
+                  {m.isComingSoon && (
+                    <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-black uppercase tracking-wider font-mono-sport">
+                      Coming Soon
                     </span>
                   )}
                   <div className="flex items-center gap-2 mb-1">
-                    <Icon className={`w-4 h-4 ${isSelected ? 'text-[#FFB800]' : 'text-slate-400'}`} />
-                    <span className="text-xs font-bold text-white leading-tight">{m.label}</span>
+                    <Icon className={`w-4 h-4 ${isSelected ? 'text-[#FFB800]' : isDisabled ? 'text-slate-600' : 'text-slate-400'}`} />
+                    <span className={`text-xs font-bold leading-tight ${isDisabled ? 'text-slate-400' : 'text-white'}`}>{m.label}</span>
                   </div>
+                  {isDisabled && (
+                    <span className="text-[10px] text-slate-500 block mt-0.5">Online gateway coming soon</span>
+                  )}
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Cashfree Payment Flow */}
+        {/* Pay Online Coming Soon Notice */}
         {payment.method === 'CASHFREE' && (
-          <div className="p-5 rounded-2xl bg-[#0A1230] border border-[#1A2C68] space-y-4 mb-6">
-            <div className="flex items-start justify-between gap-4 flex-wrap">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#FFB800] font-mono-sport block">
-                  Official Online Payment Gateway
-                </span>
-                <h4 className="text-base font-bold text-white flex items-center gap-2 font-heading">
-                  <Zap className="w-4 h-4 text-[#FFB800]" />
-                  Cashfree Payments (UPI, Cards, NetBanking, GPay, Paytm)
-                </h4>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Instant registration confirmation upon successful payment. Zero manual verification delay.
+          <div className="p-5 rounded-2xl bg-[#0A1230] border border-amber-500/30 space-y-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="space-y-1 text-left">
+                <h4 className="text-sm font-bold text-white">Pay Online is Coming Soon</h4>
+                <p className="text-xs text-slate-300">
+                  Instant online payment gateway is currently being enabled. Please select <strong className="text-[#FFB800]">Manual UPI QR / VPA</strong> or <strong className="text-[#FFB800]">Bank Transfer</strong> to submit your registration.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setPayment(prev => ({ ...prev, method: 'UPI' }))}
+                  className="mt-2 px-3 py-1.5 rounded-lg bg-[#FFB800] text-slate-950 font-bold text-xs cursor-pointer hover:bg-[#FBBF24]"
+                >
+                  Switch to UPI QR / VPA
+                </button>
               </div>
-
-              {isCashfreePaid && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/60 border border-emerald-500/50 text-emerald-400 text-xs font-bold font-mono">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>PAYMENT VERIFIED ✓</span>
-                </div>
-              )}
             </div>
-
-            {cashfreeError && (
-              <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/40 text-xs text-red-300 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-                <span>{cashfreeError}</span>
-              </div>
-            )}
-
-            {!isCashfreePaid ? (
-              <div className="pt-2 space-y-3">
-                <div className="p-4 rounded-xl bg-[#070D24] border border-[#1A2C68] flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="text-left space-y-1">
-                    <span className="text-xs text-slate-400">Total Payable Amount:</span>
-                    <div className="text-2xl font-black text-[#FFB800] font-mono-sport">
-                      ₹{totalAmount.toLocaleString('en-IN')}
-                    </div>
-                    <p className="text-[11px] text-slate-400">
-                      Supports all UPI apps (GPay, PhonePe, Paytm), Debit/Credit Cards & Netbanking.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled={isInitiatingCashfree}
-                    onClick={handlePayWithCashfree}
-                    className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#FFB800] hover:bg-[#FBBF24] text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-[#FFB800]/20 flex items-center justify-center gap-2 cursor-pointer font-heading active:scale-95 transition-all select-none"
-                  >
-                    {isInitiatingCashfree ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
-                        <span>Connecting to Cashfree...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Zap className="w-4 h-4 text-slate-950 fill-current" />
-                        <span>Pay ₹{totalAmount.toLocaleString('en-IN')} with Cashfree</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 rounded-xl bg-emerald-950/30 border border-emerald-500/30 space-y-2 text-left">
-                <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Payment Completed & Authenticated via Cashfree Gateway</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs font-mono pt-1 text-slate-300">
-                  <div>
-                    <span className="text-slate-500 text-[10px] block">Payment Reference:</span>
-                    <strong className="text-white">{payment.gatewayPaymentId || payment.transactionReference}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 text-[10px] block">Amount Paid:</span>
-                    <strong className="text-emerald-400">₹{totalAmount.toLocaleString('en-IN')}</strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 text-[10px] block">Status:</span>
-                    <strong className="text-emerald-400">VERIFIED (Instant)</strong>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -543,18 +486,6 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
                 <strong className="text-white font-mono font-bold text-sm tracking-wide">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.ifscCode}</strong>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Method Instructions: Cheque */}
-        {payment.method === 'Cheque/Demand Draft' && (
-          <div className="p-4 rounded-xl bg-[#0A1230] border border-[#1A2C68] space-y-2 text-xs text-slate-300 mb-6">
-            <p>
-              Please make cheque or Demand Draft in favour of: <strong className="text-white">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName}</strong>.
-            </p>
-            <p className="text-slate-400">
-              Submit transaction reference / cheque number below and attach scanned copy or receipt.
-            </p>
           </div>
         )}
 

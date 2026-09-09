@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   AssociationDetails, MentorDetails, PlayerDetails, 
-  PaymentInfo, TournamentCategory, RegistrationRecord, RegistrationConfirmationDTO, CategoryId 
+  PaymentInfo, TournamentCategory, RegistrationConfirmationDTO, CategoryId 
 } from '../types';
 import { StepCategoryAssociation } from './steps/StepCategoryAssociation';
 import { StepMentor } from './steps/StepMentor';
@@ -11,10 +11,18 @@ import { StepReviewPayment } from './steps/StepReviewPayment';
 import confetti from 'canvas-confetti';
 import { 
   Check, ArrowRight, ArrowLeft, Trophy, RefreshCw, AlertCircle,
-  Loader2, CheckCircle2, Lock, MessageCircle, ExternalLink, Copy
+  Loader2, CheckCircle2, Lock, MessageCircle, ExternalLink, Copy,
+  Wifi, WifiOff, HardDrive, Trash2
 } from 'lucide-react';
 import { TOURNAMENT_CONFIG } from '../config/tournamentConfig';
 import { isValidIndianMobile, isValidEmail } from '../utils/validation';
+import { 
+  getDraftFromLocalStorage, 
+  saveDraftLocally, 
+  clearDraftFromLocalStorage, 
+  hasEnteredFormData,
+  LOCAL_STORAGE_DRAFT_KEY 
+} from '../utils/draftStorage';
 
 interface WizardProps {
   categories: TournamentCategory[];
@@ -30,8 +38,6 @@ const stepsList = [
   { title: '8-Player Squad', shortTitle: 'Players' },
   { title: 'Review & Payment', shortTitle: 'Payment' },
 ];
-
-const LOCAL_STORAGE_DRAFT_KEY = 'bpl_kids_draft_token';
 
 const createEmptyPlayers = (cat: CategoryId = 'class_4_5_6'): PlayerDetails[] => {
   const defaultClass = cat === 'class_4_5_6' ? 4 : 7;
@@ -57,75 +63,258 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
   onNavigateToLookup,
   authToken
 }) => {
-  const [currentStep, setCurrentStep] = useState(0);
+  // Load cached offline draft synchronously before initial render (0ms recovery)
+  const initialDraft = getDraftFromLocalStorage();
+
+  const [currentStep, setCurrentStep] = useState<number>(() => {
+    if (initialDraft && typeof initialDraft.currentStep === 'number' && initialDraft.currentStep >= 0 && initialDraft.currentStep < stepsList.length) {
+      return initialDraft.currentStep;
+    }
+    return 0;
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionSuccess, setSubmissionSuccess] = useState<RegistrationConfirmationDTO | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [copiedLink, setCopiedLink] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
-  // Auto-Save State (subtle, non-intrusive)
-  const [draftToken, setDraftToken] = useState<string | null>(() => {
-    return localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY);
+  // Network & Auto-Save State
+  const [isOnline, setIsOnline] = useState<boolean>(() => {
+    return typeof navigator !== 'undefined' ? navigator.onLine : true;
   });
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
-  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+
+  const [draftToken, setDraftToken] = useState<string | null>(() => {
+    return initialDraft?.draftToken || (typeof localStorage !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY) : null);
+  });
+
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'offline_saved'>(() => {
+    return initialDraft ? 'saved' : 'idle';
+  });
+
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(() => {
+    return initialDraft?.updatedAt ? new Date(initialDraft.updatedAt) : null;
+  });
+
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 1. Category & Association State
-  const [category, setCategory] = useState<CategoryId>('class_4_5_6');
-  const [association, setAssociation] = useState<AssociationDetails>({
-    associationName: '',
-    branch: '',
-    email: '',
-    mobile: '',
-    associationLogo: ''
+  const [category, setCategory] = useState<CategoryId>(() => {
+    return initialDraft?.category || 'class_4_5_6';
+  });
+
+  const [association, setAssociation] = useState<AssociationDetails>(() => {
+    return initialDraft?.association || {
+      associationName: '',
+      branch: '',
+      email: '',
+      mobile: '',
+      associationLogo: ''
+    };
   });
 
   // 2. Mentor In-Charge State (Exactly ONE per team)
-  const [mentor, setMentor] = useState<MentorDetails>({
-    name: '',
-    mobile: '',
-    secondMobile: '',
-    email: '',
-    photo: '',
-    designation: 'Head Cricket Coach'
+  const [mentor, setMentor] = useState<MentorDetails>(() => {
+    return initialDraft?.mentor || {
+      name: '',
+      mobile: '',
+      secondMobile: '',
+      email: '',
+      photo: '',
+      designation: 'Head Cricket Coach'
+    };
   });
 
-  // 3. Team Branding & Options State (NO KIT COLORS)
-  const [teamName, setTeamName] = useState('');
-  const [includeBranding, setIncludeBranding] = useState(false);
-  const [teamTagline, setTeamTagline] = useState('');
+  // 3. Team Branding & Options State
+  const [teamName, setTeamName] = useState<string>(() => initialDraft?.teamName || '');
+  const [includeBranding, setIncludeBranding] = useState<boolean>(() => Boolean(initialDraft?.includeBranding));
+  const [teamTagline, setTeamTagline] = useState<string>(() => initialDraft?.teamTagline || '');
 
-  // 4. Exactly 8 Players (Initialized clean & empty)
-  const [players, setPlayers] = useState<PlayerDetails[]>(() => createEmptyPlayers('class_4_5_6'));
+  // 4. Exactly 8 Players (Initialized with restored draft or clean slots)
+  const [players, setPlayers] = useState<PlayerDetails[]>(() => {
+    if (initialDraft?.players && Array.isArray(initialDraft.players) && initialDraft.players.length === 8) {
+      return initialDraft.players;
+    }
+    return createEmptyPlayers(initialDraft?.category || 'class_4_5_6');
+  });
 
   // 5. Payment Details
-  const [payment, setPayment] = useState<PaymentInfo>({
-    method: 'CASHFREE',
-    gateway: 'CASHFREE',
-    transactionReference: '',
-    paymentDate: new Date().toISOString().split('T')[0],
-    paymentProofUrl: ''
+  const [payment, setPayment] = useState<PaymentInfo>(() => {
+    if (initialDraft?.payment) {
+      const sanitizedMethod = (initialDraft.payment.method === 'Cheque/Demand Draft' || initialDraft.payment.method === 'CASHFREE')
+        ? 'UPI'
+        : initialDraft.payment.method;
+      return {
+        ...initialDraft.payment,
+        method: sanitizedMethod,
+        gateway: sanitizedMethod === 'UPI' ? 'MANUAL_UPI' : initialDraft.payment.gateway || 'MANUAL_BANK_TRANSFER'
+      };
+    }
+    return {
+      method: 'UPI',
+      gateway: 'MANUAL_UPI',
+      transactionReference: '',
+      paymentDate: new Date().toISOString().split('T')[0],
+      paymentProofUrl: ''
+    };
   });
 
-  // Restore draft from backend on mount if one exists
+  // Track online / offline events
   useEffect(() => {
-    const existingDraftToken = localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY);
-    if (!existingDraftToken) return;
+    const handleOnline = () => {
+      setIsOnline(true);
+      // Immediately trigger background sync to server upon reconnection
+      persistDraftToServer();
+    };
 
-    fetch(`/api/drafts/${encodeURIComponent(existingDraftToken)}`, {
-      headers: {
-        'x-draft-token': existingDraftToken,
-        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+    const handleOffline = () => {
+      setIsOnline(false);
+      setSaveStatus('offline_saved');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Server-Side & Local Auto-Save Function
+  const persistDraftToServer = useCallback(async (stepToSave = currentStep) => {
+    // 1. Instant local persistence (guarantees safety before network call)
+    const draftPayload = {
+      draftToken,
+      currentStep: stepToSave,
+      category,
+      association,
+      mentor,
+      teamName,
+      includeBranding,
+      teamTagline,
+      players,
+      payment,
+      updatedAt: new Date().toISOString()
+    };
+
+    saveDraftLocally(draftPayload);
+
+    // 2. If offline, mark as saved locally on device
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      setSaveStatus('offline_saved');
+      setLastSavedTime(new Date());
+      return;
+    }
+
+    setSaveStatus('saving');
+
+    try {
+      const res = await fetch('/api/drafts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(draftToken ? { 'x-draft-token': draftToken } : {}),
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify({
+          ...draftPayload,
+          status: 'DRAFT'
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.draftToken) {
+          setDraftToken(data.draftToken);
+          saveDraftLocally({ ...draftPayload, draftToken: data.draftToken });
+        }
+        setSaveStatus('saved');
+        setLastSavedTime(new Date());
+
+        if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
+        fadeTimeoutRef.current = setTimeout(() => {
+          setSaveStatus('idle');
+        }, 3000);
+      } else {
+        setSaveStatus('offline_saved');
       }
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Draft not found');
-        return res.json();
-      })
-      .then(data => {
-        if (data.success && data.draft) {
+    } catch (err) {
+      // Network interruption: local draft is already saved
+      setSaveStatus('offline_saved');
+    }
+  }, [
+    draftToken, currentStep, category, association, 
+    mentor, teamName, includeBranding, teamTagline, 
+    players, payment, authToken
+  ]);
+
+  // Synchronously save to local storage on EVERY state change + debounced server sync (1.5s)
+  useEffect(() => {
+    // Always write immediately to local storage
+    const currentDraftData = {
+      draftToken,
+      currentStep,
+      category,
+      association,
+      mentor,
+      teamName,
+      includeBranding,
+      teamTagline,
+      players,
+      payment,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (hasEnteredFormData(currentDraftData)) {
+      saveDraftLocally(currentDraftData);
+    }
+
+    // Debounce server cloud sync
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      if (hasEnteredFormData(currentDraftData)) {
+        persistDraftToServer(currentStep);
+      }
+    }, 1500);
+
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, [
+    category, association, mentor, teamName, 
+    includeBranding, teamTagline, players, payment, 
+    currentStep, draftToken, persistDraftToServer
+  ]);
+
+  // Restore active draft from backend on mount if online
+  useEffect(() => {
+    let isMounted = true;
+
+    async function checkServerDraft() {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+
+      try {
+        // Try fetching active draft for authenticated user first
+        let endpoint = '/api/drafts/active/latest';
+        let headers: Record<string, string> = {};
+
+        if (authToken) {
+          headers.Authorization = `Bearer ${authToken}`;
+        }
+
+        const existingToken = draftToken || (typeof localStorage !== 'undefined' ? localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY) : null);
+        if (existingToken) {
+          endpoint = `/api/drafts/${encodeURIComponent(existingToken)}`;
+          headers['x-draft-token'] = existingToken;
+        }
+
+        const res = await fetch(endpoint, { headers });
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (isMounted && data.success && data.draft) {
           const d = data.draft;
           if (d.category) setCategory(d.category);
           if (d.association) setAssociation(prev => ({ ...prev, ...d.association }));
@@ -138,92 +327,24 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
           if (typeof d.currentStep === 'number' && d.currentStep >= 0 && d.currentStep < stepsList.length) {
             setCurrentStep(d.currentStep);
           }
+          if (d.draftToken) {
+            setDraftToken(d.draftToken);
+          }
           setSaveStatus('saved');
           setLastSavedTime(new Date(d.updatedAt || Date.now()));
         }
-      })
-      .catch(() => {
-        // Stale or invalid draft token, clean up
-        localStorage.removeItem(LOCAL_STORAGE_DRAFT_KEY);
-        setDraftToken(null);
-      });
-  }, [authToken]);
-
-  // Server-Side Auto-Save Function
-  const persistDraftToServer = useCallback(async (stepToSave = currentStep) => {
-    setSaveStatus('saving');
-
-    const payload = {
-      draftToken,
-      currentStep: stepToSave,
-      category,
-      association,
-      mentor,
-      teamName,
-      includeBranding,
-      teamTagline,
-      players,
-      payment,
-      status: 'DRAFT'
-    };
-
-    try {
-      const res = await fetch('/api/drafts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(draftToken ? { 'x-draft-token': draftToken } : {}),
-          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.draftToken) {
-          setDraftToken(data.draftToken);
-          localStorage.setItem(LOCAL_STORAGE_DRAFT_KEY, data.draftToken);
-        }
-        setSaveStatus('saved');
-        setLastSavedTime(new Date());
-
-        // Subtle auto-fade after 3 seconds
-        if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
-        fadeTimeoutRef.current = setTimeout(() => {
-          setSaveStatus('idle');
-        }, 3000);
-      } else {
-        setSaveStatus('idle');
+      } catch (err) {
+        // Silently preserve local draft if server request fails
+        console.log('[RegistrationWizard] Preserving local draft during offline/transient startup.');
       }
-    } catch (err) {
-      console.warn('Auto-save network error:', err);
-      setSaveStatus('idle');
     }
-  }, [
-    draftToken, currentStep, category, association, 
-    mentor, teamName, includeBranding, teamTagline, 
-    players, payment
-  ]);
 
-  // Debounced auto-save on form edits (1.5 seconds)
-  useEffect(() => {
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
-    saveTimeoutRef.current = setTimeout(() => {
-      // Only auto-save if at least some details have been entered
-      if (association.associationName || mentor.name || teamName) {
-        persistDraftToServer(currentStep);
-      }
-    }, 1500);
+    checkServerDraft();
 
     return () => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      isMounted = false;
     };
-  }, [
-    category, association, mentor, teamName, 
-    includeBranding, teamTagline, players, payment, 
-    currentStep, persistDraftToServer
-  ]);
+  }, [authToken]);
 
   // Keep player classes consistent when category changes
   const handleCategoryChange = (newCat: CategoryId) => {
@@ -340,7 +461,6 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         }
       }
     } else if (stepIndex === 4) {
-      // Validate payment
       if (payment.method === 'CASHFREE') {
         if (!payment.gatewayPaymentId && !payment.transactionReference) {
           newErrors.payment = 'Please complete your online payment with Cashfree before final submission.';
@@ -414,8 +534,8 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         setSubmissionSuccess(data.registration);
         onRegistrationSuccess(data.registration);
 
-        // Clean up draft from local storage
-        localStorage.removeItem(LOCAL_STORAGE_DRAFT_KEY);
+        // Clean up draft from local storage only upon confirmed success
+        clearDraftFromLocalStorage();
         setDraftToken(null);
 
         confetti({
@@ -428,19 +548,37 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
       }
     } catch (err) {
       console.error('Registration error:', err);
-      alert('Network error connecting to tournament server. Please try again.');
+      alert('Network error connecting to tournament server. Your draft data is safely saved on this device. Please check your connection and try submitting again.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleResetForNewTeam = () => {
+    clearDraftFromLocalStorage();
     setSubmissionSuccess(null);
     setCurrentStep(0);
     setTeamName('');
     setIncludeBranding(false);
+    setTeamTagline('');
+    setAssociation({
+      associationName: '',
+      branch: '',
+      email: '',
+      mobile: '',
+      associationLogo: ''
+    });
+    setMentor({
+      name: '',
+      mobile: '',
+      secondMobile: '',
+      email: '',
+      photo: '',
+      designation: 'Head Cricket Coach'
+    });
+    setPlayers(createEmptyPlayers('class_4_5_6'));
     setDraftToken(null);
-    localStorage.removeItem(LOCAL_STORAGE_DRAFT_KEY);
+    setShowResetConfirm(false);
   };
 
   const handleCopyCommunityLink = () => {
@@ -552,7 +690,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
               </div>
             </div>
 
-            {/* TEAM PASS: EXPLICITLY COMING SOON - NOT ACTIVE */}
+            {/* TEAM PASS: COMING SOON */}
             <div className="max-w-xl mx-auto p-4 rounded-2xl bg-[#070D24] border border-[#1A2C68] text-left space-y-1">
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-slate-500" />
@@ -592,8 +730,8 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Top Header Row with Subtle Auto-Save Indicator */}
-      <div className="flex items-center justify-between mb-4">
+      {/* Top Header Row with Subtle Auto-Save & Offline Indicator */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
           <span className="text-[10px] font-black text-[#FFB800] uppercase tracking-widest font-mono-sport">
             Official Registration Portal
@@ -603,29 +741,80 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
           </h2>
         </div>
 
-        {/* Subtle Auto-Save Status Chip */}
+        {/* Resilient Auto-Save Status Chip */}
         <div className="flex items-center gap-2 text-xs">
-          {saveStatus === 'saving' && (
+          {!isOnline && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 text-[11px] font-medium border border-amber-500/30 animate-pulse">
+              <WifiOff className="w-3 h-3 text-amber-400" />
+              <span>Offline (Saved on device)</span>
+            </span>
+          )}
+
+          {isOnline && saveStatus === 'saving' && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#1A2C68] text-[#FFB800] text-[11px] font-medium border border-[#FFB800]/30 animate-pulse">
               <Loader2 className="w-3 h-3 animate-spin" />
-              <span>Saving draft...</span>
+              <span>Syncing draft...</span>
             </span>
           )}
 
-          {saveStatus === 'saved' && (
+          {isOnline && (saveStatus === 'saved' || saveStatus === 'idle') && (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/50 text-emerald-300 text-[11px] font-medium border border-emerald-500/30 transition-opacity duration-300">
               <Check className="w-3 h-3 text-emerald-400" />
-              <span>Saved ✓</span>
+              <span>Draft Protected ✓</span>
             </span>
           )}
 
-          {saveStatus === 'idle' && lastSavedTime && (
-            <span className="text-[11px] text-slate-500 hidden sm:inline">
-              Draft synced ({lastSavedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+          {lastSavedTime && (
+            <span className="text-[11px] text-slate-500 hidden md:inline font-mono">
+              (Synced {lastSavedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })})
             </span>
           )}
+
+          {/* Reset Form Option */}
+          <button
+            type="button"
+            onClick={() => setShowResetConfirm(true)}
+            className="text-[11px] text-slate-400 hover:text-red-400 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-500/10 transition-colors cursor-pointer ml-1"
+            title="Reset form and start clean"
+          >
+            <Trash2 className="w-3 h-3" />
+            <span className="hidden sm:inline">Reset Draft</span>
+          </button>
         </div>
       </div>
+
+      {/* Reset Confirmation Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-[#0A1230] border border-red-500/40 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center gap-3 text-red-400">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/30">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <h4 className="text-base font-bold text-white">Reset Registration Draft?</h4>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Are you sure you want to clear all entered details and photos? This will permanently delete your local draft and reset the form.
+            </p>
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                className="px-4 py-2 rounded-xl bg-[#070D24] border border-[#1A2C68] text-slate-300 text-xs font-semibold hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleResetForNewTeam}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg shadow-red-600/20"
+              >
+                Yes, Reset Draft
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Step Progress Tracker */}
       <div className="mb-8">

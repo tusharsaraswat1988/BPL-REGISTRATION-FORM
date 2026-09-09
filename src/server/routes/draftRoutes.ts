@@ -1,9 +1,38 @@
 import { Router } from 'express';
-import { saveDraft, getDraft, deleteDraft } from '../db/drafts';
+import { saveDraft, getDraft, getLatestDraftByAuthUserId, deleteDraft } from '../db/drafts';
 import { draftLimiter } from '../middleware/rateLimiter';
 import { optionalAuth, AuthenticatedRequest } from '../middleware/auth';
 
 export const draftRoutes = Router();
+
+// Retrieve Latest Active Draft for Authenticated User
+draftRoutes.get('/drafts/active/latest', draftLimiter, optionalAuth, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const authUserId = req.authIdentity?.userId;
+    if (!authUserId) {
+      res.json({ success: false, draft: null });
+      return;
+    }
+
+    const draft = await getLatestDraftByAuthUserId(authUserId);
+    if (!draft) {
+      res.json({ success: false, draft: null });
+      return;
+    }
+
+    res.json({
+      success: true,
+      draft: {
+        draftToken: draft.draftToken,
+        currentStep: draft.currentStep,
+        ...draft.data,
+        updatedAt: draft.updatedAt,
+      },
+    });
+  } catch (err: any) {
+    next(err);
+  }
+});
 
 // Save / Autosave Draft
 draftRoutes.post('/drafts', draftLimiter, optionalAuth, async (req: AuthenticatedRequest, res, next) => {
@@ -28,8 +57,9 @@ draftRoutes.post('/drafts', draftLimiter, optionalAuth, async (req: Authenticate
   }
 });
 
-// Retrieve Draft
+// Retrieve Draft by Token
 draftRoutes.get('/drafts/:draftToken', draftLimiter, optionalAuth, async (req: AuthenticatedRequest, res, next) => {
+
   try {
     const draftToken = req.params.draftToken;
     const authUserId = req.authIdentity?.userId;
