@@ -526,12 +526,16 @@ export async function createRegistrationTransaction(
     }
 
     // I. Insert Payment Record
+    const isVerifiedNow = paymentStatus === 'VERIFIED';
+    const verifiedAt = isVerifiedNow ? new Date() : null;
+    const confirmationSentAt = isVerifiedNow ? new Date() : null;
+
     await client.query(
       `INSERT INTO payments (
         registration_id, utr_transaction_id, payment_screenshot, method, gateway,
         gateway_order_id, gateway_payment_id, gateway_raw_response,
         base_amount, branding_amount, total_amount, payment_status, verified_at, verified_by, confirmation_email_sent_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CASE WHEN $12 = 'VERIFIED' THEN NOW() ELSE NULL END, $13, CASE WHEN $12 = 'VERIFIED' THEN NOW() ELSE NULL END)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
       [
         registrationId,
         normalizedUtr,
@@ -545,7 +549,9 @@ export async function createRegistrationTransaction(
         brandingAmount,
         totalAmount,
         paymentStatus,
+        verifiedAt,
         verifiedBy,
+        confirmationSentAt,
       ]
     );
 
