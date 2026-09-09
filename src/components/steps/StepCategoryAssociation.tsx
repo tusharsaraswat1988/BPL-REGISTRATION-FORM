@@ -172,7 +172,7 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
             <input
               type="email"
               value={association.email}
-              onChange={e => handleChange('email', e.target.value)}
+              onChange={e => handleChange('email', e.target.value.trim())}
               placeholder="e.g. sports@school.edu.in"
               className={`w-full px-4 py-3 bg-[#0A1230] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FFB800]/50 transition-all ${
                 errors.email ? 'border-red-500' : 'border-[#1A2C68] focus:border-[#FFB800]'
@@ -190,9 +190,13 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
             </label>
             <input
               type="tel"
+              maxLength={13}
               value={association.mobile}
-              onChange={e => handleChange('mobile', e.target.value)}
-              placeholder="e.g. +91 98112 34567"
+              onChange={e => {
+                const val = e.target.value.replace(/[^\d+]/g, '');
+                handleChange('mobile', val);
+              }}
+              placeholder="10-digit number (e.g. 9811234567)"
               className={`w-full px-4 py-3 bg-[#0A1230] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FFB800]/50 transition-all ${
                 errors.mobile ? 'border-red-500' : 'border-[#1A2C68] focus:border-[#FFB800]'
               }`}

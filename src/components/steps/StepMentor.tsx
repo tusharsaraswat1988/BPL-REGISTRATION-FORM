@@ -78,7 +78,7 @@ export const StepMentor: React.FC<StepMentorProps> = ({ mentor, setMentor, error
           <input
             type="email"
             value={mentor.email}
-            onChange={e => handleChange('email', e.target.value)}
+            onChange={e => handleChange('email', e.target.value.trim())}
             placeholder="coach@school.edu.in or personal email"
             className={`w-full px-4 py-3 bg-[#0A1230] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FFB800]/50 transition-all ${
               errors.mentorEmail ? 'border-red-500' : 'border-[#1A2C68] focus:border-[#FFB800]'
@@ -97,9 +97,13 @@ export const StepMentor: React.FC<StepMentorProps> = ({ mentor, setMentor, error
           </label>
           <input
             type="tel"
+            maxLength={13}
             value={mentor.mobile}
-            onChange={e => handleChange('mobile', e.target.value)}
-            placeholder="e.g. +91 98112 34567"
+            onChange={e => {
+              const val = e.target.value.replace(/[^\d+]/g, '');
+              handleChange('mobile', val);
+            }}
+            placeholder="10-digit number (e.g. 9811234567)"
             className={`w-full px-4 py-3 bg-[#0A1230] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FFB800]/50 transition-all ${
               errors.mentorMobile ? 'border-red-500' : 'border-[#1A2C68] focus:border-[#FFB800]'
             }`}
@@ -117,9 +121,13 @@ export const StepMentor: React.FC<StepMentorProps> = ({ mentor, setMentor, error
           </label>
           <input
             type="tel"
+            maxLength={13}
             value={mentor.secondMobile || ''}
-            onChange={e => handleChange('secondMobile', e.target.value)}
-            placeholder="e.g. +91 98112 34568"
+            onChange={e => {
+              const val = e.target.value.replace(/[^\d+]/g, '');
+              handleChange('secondMobile', val);
+            }}
+            placeholder="10-digit number (e.g. 9811234568)"
             className="w-full px-4 py-3 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#FFB800] focus:ring-2 focus:ring-[#FFB800]/50 transition-all"
           />
         </div>

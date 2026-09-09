@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { PlayerDetails, CategoryId, CricketRole, BattingStyle, BowlingStyle, JerseySize } from '../../types';
-import { Users, AlertCircle, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Users, AlertCircle, Sparkles, CheckCircle2, Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import { ImageUploadField } from '../ImageUploadField';
+import { isValidIndianMobile, isValidEmail, getMobileValidationError, getEmailValidationError } from '../../utils/validation';
 
 interface StepPlayersRosterProps {
   players: PlayerDetails[];
@@ -29,6 +30,7 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
   errors
 }) => {
   const [activePlayerIndex, setActivePlayerIndex] = useState(0);
+  const [savedFeedback, setSavedFeedback] = useState<string | null>(null);
 
   const allowedClasses = category === 'class_4_5_6' ? [4, 5, 6] : [7, 8, 9];
 
@@ -51,6 +53,20 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
     });
   };
 
+  const showSavedToast = (msg: string) => {
+    setSavedFeedback(msg);
+    setTimeout(() => {
+      setSavedFeedback(null);
+    }, 2500);
+  };
+
+  const handleSaveAndNext = (index: number) => {
+    showSavedToast(`Player #${index + 1} details saved!`);
+    if (index < 7) {
+      setActivePlayerIndex(index + 1);
+    }
+  };
+
   // Helper to prefill 8 compliant players for testing / demo
   const handleAutofillCompliantSquad = () => {
     const defaultYear = category === 'class_4_5_6' ? 2015 : 2013;
@@ -71,7 +87,7 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
       playerName: s.name,
       studentClass: s.cls,
       dateOfBirth: `${defaultYear}-${String(idx + 3).padStart(2, '0')}-15`,
-      parentMobile: `+91 98110 ${20000 + idx * 311}`,
+      parentMobile: `98110${String(20000 + idx * 311).padStart(5, '0')}`,
       parentEmail: `parent.${s.name.split(' ')[0].toLowerCase()}@example.com`,
       playerPhoto: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80',
       jerseyNumber: s.num,
@@ -82,17 +98,45 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
     }));
 
     setPlayers(filled);
+    showSavedToast('Sample squad loaded successfully!');
   };
 
   // Check duplicate jersey numbers
   const jerseyNumberCounts: Record<number, number> = {};
   players.forEach(p => {
-    if (p.jerseyNumber) {
+    if (p.jerseyNumber && p.jerseyNumber > 0) {
       jerseyNumberCounts[p.jerseyNumber] = (jerseyNumberCounts[p.jerseyNumber] || 0) + 1;
     }
   });
 
   const activePlayer = players[activePlayerIndex] || players[0];
+
+  const isPlayerComplete = (p: PlayerDetails) => {
+    return Boolean(
+      p.playerName?.trim() &&
+      p.studentClass &&
+      p.dateOfBirth?.trim() &&
+      p.parentMobile?.trim() &&
+      isValidIndianMobile(p.parentMobile) &&
+      p.parentEmail?.trim() &&
+      isValidEmail(p.parentEmail) &&
+      p.playerPhoto?.trim() &&
+      p.jerseyNumber &&
+      p.jerseyNumber >= 1 &&
+      p.jerseyNumber <= 99 &&
+      p.jerseySize &&
+      p.cricketRole &&
+      (jerseyNumberCounts[p.jerseyNumber] || 0) <= 1
+    );
+  };
+
+  const mobileError = activePlayer.parentMobile?.trim()
+    ? getMobileValidationError(activePlayer.parentMobile)
+    : null;
+
+  const emailError = activePlayer.parentEmail?.trim()
+    ? getEmailValidationError(activePlayer.parentEmail)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -129,18 +173,8 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
       <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
         {players.map((p, idx) => {
           const isSelected = activePlayerIndex === idx;
-          const isComplete =
-            p.playerName?.trim() &&
-            p.studentClass &&
-            p.dateOfBirth?.trim() &&
-            p.parentMobile?.trim() &&
-            p.parentEmail?.trim() &&
-            p.playerPhoto?.trim() &&
-            p.jerseyNumber &&
-            p.jerseySize &&
-            p.cricketRole;
-
-          const hasDuplicateJersey = jerseyNumberCounts[p.jerseyNumber] > 1;
+          const complete = isPlayerComplete(p);
+          const hasDuplicateJersey = p.jerseyNumber ? (jerseyNumberCounts[p.jerseyNumber] || 0) > 1 : false;
 
           return (
             <button
@@ -150,14 +184,16 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
               className={`p-2.5 rounded-xl border text-left transition-all duration-200 cursor-pointer select-none active:scale-[0.98] ${
                 isSelected
                   ? 'bg-[#0E1B48] border-[#FFB800] ring-2 ring-[#FFB800]/30 text-white'
+                  : complete
+                  ? 'bg-[#071224] border-emerald-500/40 text-slate-300'
                   : 'bg-[#070D24] border-[#1A2C68] hover:border-slate-700 text-slate-400'
-              } ${hasDuplicateJersey ? 'border-red-500/80' : ''}`}
+              } ${hasDuplicateJersey ? 'border-red-500/80 ring-1 ring-red-500/50' : ''}`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-black font-mono-sport text-[#FFB800]">
                   #{idx + 1}
                 </span>
-                {isComplete && !hasDuplicateJersey && (
+                {complete && !hasDuplicateJersey && (
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 )}
                 {hasDuplicateJersey && (
@@ -186,11 +222,23 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
               <span className="font-bold text-white uppercase text-sm font-heading">
                 Editing Player #{activePlayerIndex + 1} of 8: {activePlayer.playerName || 'New Player'}
               </span>
+              {isPlayerComplete(activePlayer) && (
+                <span className="ml-2 px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold flex items-center gap-1">
+                  <Check className="w-3 h-3" /> Complete
+                </span>
+              )}
             </div>
             <span className="text-slate-400 font-mono text-[11px]">
               Division: {category === 'class_4_5_6' ? 'Class 4, 5, 6' : 'Class 7, 8, 9'}
             </span>
           </div>
+
+          {savedFeedback && (
+            <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2 animate-fadeIn">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <span>{savedFeedback}</span>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Player Name */}
@@ -236,21 +284,35 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
               />
             </div>
 
-            {/* Parent Mobile */}
+            {/* Parent Mobile with Validation */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Parent / Guardian Mobile <span className="text-[#FFB800]">*</span>
               </label>
               <input
                 type="tel"
+                maxLength={13}
                 value={activePlayer.parentMobile}
-                onChange={e => handlePlayerChange(activePlayerIndex, 'parentMobile', e.target.value)}
-                placeholder="+91 98110 00000"
-                className="w-full px-4 py-2.5 bg-[#070D24] border border-[#1A2C68] rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#FFB800]"
+                onChange={e => {
+                  const val = e.target.value.replace(/[^\d+]/g, '');
+                  handlePlayerChange(activePlayerIndex, 'parentMobile', val);
+                }}
+                placeholder="10-digit number (e.g. 9811000000)"
+                className={`w-full px-4 py-2.5 bg-[#070D24] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 ${
+                  mobileError
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50'
+                    : 'border-[#1A2C68] focus:border-[#FFB800] focus:ring-[#FFB800]/50'
+                }`}
               />
+              {mobileError && (
+                <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                  {mobileError}
+                </p>
+              )}
             </div>
 
-            {/* Parent Email */}
+            {/* Parent Email with Validation */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
                 Parent Email <span className="text-[#FFB800]">*</span>
@@ -258,10 +320,20 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
               <input
                 type="email"
                 value={activePlayer.parentEmail}
-                onChange={e => handlePlayerChange(activePlayerIndex, 'parentEmail', e.target.value)}
+                onChange={e => handlePlayerChange(activePlayerIndex, 'parentEmail', e.target.value.trim())}
                 placeholder="parent@example.com"
-                className="w-full px-4 py-2.5 bg-[#070D24] border border-[#1A2C68] rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#FFB800]"
+                className={`w-full px-4 py-2.5 bg-[#070D24] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 ${
+                  emailError
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50'
+                    : 'border-[#1A2C68] focus:border-[#FFB800] focus:ring-[#FFB800]/50'
+                }`}
               />
+              {emailError && (
+                <p className="text-[11px] text-red-400 mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3 flex-shrink-0" />
+                  {emailError}
+                </p>
+              )}
             </div>
 
             {/* Jersey Number */}
@@ -270,7 +342,7 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
                   Jersey Number <span className="text-[#FFB800]">* (1–99)</span>
                 </label>
-                {jerseyNumberCounts[activePlayer.jerseyNumber] > 1 && (
+                {activePlayer.jerseyNumber && (jerseyNumberCounts[activePlayer.jerseyNumber] || 0) > 1 && (
                   <span className="text-[10px] text-red-400 font-semibold">
                     Duplicate Jersey Number!
                   </span>
@@ -284,7 +356,9 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
                 onChange={e => handlePlayerChange(activePlayerIndex, 'jerseyNumber', parseInt(e.target.value) || 0)}
                 placeholder="e.g. 7"
                 className={`w-full px-4 py-2.5 bg-[#070D24] border rounded-xl text-sm font-mono text-[#FFB800] font-bold focus:outline-none focus:border-[#FFB800] ${
-                  jerseyNumberCounts[activePlayer.jerseyNumber] > 1 ? 'border-red-500 ring-1 ring-red-500' : 'border-[#1A2C68]'
+                  activePlayer.jerseyNumber && (jerseyNumberCounts[activePlayer.jerseyNumber] || 0) > 1
+                    ? 'border-red-500 ring-1 ring-red-500'
+                    : 'border-[#1A2C68]'
                 }`}
               />
             </div>
@@ -295,10 +369,11 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
                 Jersey Size <span className="text-[#FFB800]">*</span>
               </label>
               <select
-                value={activePlayer.jerseySize}
+                value={activePlayer.jerseySize || ''}
                 onChange={e => handlePlayerChange(activePlayerIndex, 'jerseySize', e.target.value as JerseySize)}
                 className="w-full px-4 py-2.5 bg-[#070D24] border border-[#1A2C68] rounded-xl text-sm text-white focus:outline-none focus:border-[#FFB800] cursor-pointer"
               >
+                <option value="">Select Jersey Size</option>
                 {jerseySizes.map(sz => (
                   <option key={sz} value={sz}>{sz} ({parseInt(sz) ? `Chest ${sz}"` : sz})</option>
                 ))}
@@ -311,10 +386,11 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
                 Cricket Role <span className="text-[#FFB800]">*</span>
               </label>
               <select
-                value={activePlayer.cricketRole}
+                value={activePlayer.cricketRole || ''}
                 onChange={e => handlePlayerChange(activePlayerIndex, 'cricketRole', e.target.value as CricketRole)}
                 className="w-full px-4 py-2.5 bg-[#070D24] border border-[#1A2C68] rounded-xl text-sm text-white focus:outline-none focus:border-[#FFB800] cursor-pointer"
               >
+                <option value="">Select Cricket Role</option>
                 {cricketRoles.map(r => (
                   <option key={r} value={r}>{r}</option>
                 ))}
@@ -373,30 +449,48 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
             />
           </div>
 
-          {/* Stepper buttons between players */}
-          <div className="flex items-center justify-between pt-3 border-t border-[#1A2C68] text-xs">
+          {/* Save & Navigation Action Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#1A2C68] text-xs">
             <button
               type="button"
               disabled={activePlayerIndex === 0}
               onClick={() => setActivePlayerIndex(prev => Math.max(0, prev - 1))}
-              className="px-3.5 py-2 rounded-lg bg-[#070D24] border border-[#1A2C68] text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#070D24] border border-[#1A2C68] text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors font-medium flex items-center justify-center gap-1.5"
             >
-              ← Previous Player
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Previous Player</span>
             </button>
-            <span className="text-slate-400 font-mono">
-              Player {activePlayerIndex + 1} of 8
+
+            <span className="text-slate-400 font-mono text-xs">
+              Player {activePlayerIndex + 1} of 8 ({players.filter(isPlayerComplete).length}/8 Ready)
             </span>
-            <button
-              type="button"
-              disabled={activePlayerIndex === 7}
-              onClick={() => setActivePlayerIndex(prev => Math.min(7, prev + 1))}
-              className="px-3.5 py-2 rounded-lg bg-[#070D24] border border-[#1A2C68] text-slate-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none transition-colors"
-            >
-              Next Player →
-            </button>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {activePlayerIndex < 7 ? (
+                <button
+                  type="button"
+                  onClick={() => handleSaveAndNext(activePlayerIndex)}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#FFB800] hover:bg-[#FFC933] active:scale-[0.98] text-slate-950 font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-[#FFB800]/20 transition-all cursor-pointer"
+                >
+                  <Check className="w-4 h-4 text-slate-950" />
+                  <span>Save & Next Player (#{activePlayerIndex + 2})</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-950 ml-0.5" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleSaveAndNext(activePlayerIndex)}
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 active:scale-[0.98] text-slate-950 font-bold flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-400/20 transition-all cursor-pointer"
+                >
+                  <Check className="w-4 h-4 text-slate-950" />
+                  <span>Save Player #8 & Complete Squad</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 };
+

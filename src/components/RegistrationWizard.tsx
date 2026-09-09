@@ -14,6 +14,7 @@ import {
   Loader2, CheckCircle2, Lock, MessageCircle, ExternalLink, Copy
 } from 'lucide-react';
 import { TOURNAMENT_CONFIG } from '../config/tournamentConfig';
+import { isValidIndianMobile, isValidEmail } from '../utils/validation';
 
 interface WizardProps {
   categories: TournamentCategory[];
@@ -31,6 +32,24 @@ const stepsList = [
 ];
 
 const LOCAL_STORAGE_DRAFT_KEY = 'bpl_kids_draft_token';
+
+const createEmptyPlayers = (cat: CategoryId = 'class_4_5_6'): PlayerDetails[] => {
+  const defaultClass = cat === 'class_4_5_6' ? 4 : 7;
+  return Array.from({ length: 8 }, (_, idx) => ({
+    id: `p-${idx + 1}`,
+    playerName: '',
+    studentClass: defaultClass,
+    dateOfBirth: '',
+    parentMobile: '',
+    parentEmail: '',
+    playerPhoto: '',
+    jerseyNumber: 0,
+    jerseySize: '' as any,
+    cricketRole: '' as any,
+    battingStyle: undefined,
+    bowlingStyle: undefined,
+  }));
+};
 
 export const RegistrationWizard: React.FC<WizardProps> = ({
   categories,
@@ -78,117 +97,8 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
   const [includeBranding, setIncludeBranding] = useState(false);
   const [teamTagline, setTeamTagline] = useState('');
 
-  // 4. Exactly 8 Players
-  const initialPlayers: PlayerDetails[] = [
-    {
-      id: 'p-1',
-      playerName: '',
-      studentClass: 5,
-      dateOfBirth: '2015-05-12',
-      parentMobile: '',
-      parentEmail: '',
-      playerPhoto: '',
-      jerseyNumber: 7,
-      jerseySize: '32',
-      cricketRole: 'All Rounder',
-      battingStyle: 'Right Hand',
-      bowlingStyle: 'Right Arm Medium'
-    },
-    {
-      id: 'p-2',
-      playerName: '',
-      studentClass: 5,
-      dateOfBirth: '2015-06-18',
-      parentMobile: '',
-      parentEmail: '',
-      playerPhoto: '',
-      jerseyNumber: 18,
-      jerseySize: '32',
-      cricketRole: 'Batsman',
-      battingStyle: 'Right Hand'
-    },
-    {
-      id: 'p-3',
-      playerName: '',
-      studentClass: 4,
-      dateOfBirth: '2016-02-14',
-      parentMobile: '',
-      parentEmail: '',
-      playerPhoto: '',
-      jerseyNumber: 99,
-      jerseySize: '30',
-      cricketRole: 'Bowler',
-      bowlingStyle: 'Right Arm Spin'
-    },
-    {
-      id: 'p-4',
-      playerName: '',
-      studentClass: 4,
-      dateOfBirth: '2016-04-20',
-      parentMobile: '',
-      parentEmail: '',
-      playerPhoto: '',
-      jerseyNumber: 10,
-      jerseySize: '30',
-      cricketRole: 'Wicket Keeper',
-      battingStyle: 'Left Hand'
-    },
-    {
-      id: 'p-5',
-      playerName: '',
-      studentClass: 5,
-      dateOfBirth: '2015-09-08',
-      parentMobile: '',
-      parentEmail: '',
-      playerPhoto: '',
-      jerseyNumber: 45,
-      jerseySize: '32',
-      cricketRole: 'Bowler',
-      bowlingStyle: 'Left Arm Spin'
-    },
-    {
-      id: 'p-6',
-      playerName: '',
-      studentClass: 6,
-      dateOfBirth: '2014-11-22',
-      parentMobile: '',
-      parentEmail: '',
-      playerPhoto: '',
-      jerseyNumber: 24,
-      jerseySize: '34',
-      cricketRole: 'All Rounder',
-      battingStyle: 'Right Hand',
-      bowlingStyle: 'Right Arm Fast'
-    },
-    {
-      id: 'p-7',
-      playerName: '',
-      studentClass: 4,
-      dateOfBirth: '2016-07-30',
-      parentMobile: '',
-      parentEmail: '',
-      playerPhoto: '',
-      jerseyNumber: 11,
-      jerseySize: '30',
-      cricketRole: 'Batsman',
-      battingStyle: 'Right Hand'
-    },
-    {
-      id: 'p-8',
-      playerName: '',
-      studentClass: 5,
-      dateOfBirth: '2015-03-10',
-      parentMobile: '',
-      parentEmail: '',
-      playerPhoto: '',
-      jerseyNumber: 8,
-      jerseySize: '32',
-      cricketRole: 'Bowler',
-      bowlingStyle: 'Right Arm Spin'
-    }
-  ];
-
-  const [players, setPlayers] = useState<PlayerDetails[]>(initialPlayers);
+  // 4. Exactly 8 Players (Initialized clean & empty)
+  const [players, setPlayers] = useState<PlayerDetails[]>(() => createEmptyPlayers('class_4_5_6'));
 
   // 5. Payment Details
   const [payment, setPayment] = useState<PaymentInfo>({
@@ -335,15 +245,34 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
 
     if (stepIndex === 0) {
       if (!category) newErrors.category = 'Please select a tournament category.';
-      if (!association.associationName.trim()) newErrors.associationName = 'Association Name is required.';
-      if (!association.branch.trim()) newErrors.branch = 'Branch is required.';
-      if (!association.email.trim() || !association.email.includes('@')) newErrors.email = 'Valid Association Email is required.';
-      if (!association.mobile.trim() || association.mobile.length < 8) newErrors.mobile = 'Valid Association Mobile is required.';
+      if (!association.associationName.trim()) newErrors.associationName = 'Association / School Name is required.';
+      if (!association.branch.trim()) newErrors.branch = 'Branch / Campus is required.';
+      if (!association.email.trim()) {
+        newErrors.email = 'Official Email is required.';
+      } else if (!isValidEmail(association.email)) {
+        newErrors.email = 'Please enter a valid official email address (e.g. sports@school.edu.in).';
+      }
+      if (!association.mobile.trim()) {
+        newErrors.mobile = 'Contact Mobile is required.';
+      } else if (!isValidIndianMobile(association.mobile)) {
+        newErrors.mobile = 'Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.';
+      }
       if (!association.associationLogo.trim()) newErrors.associationLogo = 'Association Logo is required.';
     } else if (stepIndex === 1) {
-      if (!mentor.name.trim()) newErrors.mentorName = 'Mentor Name is required.';
-      if (!mentor.mobile.trim() || mentor.mobile.length < 8) newErrors.mentorMobile = 'Valid Mentor Mobile is required.';
-      if (!mentor.email.trim() || !mentor.email.includes('@')) newErrors.mentorEmail = 'Valid Mentor Email is required.';
+      if (!mentor.name.trim()) newErrors.mentorName = 'Mentor Full Name is required.';
+      if (!mentor.mobile.trim()) {
+        newErrors.mentorMobile = 'Mentor Mobile number is required.';
+      } else if (!isValidIndianMobile(mentor.mobile)) {
+        newErrors.mentorMobile = 'Please enter a valid 10-digit Indian mobile number.';
+      }
+      if (mentor.secondMobile?.trim() && !isValidIndianMobile(mentor.secondMobile)) {
+        newErrors.mentorSecondMobile = 'Alternative mobile must be a valid 10-digit number.';
+      }
+      if (!mentor.email.trim()) {
+        newErrors.mentorEmail = 'Mentor Email is required.';
+      } else if (!isValidEmail(mentor.email)) {
+        newErrors.mentorEmail = 'Please enter a valid email address.';
+      }
       if (!mentor.photo.trim()) newErrors.mentorPhoto = 'Mentor Photo is required.';
     } else if (stepIndex === 2) {
       if (!teamName.trim()) newErrors.teamName = 'Team Name is required.';
@@ -356,32 +285,43 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
 
       for (let i = 0; i < players.length; i++) {
         const p = players[i];
+        const pNum = i + 1;
+        const pLabel = p.playerName ? `Player #${pNum} (${p.playerName})` : `Player #${pNum}`;
+
         if (!p.playerName?.trim()) {
-          newErrors.players = `Player #${i + 1} is missing a full name.`;
+          newErrors.players = `Player #${pNum} is missing a full name.`;
           break;
         }
         if (!allowedClasses.includes(p.studentClass)) {
-          newErrors.players = `Player #${i + 1} must be in Class ${allowedClasses.join(', ')}.`;
+          newErrors.players = `${pLabel} must be in Class ${allowedClasses.join(', ')}.`;
           break;
         }
         if (!p.dateOfBirth?.trim()) {
-          newErrors.players = `Player #${i + 1} is missing a Date of Birth.`;
+          newErrors.players = `${pLabel} is missing a Date of Birth.`;
           break;
         }
         if (!p.parentMobile?.trim()) {
-          newErrors.players = `Player #${i + 1} is missing a Parent Mobile number.`;
+          newErrors.players = `${pLabel} is missing Parent / Guardian Mobile.`;
+          break;
+        }
+        if (!isValidIndianMobile(p.parentMobile)) {
+          newErrors.players = `${pLabel} requires a valid 10-digit mobile number starting with 6, 7, 8, or 9.`;
           break;
         }
         if (!p.parentEmail?.trim()) {
-          newErrors.players = `Player #${i + 1} is missing a Parent Email.`;
+          newErrors.players = `${pLabel} is missing Parent Email.`;
+          break;
+        }
+        if (!isValidEmail(p.parentEmail)) {
+          newErrors.players = `${pLabel} requires a valid email address (e.g. parent@example.com).`;
           break;
         }
         if (!p.playerPhoto?.trim()) {
-          newErrors.players = `Player #${i + 1} is missing a Photo.`;
+          newErrors.players = `${pLabel} is missing a Photo.`;
           break;
         }
         if (!p.jerseyNumber || p.jerseyNumber < 1 || p.jerseyNumber > 99) {
-          newErrors.players = `Player #${i + 1} requires a jersey number between 1 and 99.`;
+          newErrors.players = `${pLabel} requires a jersey number between 1 and 99.`;
           break;
         }
         if (numbersSet.has(p.jerseyNumber)) {
@@ -391,11 +331,11 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         numbersSet.add(p.jerseyNumber);
 
         if (!p.jerseySize) {
-          newErrors.players = `Player #${i + 1} is missing a Jersey Size.`;
+          newErrors.players = `${pLabel} is missing a Jersey Size.`;
           break;
         }
         if (!p.cricketRole) {
-          newErrors.players = `Player #${i + 1} is missing a Cricket Role.`;
+          newErrors.players = `${pLabel} is missing a Cricket Role.`;
           break;
         }
       }
