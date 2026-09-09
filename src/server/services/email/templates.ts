@@ -77,17 +77,14 @@ export function renderRegistrationConfirmationEmail(data: RegistrationEmailTempl
     teamCode: data.teamCode,
     mentorName: data.mentorName,
     squadSize: data.players.length || 8,
-    brandingStatus,
+    brandingStatus: isParent ? undefined : brandingStatus, // Do not show branding package to parents
     tournamentDates,
-    paymentStatus: isMentor ? undefined : data.paymentStatus, // Do not show billing status to mentor
+    paymentStatus: isParent || isMentor ? undefined : data.paymentStatus, // Do not show billing status to parents or mentors
   };
 
   const mentorInfo: MentorInfo = {
     name: data.mentorName,
-    designation: data.mentorDesignation || 'Head Coach / In-Charge',
-    mobile: data.mentorMobile || 'Contact Academy',
-    secondMobile: data.mentorSecondMobile,
-    email: data.mentorEmail || '',
+    designation: data.mentorDesignation || 'Head Cricket Coach',
   };
 
   let contentHtml = '';
@@ -117,7 +114,7 @@ export function renderRegistrationConfirmationEmail(data: RegistrationEmailTempl
         <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #cbd5e1; line-height: 1.7;">
           <li>Matches will be played on <strong>${tournamentDates}</strong> in Varanasi.</li>
           <li>Please ensure your child brings a valid <strong>School Photo ID or Bonafide certificate</strong> for age & class verification.</li>
-          <li>For team reporting time and coordination, please contact your designated Mentor: <strong style="color: #ffffff;">${mentorInfo.name} (${mentorInfo.mobile})</strong>.</li>
+          <li>For team reporting time and coordination, please contact your designated Mentor: <strong style="color: #ffffff;">${mentorInfo.name}</strong>.</li>
         </ul>
       </div>
 
@@ -311,7 +308,7 @@ export function renderTournamentRulesEmail(data: RulesEmailTemplateData): { subj
       <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #cbd5e1; line-height: 1.8;">
         <li>The 4-digit Team Code (<strong>${data.teamCode}</strong>) is your team's digital identification key for match tosses and digital scoring.</li>
         <li>Live ball-by-ball tournament scoreboards are hosted on <a href="https://bidwar.in" style="color: #38bdf8; text-decoration: none; font-weight: bold;">Bidwar.in</a>.</li>
-        <li>For any tournament inquiries or support, contact the tournament desk at <strong style="color: #FFB800;">8707488250</strong>.</li>
+        <li>For team reporting time and match coordination, please contact your designated Team Mentor: <strong style="color: #FFB800;">${data.mentorName}</strong>.</li>
       </ul>
     </div>
 

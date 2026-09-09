@@ -99,9 +99,9 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Category & Association State
-  const [category, setCategory] = useState<CategoryId>(() => {
-    return initialDraft?.category || 'class_4_5_6';
+  // 1. Category & Association State (starts unselected so user chooses explicitly)
+  const [category, setCategory] = useState<CategoryId | ''>(() => {
+    return initialDraft?.category || '';
   });
 
   const [association, setAssociation] = useState<AssociationDetails>(() => {
@@ -445,12 +445,8 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
           newErrors.players = `${pLabel} is missing a Date of Birth.`;
           break;
         }
-        if (!p.parentMobile?.trim()) {
-          newErrors.players = `${pLabel} is missing Parent / Guardian Mobile.`;
-          break;
-        }
-        if (!isValidIndianMobile(p.parentMobile)) {
-          newErrors.players = `${pLabel} requires a valid 10-digit mobile number starting with 6, 7, 8, or 9.`;
+        if (p.parentMobile?.trim() && !isValidIndianMobile(p.parentMobile)) {
+          newErrors.players = `${pLabel} parent mobile must be a valid 10-digit mobile number starting with 6, 7, 8, or 9.`;
           break;
         }
         if (!p.parentEmail?.trim()) {
@@ -465,26 +461,33 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
           newErrors.players = `${pLabel} is missing a Photo.`;
           break;
         }
-        if (!p.jerseyNumber || p.jerseyNumber < 1 || p.jerseyNumber > 99) {
-          newErrors.players = `${pLabel} requires a jersey number between 1 and 99.`;
-          break;
+        if (p.jerseyNumber) {
+          if (p.jerseyNumber < 1 || p.jerseyNumber > 99) {
+            newErrors.players = `${pLabel} jersey number must be between 1 and 99.`;
+            break;
+          }
+          if (numbersSet.has(p.jerseyNumber)) {
+            newErrors.players = `Jersey number ${p.jerseyNumber} is assigned to more than one player. Numbers must be unique.`;
+            break;
+          }
+          numbersSet.add(p.jerseyNumber);
         }
-        if (numbersSet.has(p.jerseyNumber)) {
-          newErrors.players = `Jersey number ${p.jerseyNumber} is assigned to more than one player. Numbers must be unique.`;
-          break;
-        }
-        numbersSet.add(p.jerseyNumber);
 
-        if (!p.jerseySize) {
-          newErrors.players = `${pLabel} is missing a Jersey Size.`;
-          break;
-        }
         if (!p.cricketRole) {
           newErrors.players = `${pLabel} is missing a Cricket Role.`;
           break;
         }
       }
     } else if (stepIndex === 4) {
+      const isVerified = payment.paymentStatus === 'VERIFIED';
+      const isBrandingAddonPending = isVerified && includeBranding && (!payment.brandingAmount || payment.brandingAmount === 0 || payment.totalAmount === 8000);
+
+      if (isVerified && !isBrandingAddonPending) {
+        // Fully verified base + branding, no payment validation errors
+        setErrors({});
+        return true;
+      }
+
       if (payment.method === 'CASHFREE') {
         if (!payment.gatewayPaymentId && !payment.transactionReference && !payment.utrTransactionId) {
           newErrors.payment = 'Please complete your online payment with Cashfree before final submission.';
@@ -493,10 +496,14 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         const utr = (payment.transactionReference || payment.utrTransactionId || '').trim();
         const proof = (payment.paymentProofUrl || payment.paymentScreenshot || '').trim();
         if (!utr) {
-          newErrors.payment = 'UTR / Transaction Reference number is required.';
+          newErrors.payment = isBrandingAddonPending 
+            ? 'UTR / Transaction Reference for the ₹5,000 Branding Add-on is required.'
+            : 'UTR / Transaction Reference number is required.';
         }
         if (!proof) {
-          newErrors.payment = 'Payment receipt / screenshot is required.';
+          newErrors.payment = isBrandingAddonPending
+            ? 'Payment receipt screenshot for the ₹5,000 Branding Add-on is required.'
+            : 'Payment receipt / screenshot is required.';
         }
       }
     }
@@ -598,6 +605,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
     clearDraftFromLocalStorage();
     setSubmissionSuccess(null);
     setCurrentStep(0);
+    setCategory('');
     setTeamName('');
     setIncludeBranding(false);
     setTeamTagline('');
@@ -953,14 +961,14 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
           <StepPlayersRoster
             players={players}
             setPlayers={setPlayers}
-            category={category}
+            category={category as CategoryId}
             errors={errors}
           />
         )}
 
         {currentStep === 4 && (
           <StepReviewPayment
-            category={category}
+            category={category as CategoryId}
             association={association}
             mentor={mentor}
             teamName={teamName}

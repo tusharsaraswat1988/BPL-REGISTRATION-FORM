@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { saveDraft, getDraft, getLatestDraftByAuthUserId, deleteDraft } from '../db/drafts';
+import { getRegistrationById } from '../db/registrations';
+import { query } from '../db/index';
 import { draftLimiter } from '../middleware/rateLimiter';
 import { optionalAuth, AuthenticatedRequest } from '../middleware/auth';
 
 export const draftRoutes = Router();
 
-// Retrieve Latest Active Draft for Authenticated User
+// Retrieve Latest Active Draft / Existing Registration for Authenticated User
 draftRoutes.get('/drafts/active/latest', draftLimiter, optionalAuth, async (req: AuthenticatedRequest, res, next) => {
   try {
     const authUserId = req.authIdentity?.userId;
@@ -14,7 +16,78 @@ draftRoutes.get('/drafts/active/latest', draftLimiter, optionalAuth, async (req:
       return;
     }
 
+    // 1. Check if user already owns an existing registration in PostgreSQL
+    const regRes = await query(
+      `SELECT id FROM registrations WHERE auth_user_id = $1 ORDER BY created_at DESC LIMIT 1`,
+      [authUserId]
+    );
+
+    let existingReg: any = null;
+    if (regRes.rows.length > 0) {
+      existingReg = await getRegistrationById(regRes.rows[0].id);
+    }
+
+    // 2. Check for latest autosaved draft
     const draft = await getLatestDraftByAuthUserId(authUserId);
+
+    if (existingReg) {
+      const regPayload = {
+        isExistingRegistration: true,
+        registrationId: existingReg.id,
+        teamCode: existingReg.teamCode,
+        currentStep: draft?.currentStep ?? 0,
+        category: existingReg.category,
+        association: existingReg.association,
+        mentor: existingReg.mentor,
+        teamName: existingReg.teamName,
+        includeBranding: existingReg.includeBranding,
+        teamTagline: existingReg.branding?.teamTagline || '',
+        players: existingReg.players,
+        payment: {
+          ...existingReg.payment,
+          transactionReference: existingReg.payment.utrTransactionId,
+          paymentProofUrl: existingReg.payment.paymentScreenshot,
+          paymentStatus: existingReg.payment.paymentStatus,
+          baseAmount: existingReg.payment.baseAmount,
+          brandingAmount: existingReg.payment.brandingAmount,
+          totalAmount: existingReg.payment.totalAmount,
+        },
+        updatedAt: existingReg.createdAt,
+      };
+
+      // If there is an unsaved newer draft, overlay draft edits onto existing registration
+      if (draft && new Date(draft.updatedAt) > new Date(existingReg.createdAt)) {
+        res.json({
+          success: true,
+          draft: {
+            draftToken: draft.draftToken,
+            ...regPayload,
+            ...draft.data,
+            isExistingRegistration: true,
+            registrationId: existingReg.id,
+            teamCode: existingReg.teamCode,
+            payment: {
+              ...regPayload.payment,
+              ...(draft.data.payment || {}),
+              paymentStatus: existingReg.payment.paymentStatus, // Authoritative status from DB
+            },
+            currentStep: draft.currentStep,
+            updatedAt: draft.updatedAt,
+          },
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        draft: {
+          draftToken: draft?.draftToken || `bpl_draft_${existingReg.id}`,
+          ...regPayload,
+        },
+      });
+      return;
+    }
+
     if (!draft) {
       res.json({ success: false, draft: null });
       return;

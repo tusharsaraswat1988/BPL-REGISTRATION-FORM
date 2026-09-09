@@ -9,7 +9,8 @@ import {
 } from '../../types';
 import { 
   ShieldCheck, CreditCard, QrCode, Building, CheckCircle2, 
-  Trophy, Users, ArrowRight, Loader2, Copy, Check, Zap, AlertCircle, ExternalLink
+  Trophy, Users, ArrowRight, Loader2, Copy, Check, Zap, AlertCircle, ExternalLink,
+  Clock, RefreshCw, Sparkles
 } from 'lucide-react';
 import { ImageUploadField } from '../ImageUploadField';
 import { TOURNAMENT_CONFIG } from '../../config/tournamentConfig';
@@ -46,9 +47,21 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
   const [isInitiatingCashfree, setIsInitiatingCashfree] = useState(false);
   const [cashfreeError, setCashfreeError] = useState<string | null>(null);
 
-  const baseFee = TOURNAMENT_CONFIG.REGISTRATION_FEE;
-  const brandingFee = includeBranding ? TOURNAMENT_CONFIG.BRANDING_FEE : 0;
+  const baseFee = TOURNAMENT_CONFIG.REGISTRATION_FEE; // ₹8,000
+  const brandingFee = includeBranding ? TOURNAMENT_CONFIG.BRANDING_FEE : 0; // ₹5,000
   const totalAmount = baseFee + brandingFee;
+
+  // Payment Status Flags
+  const isPaymentVerified = payment.paymentStatus === 'VERIFIED';
+  const isPaymentRejected = payment.paymentStatus === 'PAYMENT_REJECTED';
+  const isPaymentPending = payment.paymentStatus === 'PENDING_VERIFICATION' && Boolean(payment.utrTransactionId || payment.transactionReference);
+  
+  // If base ₹8,000 was verified, but user now selected branding package (needs additional ₹5,000)
+  const isBrandingAddonPending = isPaymentVerified && includeBranding && (!payment.brandingAmount || payment.brandingAmount === 0 || payment.totalAmount === 8000);
+  const isFullyVerified = isPaymentVerified && !isBrandingAddonPending;
+
+  // Actual amount to pay in this step
+  const paymentDueAmount = isBrandingAddonPending ? brandingFee : totalAmount;
 
   const isCashfreePaid = Boolean(
     payment.gateway === 'CASHFREE' && 
@@ -70,7 +83,6 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
     setCashfreeError(null);
 
     try {
-      // 1. Create order on backend
       const res = await fetch('/api/payments/cashfree/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -90,11 +102,7 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
 
       const { orderId, paymentSessionId, environment, isMock } = orderData;
 
-      // 2. If sandbox mock / development without live keys, simulate instant checkout
       if (isMock || !(window as any).Cashfree) {
-        console.log('[Cashfree] Simulating payment verification for order:', orderId);
-        
-        // Call backend verification
         const verifyRes = await fetch('/api/payments/cashfree/verify-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -122,7 +130,6 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
         return;
       }
 
-      // 3. Launch live Cashfree JS SDK Checkout Modal
       const CashfreeSdk = (window as any).Cashfree;
       const cashfree = CashfreeSdk({
         mode: environment || 'sandbox',
@@ -138,7 +145,6 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           return;
         }
 
-        // Verify order on backend
         const verifyRes = await fetch('/api/payments/cashfree/verify-order', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -294,255 +300,355 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
         </div>
       </div>
 
-      {/* Official Fee Breakdown */}
+      {/* Official Fee & Payment Section */}
       <div className="pt-6 border-t border-[#1A2C68]">
         <div className="mb-4">
           <h4 className="text-base font-bold text-white flex items-center gap-2 font-heading">
             <CreditCard className="w-5 h-5 text-[#FFB800]" />
-            Tournament Entry Fee & Payment Method
+            Tournament Entry Fee & Payment Verification
           </h4>
           <p className="text-xs text-slate-400">
-            Select your preferred payment method and submit verification details.
+            Review your payment status or complete your transfer for official verification.
           </p>
         </div>
 
-        {/* Pricing Inclusions Banner */}
-        <div className="p-5 rounded-xl bg-[#0B1538] border border-[#FFB800]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 shadow-lg shadow-[#FFB800]/5">
-          <div className="space-y-1">
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-[#FFB800] font-mono-sport">
-                ₹{totalAmount.toLocaleString('en-IN')}
-              </span>
-              <span className="text-xs text-slate-400">
-                (Base: ₹8,000 {includeBranding ? '+ Branding Add-on: ₹5,000' : '+ Branding: ₹0'})
-              </span>
-            </div>
-            <p className="text-xs text-slate-300">
-              Includes 8 player match registrations, box-cricket fixtures, digital scoring & arena coverage.
-            </p>
-          </div>
-          <div className="text-xs text-[#FFB800] font-bold bg-[#FFB800]/15 px-3 py-1.5 rounded-lg border border-[#FFB800]/30 whitespace-nowrap font-mono-sport">
-            {includeBranding ? 'Branded Team Package' : 'Standard Team Entry'}
-          </div>
-        </div>
-
-        {/* Payment Method Selector */}
-        <div className="mb-6">
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-            Select Payment Method <span className="text-[#FFB800]">*</span>
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {[
-              { id: 'UPI', label: 'Manual UPI QR / VPA', icon: QrCode, isRecommended: true },
-              { id: 'Bank Transfer (NEFT/RTGS/IMPS)', label: 'Bank Transfer (NEFT/RTGS)', icon: Building },
-              { id: 'CASHFREE', label: 'Pay Online', icon: Zap, isComingSoon: true },
-            ].map(m => {
-              const Icon = m.icon;
-              const isSelected = payment.method === m.id;
-              const isDisabled = !!m.isComingSoon;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  disabled={isDisabled}
-                  onClick={() => !isDisabled && setPayment(prev => ({ 
-                    ...prev, 
-                    method: m.id as PaymentMethod,
-                    gateway: m.id === 'CASHFREE' ? 'CASHFREE' : 'MANUAL'
-                  }))}
-                  className={`p-3.5 rounded-xl border text-left transition-all duration-200 relative ${
-                    isDisabled
-                      ? 'bg-[#070D24]/60 border-slate-800/80 text-slate-500 cursor-not-allowed opacity-75'
-                      : isSelected
-                      ? 'bg-[#0E1B48] border-[#FFB800] ring-2 ring-[#FFB800]/40 text-white shadow-md cursor-pointer select-none active:scale-[0.98]'
-                      : 'bg-[#0A1230] border-[#1A2C68] text-slate-400 hover:border-slate-700 cursor-pointer select-none active:scale-[0.98]'
-                  }`}
-                >
-                  {m.isRecommended && (
-                    <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded bg-[#FFB800] text-slate-950 text-[9px] font-black uppercase tracking-wider font-mono-sport">
-                      Recommended
-                    </span>
-                  )}
-                  {m.isComingSoon && (
-                    <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-black uppercase tracking-wider font-mono-sport">
-                      Coming Soon
-                    </span>
-                  )}
-                  <div className="flex items-center gap-2 mb-1">
-                    <Icon className={`w-4 h-4 ${isSelected ? 'text-[#FFB800]' : isDisabled ? 'text-slate-600' : 'text-slate-400'}`} />
-                    <span className={`text-xs font-bold leading-tight ${isDisabled ? 'text-slate-400' : 'text-white'}`}>{m.label}</span>
-                  </div>
-                  {isDisabled && (
-                    <span className="text-[10px] text-slate-500 block mt-0.5">Online gateway coming soon</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Pay Online Coming Soon Notice */}
-        {payment.method === 'CASHFREE' && (
-          <div className="p-5 rounded-2xl bg-[#0A1230] border border-amber-500/30 space-y-4 mb-6">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-              <div className="space-y-1 text-left">
-                <h4 className="text-sm font-bold text-white">Pay Online is Coming Soon</h4>
-                <p className="text-xs text-slate-300">
-                  Instant online payment gateway is currently being enabled. Please select <strong className="text-[#FFB800]">Manual UPI QR / VPA</strong> or <strong className="text-[#FFB800]">Bank Transfer</strong> to submit your registration.
+        {/* CASE A: FULLY VERIFIED (No Pending Payment) */}
+        {isFullyVerified && (
+          <div className="p-5 rounded-2xl bg-emerald-950/40 border-2 border-emerald-500/50 shadow-lg shadow-emerald-950/50 space-y-4 mb-6">
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 border border-emerald-500/30">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div className="flex-1 text-left">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2.5 py-0.5 rounded bg-emerald-500 text-slate-950 text-[10px] font-black uppercase tracking-wider font-mono-sport">
+                    PAYMENT VERIFIED & APPROVED
+                  </span>
+                  <span className="text-xs text-emerald-300 font-semibold">Tournament Registration Confirmed</span>
+                </div>
+                <h4 className="text-base font-bold text-white font-heading mt-1">
+                  Official Fee Confirmed: ₹{totalAmount.toLocaleString('en-IN')}
+                </h4>
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                  Your payment has already been verified and approved by the tournament committee. You can modify remaining association, mentor, or player squad details and click <strong className="text-emerald-300">"Save & Update Tournament Details"</strong> below anytime without re-entering payment proofs.
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setPayment(prev => ({ ...prev, method: 'UPI', gateway: 'MANUAL' }))}
-                  className="mt-2 px-3 py-1.5 rounded-lg bg-[#FFB800] text-slate-950 font-bold text-xs cursor-pointer hover:bg-[#FBBF24]"
-                >
-                  Switch to UPI QR / VPA
-                </button>
+
+                <div className="mt-4 pt-3 border-t border-emerald-500/20 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-[#070D24]/60 p-2.5 rounded-lg border border-emerald-500/20">
+                    <span className="text-slate-400 block text-[10px] uppercase font-mono-sport">Payment Reference / UTR</span>
+                    <span className="text-emerald-300 font-mono font-bold text-xs truncate block mt-0.5">
+                      {payment.transactionReference || payment.utrTransactionId || 'OFFICIALLY_VERIFIED'}
+                    </span>
+                  </div>
+                  <div className="bg-[#070D24]/60 p-2.5 rounded-lg border border-emerald-500/20">
+                    <span className="text-slate-400 block text-[10px] uppercase font-mono-sport">Payment Method</span>
+                    <span className="text-white font-medium text-xs block mt-0.5">
+                      {payment.method || 'Manual UPI / Transfer'}
+                    </span>
+                  </div>
+                  <div className="bg-[#070D24]/60 p-2.5 rounded-lg border border-emerald-500/20">
+                    <span className="text-slate-400 block text-[10px] uppercase font-mono-sport">Package</span>
+                    <span className="text-[#FFB800] font-bold text-xs block mt-0.5 font-mono-sport">
+                      {includeBranding ? 'Branded Team (₹13,000)' : 'Standard Entry (₹8,000)'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Method Instructions: Manual UPI */}
-        {payment.method === 'UPI' && (
-          <div className="p-5 rounded-2xl bg-[#0A1230] border border-[#1A2C68] space-y-4 mb-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-              {/* Dynamic QR Code */}
-              <div className="w-36 h-36 bg-white p-2.5 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 shadow-lg border border-slate-200">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=${TOURNAMENT_CONFIG.PAYMENT_CONFIG.upiId}&pn=${encodeURIComponent(TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName)}&am=${totalAmount}&cu=INR&tn=BPL ${teamName || 'Registration'}`)}`}
-                  alt="UPI QR Code"
-                  className="w-28 h-28 object-contain"
-                />
-                <span className="text-[10px] font-bold text-slate-900 font-mono mt-1">Scan to Pay ₹{totalAmount.toLocaleString('en-IN')}</span>
+        {/* CASE B: PAYMENT REJECTED BY ADMIN */}
+        {isPaymentRejected && (
+          <div className="p-5 rounded-2xl bg-red-950/40 border-2 border-red-500/50 shadow-lg shadow-red-950/50 space-y-3 mb-6">
+            <div className="flex items-start gap-3.5">
+              <div className="w-11 h-11 rounded-xl bg-red-500/20 text-red-400 flex items-center justify-center flex-shrink-0 border border-red-500/30">
+                <AlertCircle className="w-6 h-6" />
               </div>
-
-              <div className="flex-1 text-left space-y-3 w-full">
-                <div>
-                  <span className="text-[10px] font-bold text-[#FFB800] uppercase tracking-wider font-mono-sport block">
-                    Instant UPI QR & Direct App Link
+              <div className="flex-1 text-left space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded bg-red-500 text-white text-[10px] font-black uppercase tracking-wider font-mono-sport">
+                    PAYMENT VERIFICATION REJECTED
                   </span>
-                  <h4 className="text-sm sm:text-base font-bold text-white font-heading">
-                    Pay with Any UPI App (GPay, PhonePe, Paytm, BHIM, CRED)
-                  </h4>
                 </div>
+                <h4 className="text-sm sm:text-base font-bold text-white font-heading">
+                  Payment Needs Correction / Fresh Submission
+                </h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Your previous payment transaction reference could not be verified by the admin committee. Please verify the tournament payment details below, complete the transfer of <strong className="text-[#FFB800]">₹{totalAmount.toLocaleString('en-IN')}</strong>, and enter your corrected UTR transaction ID & screenshot to resubmit for verification.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
-                    <span className="text-slate-400 block text-[10px] uppercase">Tournament UPI ID / VPA</span>
-                    <div className="flex items-center justify-between gap-2 mt-1">
-                      <code className="text-xs font-mono font-bold text-[#FFB800]">
-                        {TOURNAMENT_CONFIG.PAYMENT_CONFIG.upiId}
-                      </code>
-                      <button
-                        type="button"
-                        onClick={handleCopyUpi}
-                        className="text-[11px] text-slate-300 hover:text-white bg-[#1A2C68] hover:bg-[#253D88] px-2 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition-colors active:scale-95"
+        {/* CASE C: PAYMENT PENDING VERIFICATION */}
+        {!isPaymentVerified && !isPaymentRejected && isPaymentPending && (
+          <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-3 mb-6">
+            <Clock className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-slate-300">
+              <strong className="text-amber-300 block font-medium">Payment Verification In Progress</strong>
+              Your submitted payment transaction reference (<code className="text-[#FFB800] font-bold font-mono">{payment.transactionReference || payment.utrTransactionId}</code>) is currently awaiting committee verification. You can update any registration details below or resubmit your screenshot if needed.
+            </div>
+          </div>
+        )}
+
+        {/* CASE D: BRANDING ADD-ON PENDING (Base ₹8,000 Verified) */}
+        {isBrandingAddonPending && (
+          <div className="space-y-4 mb-6">
+            <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                <span className="text-xs font-bold text-white">Base Registration Fee (₹8,000) — VERIFIED</span>
+              </div>
+              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded font-mono font-bold">
+                PAID & APPROVED
+              </span>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-[#0B1538] border-2 border-[#FFB800]/50 space-y-2">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[#FFB800]" />
+                <h4 className="text-sm sm:text-base font-bold text-white font-heading">
+                  Custom Branding Package Add-on: ₹5,000
+                </h4>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                You have added the Custom Branding Package (custom jerseys, logo on match streams, banner, and social spotlight). Please complete the add-on payment of <strong className="text-[#FFB800]">₹5,000</strong> using the QR code below.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Pricing Inclusions Banner (Shown when not fully verified) */}
+        {!isFullyVerified && (
+          <div className="p-5 rounded-xl bg-[#0B1538] border border-[#FFB800]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 shadow-lg shadow-[#FFB800]/5">
+            <div className="space-y-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-black text-[#FFB800] font-mono-sport">
+                  ₹{paymentDueAmount.toLocaleString('en-IN')}
+                </span>
+                <span className="text-xs text-slate-400">
+                  {isBrandingAddonPending 
+                    ? '(Branding Add-on Fee: ₹5,000 | Base ₹8,000 Paid)'
+                    : `(Base: ₹8,000 ${includeBranding ? '+ Branding Add-on: ₹5,000' : '+ Branding: ₹0'})`}
+                </span>
+              </div>
+              <p className="text-xs text-slate-300">
+                {isBrandingAddonPending
+                  ? 'Includes customized team jersey branding, social media team spotlight, and match broadcast banner.'
+                  : 'Includes 8 player match registrations, box-cricket fixtures, digital scoring & arena coverage.'}
+              </p>
+            </div>
+            <div className="text-xs text-[#FFB800] font-bold bg-[#FFB800]/15 px-3 py-1.5 rounded-lg border border-[#FFB800]/30 whitespace-nowrap font-mono-sport">
+              {isBrandingAddonPending ? 'Branding Add-on Payment' : (includeBranding ? 'Branded Team Package' : 'Standard Team Entry')}
+            </div>
+          </div>
+        )}
+
+        {/* PAYMENT METHOD & DETAILS (Hidden if fully verified) */}
+        {!isFullyVerified && (
+          <>
+            {/* Payment Method Selector */}
+            <div className="mb-6">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+                Select Payment Method <span className="text-[#FFB800]">*</span>
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { id: 'UPI', label: 'Manual UPI QR / VPA', icon: QrCode, isRecommended: true },
+                  { id: 'Bank Transfer (NEFT/RTGS/IMPS)', label: 'Bank Transfer (NEFT/RTGS)', icon: Building },
+                  { id: 'CASHFREE', label: 'Pay Online', icon: Zap, isComingSoon: true },
+                ].map(m => {
+                  const Icon = m.icon;
+                  const isSelected = payment.method === m.id;
+                  const isDisabled = !!m.isComingSoon;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      disabled={isDisabled}
+                      onClick={() => !isDisabled && setPayment(prev => ({ 
+                        ...prev, 
+                        method: m.id as PaymentMethod,
+                        gateway: m.id === 'CASHFREE' ? 'CASHFREE' : 'MANUAL'
+                      }))}
+                      className={`p-3.5 rounded-xl border text-left transition-all duration-200 relative ${
+                        isDisabled
+                          ? 'bg-[#070D24]/60 border-slate-800/80 text-slate-500 cursor-not-allowed opacity-75'
+                          : isSelected
+                          ? 'bg-[#0E1B48] border-[#FFB800] ring-2 ring-[#FFB800]/40 text-white shadow-md cursor-pointer select-none active:scale-[0.98]'
+                          : 'bg-[#0A1230] border-[#1A2C68] text-slate-400 hover:border-slate-700 cursor-pointer select-none active:scale-[0.98]'
+                      }`}
+                    >
+                      {m.isRecommended && (
+                        <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded bg-[#FFB800] text-slate-950 text-[9px] font-black uppercase tracking-wider font-mono-sport">
+                          Recommended
+                        </span>
+                      )}
+                      {m.isComingSoon && (
+                        <span className="absolute -top-2 right-2 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-black uppercase tracking-wider font-mono-sport">
+                          Coming Soon
+                        </span>
+                      )}
+                      <div className="flex items-center gap-2 mb-1">
+                        <Icon className={`w-4 h-4 ${isSelected ? 'text-[#FFB800]' : isDisabled ? 'text-slate-600' : 'text-slate-400'}`} />
+                        <span className={`text-xs font-bold leading-tight ${isDisabled ? 'text-slate-400' : 'text-white'}`}>{m.label}</span>
+                      </div>
+                      {isDisabled && (
+                        <span className="text-[10px] text-slate-500 block mt-0.5">Online gateway coming soon</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Method Instructions: Manual UPI */}
+            {payment.method === 'UPI' && (
+              <div className="p-5 rounded-2xl bg-[#0A1230] border border-[#1A2C68] space-y-4 mb-6">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                  {/* Dynamic QR Code */}
+                  <div className="w-36 h-36 bg-white p-2.5 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 shadow-lg border border-slate-200">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=${TOURNAMENT_CONFIG.PAYMENT_CONFIG.upiId}&pn=${encodeURIComponent(TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName)}&am=${paymentDueAmount}&cu=INR&tn=BPL ${isBrandingAddonPending ? 'Branding Addon' : 'Registration'} ${teamName || ''}`.trim())}`}
+                      alt="UPI QR Code"
+                      className="w-28 h-28 object-contain"
+                    />
+                    <span className="text-[10px] font-bold text-slate-900 font-mono mt-1">Scan to Pay ₹{paymentDueAmount.toLocaleString('en-IN')}</span>
+                  </div>
+
+                  <div className="flex-1 text-left space-y-3 w-full">
+                    <div>
+                      <span className="text-[10px] font-bold text-[#FFB800] uppercase tracking-wider font-mono-sport block">
+                        Instant UPI QR & Direct App Link
+                      </span>
+                      <h4 className="text-sm sm:text-base font-bold text-white font-heading">
+                        Pay with Any UPI App (GPay, PhonePe, Paytm, BHIM, CRED)
+                      </h4>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
+                        <span className="text-slate-400 block text-[10px] uppercase font-mono-sport">Tournament UPI ID / VPA</span>
+                        <div className="flex items-center justify-between gap-2 mt-1">
+                          <code className="text-xs font-mono font-bold text-[#FFB800]">
+                            {TOURNAMENT_CONFIG.PAYMENT_CONFIG.upiId}
+                          </code>
+                          <button
+                            type="button"
+                            onClick={handleCopyUpi}
+                            className="text-[11px] text-slate-300 hover:text-white bg-[#1A2C68] hover:bg-[#253D88] px-2 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition-colors active:scale-95"
+                          >
+                            {copiedUpi ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                            <span>{copiedUpi ? 'Copied!' : 'Copy'}</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
+                        <span className="text-slate-400 block text-[10px] uppercase font-mono-sport">Payee / Account Name</span>
+                        <strong className="text-white text-xs block mt-1">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName}</strong>
+                      </div>
+                    </div>
+
+                    {/* Direct UPI App Payment Link */}
+                    <div>
+                      <a
+                        href={`upi://pay?pa=${TOURNAMENT_CONFIG.PAYMENT_CONFIG.upiId}&pn=${encodeURIComponent(TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName)}&am=${paymentDueAmount}&cu=INR&tn=BPL%20Registration`}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0E1B48] hover:bg-[#1A2C68] border border-[#1A2C68] text-xs font-bold text-[#FFB800] transition-colors active:scale-[0.98]"
                       >
-                        {copiedUpi ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                        <span>{copiedUpi ? 'Copied!' : 'Copy'}</span>
-                      </button>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Pay ₹{paymentDueAmount.toLocaleString('en-IN')} directly via UPI App</span>
+                      </a>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
 
+            {/* Method Instructions: Bank Transfer */}
+            {payment.method === 'Bank Transfer (NEFT/RTGS/IMPS)' && (
+              <div className="p-5 rounded-2xl bg-[#0A1230] border border-[#1A2C68] space-y-3 mb-6">
+                <div className="text-xs text-slate-400 mb-1">
+                  Transfer registration fee of <strong className="text-[#FFB800]">₹{paymentDueAmount.toLocaleString('en-IN')}</strong> to the official tournament account:
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
-                    <span className="text-slate-400 block text-[10px] uppercase">Payee / Account Name</span>
-                    <strong className="text-white text-xs block mt-1">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName}</strong>
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Account Holder</span>
+                    <strong className="text-white text-sm">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName}</strong>
+                  </div>
+                  <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Bank & Branch</span>
+                    <strong className="text-white text-sm">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankName}</strong>
+                  </div>
+                  <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">Account Number</span>
+                    <strong className="text-[#FFB800] font-mono font-bold text-sm tracking-wide">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.accountNumber}</strong>
+                  </div>
+                  <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
+                    <span className="text-slate-400 block text-[10px] uppercase font-semibold">IFSC Code</span>
+                    <strong className="text-white font-mono font-bold text-sm tracking-wide">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.ifscCode}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Transaction Reference & Date Inputs */}
+            {payment.method !== 'CASHFREE' && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                      {isBrandingAddonPending 
+                        ? 'Branding Add-on UTR / Reference Number' 
+                        : 'Transaction Reference / UTR Number'}{' '}
+                      <span className="text-[#FFB800]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={payment.transactionReference || payment.utrTransactionId || ''}
+                      onChange={e => setPayment(prev => ({ 
+                        ...prev, 
+                        transactionReference: e.target.value,
+                        utrTransactionId: e.target.value
+                      }))}
+                      placeholder={isBrandingAddonPending ? "e.g. UTR for ₹5,000 Branding Add-on" : "e.g. 428198301982 or 12-digit UTR"}
+                      className="w-full px-4 py-3 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#FFB800] font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
+                      Payment Date <span className="text-[#FFB800]">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={payment.paymentDate || new Date().toISOString().split('T')[0]}
+                      onChange={e => setPayment(prev => ({ ...prev, paymentDate: e.target.value }))}
+                      className="w-full px-4 py-3 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-xs text-white focus:outline-none focus:border-[#FFB800]"
+                    />
                   </div>
                 </div>
 
-                {/* Direct UPI App Payment Link */}
-                <div>
-                  <a
-                    href={`upi://pay?pa=${TOURNAMENT_CONFIG.PAYMENT_CONFIG.upiId}&pn=${encodeURIComponent(TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName)}&am=${totalAmount}&cu=INR&tn=BPL%20Registration`}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0E1B48] hover:bg-[#1A2C68] border border-[#1A2C68] text-xs font-bold text-[#FFB800] transition-colors active:scale-[0.98]"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Pay ₹{totalAmount.toLocaleString('en-IN')} directly via UPI App</span>
-                  </a>
+                {/* Payment Proof Upload via ImageUploadField */}
+                <div className="mb-6">
+                  <ImageUploadField
+                    label={isBrandingAddonPending ? "Branding Add-on (₹5,000) Payment Screenshot Proof" : "Payment Screenshot / Receipt Proof"}
+                    required
+                    tag="payment-proofs"
+                    value={payment.paymentProofUrl || payment.paymentScreenshot || ''}
+                    onChange={url => setPayment(prev => ({ 
+                      ...prev, 
+                      paymentProofUrl: url,
+                      paymentScreenshot: url
+                    }))}
+                    aspectRatio="wide"
+                    helperText="Screenshot or scanned receipt showing UTR / transaction ID and amount transferred"
+                  />
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Method Instructions: Bank Transfer */}
-        {payment.method === 'Bank Transfer (NEFT/RTGS/IMPS)' && (
-          <div className="p-5 rounded-2xl bg-[#0A1230] border border-[#1A2C68] space-y-3 mb-6">
-            <div className="text-xs text-slate-400 mb-1">
-              Transfer registration fee of <strong className="text-[#FFB800]">₹{totalAmount.toLocaleString('en-IN')}</strong> to the official tournament account:
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Account Holder</span>
-                <strong className="text-white text-sm">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName}</strong>
-              </div>
-              <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Bank & Branch</span>
-                <strong className="text-white text-sm">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankName}</strong>
-              </div>
-              <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Account Number</span>
-                <strong className="text-[#FFB800] font-mono font-bold text-sm tracking-wide">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.accountNumber}</strong>
-              </div>
-              <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
-                <span className="text-slate-400 block text-[10px] uppercase font-semibold">IFSC Code</span>
-                <strong className="text-white font-mono font-bold text-sm tracking-wide">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.ifscCode}</strong>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Transaction Reference & Date (Required for manual methods) */}
-        {payment.method !== 'CASHFREE' && (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Transaction Reference / UTR Number <span className="text-[#FFB800]">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={payment.transactionReference || payment.utrTransactionId || ''}
-                  onChange={e => setPayment(prev => ({ 
-                    ...prev, 
-                    transactionReference: e.target.value,
-                    utrTransactionId: e.target.value
-                  }))}
-                  placeholder="e.g. 428198301982 or UTR number"
-                  className="w-full px-4 py-3 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#FFB800] font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                  Payment Date <span className="text-[#FFB800]">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={payment.paymentDate}
-                  onChange={e => setPayment(prev => ({ ...prev, paymentDate: e.target.value }))}
-                  className="w-full px-4 py-3 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-xs text-white focus:outline-none focus:border-[#FFB800]"
-                />
-              </div>
-            </div>
-
-            {/* Payment Proof Upload via ImageUploadField */}
-            <div className="mb-6">
-              <ImageUploadField
-                label="Payment Screenshot / Receipt Proof"
-                required
-                tag="payment-proofs"
-                value={payment.paymentProofUrl || payment.paymentScreenshot || ''}
-                onChange={url => setPayment(prev => ({ 
-                  ...prev, 
-                  paymentProofUrl: url,
-                  paymentScreenshot: url
-                }))}
-                aspectRatio="wide"
-                helperText="Screenshot or scanned receipt showing UTR / transaction ID and amount"
-              />
-            </div>
+              </>
+            )}
           </>
         )}
 
@@ -556,19 +662,19 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
             className="mt-0.5 w-4 h-4 rounded border-slate-700 text-[#FFB800] focus:ring-[#FFB800] bg-slate-800 cursor-pointer"
           />
           <label htmlFor="terms-check" className="text-xs text-slate-300 cursor-pointer leading-relaxed select-none">
-            <strong className="text-white block font-medium mb-0.5">Tournament Undertaking & Age Eligibility Verification</strong>
+            <strong className="text-white block font-medium mb-0.5">Tournament Undertaking & Squad Verification</strong>
             I certify that all 8 players meet the official school class and age eligibility requirements for Category <strong>{category === 'class_4_5_6' ? 'Class 4–6 (8 Years to 11 Years 11 Months 29 Days)' : 'Class 7–9 (12 Years to 14 Years 11 Months 29 Days)'}</strong> for BidWar Premier League Kids Season 1 (3rd & 4th October 2026).
           </label>
         </div>
 
-        {/* FINAL SUBMIT BUTTON */}
+        {/* DYNAMIC ACTION BUTTON */}
         <div>
           <button
             type="button"
-            disabled={!agreedToTerms || isSubmitting || (payment.method === 'CASHFREE' && !isCashfreePaid)}
+            disabled={!agreedToTerms || isSubmitting || (!isFullyVerified && payment.method === 'CASHFREE' && !isCashfreePaid)}
             onClick={onSubmit}
             className={`w-full py-4 rounded-xl text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg transition-all duration-200 flex items-center justify-center gap-2 font-heading cursor-pointer select-none active:scale-[0.99] ${
-              agreedToTerms && !isSubmitting && (payment.method !== 'CASHFREE' || isCashfreePaid)
+              agreedToTerms && !isSubmitting && (isFullyVerified || payment.method !== 'CASHFREE' || isCashfreePaid)
                 ? 'bg-[#FFB800] hover:bg-[#FBBF24] shadow-[#FFB800]/25'
                 : 'bg-slate-800 text-slate-500 cursor-not-allowed'
             }`}
@@ -576,7 +682,31 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
             {isSubmitting ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin text-slate-950" />
-                <span>Submitting Official Registration...</span>
+                <span>Saving & Updating Tournament Details...</span>
+              </>
+            ) : isFullyVerified ? (
+              <>
+                <CheckCircle2 className="w-5 h-5 text-slate-950" />
+                <span>Save & Update Tournament Details</span>
+                <ArrowRight className="w-4 h-4 text-slate-950" />
+              </>
+            ) : isBrandingAddonPending ? (
+              <>
+                <Sparkles className="w-5 h-5 text-slate-950" />
+                <span>Submit Branding Add-on Verification (₹5,000)</span>
+                <ArrowRight className="w-4 h-4 text-slate-950" />
+              </>
+            ) : isPaymentRejected ? (
+              <>
+                <RefreshCw className="w-5 h-5 text-slate-950" />
+                <span>Resubmit Payment for Verification (₹{totalAmount.toLocaleString('en-IN')})</span>
+                <ArrowRight className="w-4 h-4 text-slate-950" />
+              </>
+            ) : isPaymentPending ? (
+              <>
+                <CheckCircle2 className="w-5 h-5 text-slate-950" />
+                <span>Update Registration Details</span>
+                <ArrowRight className="w-4 h-4 text-slate-950" />
               </>
             ) : (
               <>

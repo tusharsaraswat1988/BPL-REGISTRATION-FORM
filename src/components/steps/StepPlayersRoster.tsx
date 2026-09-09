@@ -116,17 +116,12 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
       p.playerName?.trim() &&
       p.studentClass &&
       p.dateOfBirth?.trim() &&
-      p.parentMobile?.trim() &&
-      isValidIndianMobile(p.parentMobile) &&
       p.parentEmail?.trim() &&
       isValidEmail(p.parentEmail) &&
       p.playerPhoto?.trim() &&
-      p.jerseyNumber &&
-      p.jerseyNumber >= 1 &&
-      p.jerseyNumber <= 99 &&
-      p.jerseySize &&
       p.cricketRole &&
-      (jerseyNumberCounts[p.jerseyNumber] || 0) <= 1
+      (!p.parentMobile?.trim() || isValidIndianMobile(p.parentMobile)) &&
+      (!p.jerseyNumber || (p.jerseyNumber >= 1 && p.jerseyNumber <= 99 && (jerseyNumberCounts[p.jerseyNumber] || 0) <= 1))
     );
   };
 
@@ -284,20 +279,20 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
               />
             </div>
 
-            {/* Parent Mobile with Validation */}
+            {/* Parent Mobile (Optional) */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Parent / Guardian Mobile <span className="text-[#FFB800]">*</span>
+                Parent / Guardian Mobile <span className="text-slate-400 text-[10px] font-normal font-sans">(Optional)</span>
               </label>
               <input
                 type="tel"
                 maxLength={13}
-                value={activePlayer.parentMobile}
+                value={activePlayer.parentMobile || ''}
                 onChange={e => {
                   const val = e.target.value.replace(/[^\d+]/g, '');
                   handlePlayerChange(activePlayerIndex, 'parentMobile', val);
                 }}
-                placeholder="10-digit number (e.g. 9811000000)"
+                placeholder="10-digit number (Optional)"
                 className={`w-full px-4 py-2.5 bg-[#070D24] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 ${
                   mobileError
                     ? 'border-red-500 focus:border-red-500 focus:ring-red-500/50'
@@ -336,11 +331,11 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
               )}
             </div>
 
-            {/* Jersey Number */}
+            {/* Jersey Number (Optional) */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
-                  Jersey Number <span className="text-[#FFB800]">* (1–99)</span>
+                  Jersey Number <span className="text-slate-400 text-[10px] font-normal font-sans">(Optional, 1–99)</span>
                 </label>
                 {activePlayer.jerseyNumber && (jerseyNumberCounts[activePlayer.jerseyNumber] || 0) > 1 && (
                   <span className="text-[10px] text-red-400 font-semibold">
@@ -353,8 +348,8 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
                 min="1"
                 max="99"
                 value={activePlayer.jerseyNumber || ''}
-                onChange={e => handlePlayerChange(activePlayerIndex, 'jerseyNumber', parseInt(e.target.value) || 0)}
-                placeholder="e.g. 7"
+                onChange={e => handlePlayerChange(activePlayerIndex, 'jerseyNumber', parseInt(e.target.value) || undefined)}
+                placeholder="e.g. 7 (Optional)"
                 className={`w-full px-4 py-2.5 bg-[#070D24] border rounded-xl text-sm font-mono text-[#FFB800] font-bold focus:outline-none focus:border-[#FFB800] ${
                   activePlayer.jerseyNumber && (jerseyNumberCounts[activePlayer.jerseyNumber] || 0) > 1
                     ? 'border-red-500 ring-1 ring-red-500'
@@ -363,17 +358,17 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
               />
             </div>
 
-            {/* Jersey Size */}
+            {/* Jersey Size (Optional) */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Jersey Size <span className="text-[#FFB800]">*</span>
+                Jersey Size <span className="text-slate-400 text-[10px] font-normal font-sans">(Optional)</span>
               </label>
               <select
                 value={activePlayer.jerseySize || ''}
-                onChange={e => handlePlayerChange(activePlayerIndex, 'jerseySize', e.target.value as JerseySize)}
+                onChange={e => handlePlayerChange(activePlayerIndex, 'jerseySize', e.target.value ? (e.target.value as JerseySize) : undefined)}
                 className="w-full px-4 py-2.5 bg-[#070D24] border border-[#1A2C68] rounded-xl text-sm text-white focus:outline-none focus:border-[#FFB800] cursor-pointer"
               >
-                <option value="">Select Jersey Size</option>
+                <option value="">Select Jersey Size (Optional)</option>
                 {jerseySizes.map(sz => (
                   <option key={sz} value={sz}>{sz} ({parseInt(sz) ? `Chest ${sz}"` : sz})</option>
                 ))}

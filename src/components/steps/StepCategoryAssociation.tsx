@@ -4,7 +4,7 @@ import { CheckCircle2, AlertCircle, Building2 } from 'lucide-react';
 import { ImageUploadField } from '../ImageUploadField';
 
 interface StepProps {
-  category: CategoryId;
+  category: CategoryId | '';
   setCategory: (cat: CategoryId) => void;
   association: AssociationDetails;
   setAssociation: React.Dispatch<React.SetStateAction<AssociationDetails>>;
@@ -37,10 +37,10 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#FFB800]/20 text-[#FFB800] text-xs font-bold border border-[#FFB800]/40">
                 1
               </span>
-              Select Tournament Category (School Class)
+              Select Tournament Category
             </h3>
             <p className="text-xs text-slate-400">
-              There are strictly two categories based on player school class. Every squad must have exactly 8 players.
+              Select division based on player school class. Squad must have exactly 8 players.
             </p>
           </div>
           <span className="text-xs text-[#FFB800] font-semibold hidden sm:inline">
@@ -49,65 +49,119 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
         </div>
 
         {errors.category && (
-          <div className="mb-3 p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2">
+          <div className="mb-3 p-2.5 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-2 max-w-xl">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <span>{errors.category}</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {categories.map(cat => {
-            const isSelected = category === cat.id;
-            return (
-              <div
-                key={cat.id}
-                onClick={() => setCategory(cat.id)}
-                className={`relative p-5 rounded-2xl border transition-all duration-200 cursor-pointer text-left select-none active:scale-[0.99] ${
-                  isSelected
-                    ? 'bg-[#0B1538] border-[#FFB800] ring-2 ring-[#FFB800]/40 shadow-xl shadow-[#FFB800]/10'
-                    : 'bg-[#091230]/60 border-[#1A2C68] hover:border-slate-700 hover:bg-[#091230]'
-                }`}
-              >
-                {isSelected && (
-                  <div className="absolute top-4 right-4 text-[#FFB800]">
-                    <CheckCircle2 className="w-5 h-5 fill-[#FFB800]/20" />
+        {/* Compact Category Cards (Reduced Width & Essential Data Only) */}
+        <div className="max-w-2xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {categories.map(cat => {
+              const isSelected = category === cat.id;
+              const isCat1 = cat.id === 'class_4_5_6';
+
+              // Distinct color styles per category when chosen
+              const selectedStyle = isCat1
+                ? 'bg-gradient-to-br from-amber-500/20 via-[#0B1538] to-[#070D24] border-amber-400 ring-2 ring-amber-400/40 shadow-lg shadow-amber-500/15'
+                : 'bg-gradient-to-br from-cyan-500/20 via-[#0B1538] to-[#070D24] border-cyan-400 ring-2 ring-cyan-400/40 shadow-lg shadow-cyan-500/15';
+
+              const unselectedStyle =
+                'bg-[#081028]/60 border-[#1A2C68] hover:border-slate-500 hover:bg-[#0b1638] text-slate-400';
+
+              return (
+                <div
+                  key={cat.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setCategory(cat.id)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setCategory(cat.id);
+                    }
+                  }}
+                  className={`relative p-3.5 rounded-xl border transition-all duration-200 cursor-pointer text-left select-none active:scale-[0.99] ${
+                    isSelected ? selectedStyle : unselectedStyle
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-black uppercase font-mono-sport tracking-wider ${
+                        isSelected
+                          ? isCat1
+                            ? 'bg-amber-400 text-slate-950 font-bold'
+                            : 'bg-cyan-400 text-slate-950 font-bold'
+                          : 'bg-[#15234D] text-slate-300 border border-[#253975]'
+                      }`}
+                    >
+                      {cat.classes || (isCat1 ? 'Class 4, 5, 6' : 'Class 7, 8, 9')}
+                    </span>
+
+                    {isSelected ? (
+                      <CheckCircle2
+                        className={`w-4 h-4 flex-shrink-0 ${
+                          isCat1 ? 'text-amber-400' : 'text-cyan-400'
+                        }`}
+                      />
+                    ) : (
+                      <span className="w-4 h-4 rounded-full border border-slate-600 block flex-shrink-0" />
+                    )}
                   </div>
-                )}
 
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="px-2.5 py-0.5 rounded text-[11px] font-black bg-[#FFB800]/15 text-[#FFB800] border border-[#FFB800]/30 uppercase font-mono-sport">
-                    {cat.classes || (cat.id === 'class_4_5_6' ? 'Class 4, 5, 6' : 'Class 7, 8, 9')}
-                  </span>
-                  <span className="text-xs text-slate-400">
-                    Official Division
-                  </span>
-                </div>
+                  <h4
+                    className={`text-sm sm:text-base font-bold mb-1.5 font-heading transition-colors ${
+                      isSelected
+                        ? isCat1
+                          ? 'text-amber-300'
+                          : 'text-cyan-300'
+                        : 'text-slate-200'
+                    }`}
+                  >
+                    {cat.name}
+                  </h4>
 
-                <h4 className="text-xl font-bold text-white mb-1.5 font-heading">
-                  {cat.name}
-                </h4>
+                  {/* Crucial Data: Age Eligibility */}
+                  <div
+                    className={`px-2.5 py-1 rounded-md border text-[11px] mb-2 transition-colors ${
+                      isSelected
+                        ? isCat1
+                          ? 'bg-[#070D24]/80 border-amber-400/30 text-amber-200'
+                          : 'bg-[#070D24]/80 border-cyan-400/30 text-cyan-200'
+                        : 'bg-[#060B1E]/60 border-[#1A2C68] text-slate-400'
+                    }`}
+                  >
+                    <span className="text-[9px] font-bold uppercase tracking-wider opacity-75 mr-1">
+                      Age:
+                    </span>
+                    <span className="font-bold text-white font-mono-sport text-[11px]">
+                      {cat.ageEligibility ||
+                        (isCat1
+                          ? '8 to 11 Yrs 11 Mos'
+                          : '12 to 14 Yrs 11 Mos')}
+                    </span>
+                  </div>
 
-                {/* Age Eligibility Callout */}
-                <div className="mb-3 px-3 py-1.5 rounded-lg bg-[#070D24] border border-[#1A2C68] text-[11px] text-slate-300 space-y-0.5">
-                  <div className="text-[10px] font-bold text-[#FFB800] uppercase tracking-wider">Age Eligibility:</div>
-                  <div className="font-bold text-white font-mono-sport">
-                    {cat.ageEligibility || (cat.id === 'class_4_5_6' ? '8 Years to 11 Years 11 Months 29 Days' : '12 Years to 14 Years 11 Months 29 Days')}
+                  {/* Crucial Data: Squad Requirement & Fee */}
+                  <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-white/10">
+                    <span className="text-slate-400 text-[10px]">Squad:</span>
+                    <span
+                      className={`font-bold font-mono-sport text-[11px] ${
+                        isSelected
+                          ? isCat1
+                            ? 'text-amber-300'
+                            : 'text-cyan-300'
+                          : 'text-slate-300'
+                      }`}
+                    >
+                      8 Players (₹1,000 / player)
+                    </span>
                   </div>
                 </div>
-
-                <p className="text-xs text-slate-300 leading-relaxed mb-4">
-                  {cat.description}
-                </p>
-
-                <div className="pt-3 border-t border-[#1A2C68] flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Squad Requirement:</span>
-                  <span className="font-bold text-[#FFB800] font-mono-sport">
-                    EXACTLY 8 PLAYERS (₹1,000 / Player)
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 

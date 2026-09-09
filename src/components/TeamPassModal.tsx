@@ -116,9 +116,7 @@ export const TeamPassModal: React.FC<TeamPassModalProps> = ({ registration, onCl
             <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">
               <span className="text-slate-500 block text-[10px] uppercase font-semibold mb-1">Mentor In-Charge</span>
               <p className="text-sm font-bold text-white">{registration.mentor.name}</p>
-              <p className="text-slate-400">{registration.mentor.designation || 'Team Coach'}</p>
-              <p className="text-slate-400 mt-1">Mobile: {registration.mentor.mobile}</p>
-              <p className="text-slate-400">Email: {registration.mentor.email}</p>
+              <p className="text-slate-400">{registration.mentor.designation || 'Head Cricket Coach'}</p>
             </div>
 
             <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800">

@@ -12,7 +12,7 @@ export const LOCAL_STORAGE_PAYLOAD_KEY = 'bpl_form_offline_draft_v2';
 export interface FormDraftData {
   draftToken?: string | null;
   currentStep: number;
-  category: CategoryId;
+  category: CategoryId | '';
   association: AssociationDetails;
   mentor: MentorDetails;
   teamName: string;

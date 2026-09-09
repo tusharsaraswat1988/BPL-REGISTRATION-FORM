@@ -20,7 +20,7 @@ export interface TeamCardData {
   teamCode: string;
   mentorName: string;
   squadSize: number;
-  brandingStatus: string;
+  brandingStatus?: string;
   tournamentDates: string;
   paymentStatus?: string;
 }
@@ -43,9 +43,9 @@ export interface PaymentCardData {
 export interface MentorInfo {
   name: string;
   designation?: string;
-  mobile: string;
+  mobile?: string;
   secondMobile?: string;
-  email: string;
+  email?: string;
 }
 
 export function StatusBadge(status: string): string {
@@ -113,21 +113,7 @@ export function MentorDetailsCard(mentor: MentorInfo): string {
       </tr>
       <tr>
         <td style="color: #94a3b8; padding: 6px 0;">Designation / Role:</td>
-        <td style="color: #38bdf8; font-weight: 600; text-align: right; padding: 6px 0;">${mentor.designation || 'Head Coach / In-Charge'}</td>
-      </tr>
-      <tr>
-        <td style="color: #94a3b8; padding: 6px 0;">Contact Mobile:</td>
-        <td style="color: #FFB800; font-weight: 800; font-family: monospace; text-align: right; padding: 6px 0;">${mentor.mobile}</td>
-      </tr>
-      ${mentor.secondMobile ? `
-      <tr>
-        <td style="color: #94a3b8; padding: 6px 0;">Alternate Mobile:</td>
-        <td style="color: #ffffff; font-family: monospace; text-align: right; padding: 6px 0;">${mentor.secondMobile}</td>
-      </tr>
-      ` : ''}
-      <tr>
-        <td style="color: #94a3b8; padding: 6px 0;">Official Email:</td>
-        <td style="color: #cbd5e1; font-family: monospace; text-align: right; padding: 6px 0;">${mentor.email}</td>
+        <td style="color: #38bdf8; font-weight: 600; text-align: right; padding: 6px 0;">${mentor.designation || 'Head Cricket Coach'}</td>
       </tr>
     </table>
   `);
@@ -144,9 +130,6 @@ export function EmailFooter(): string {
     <div style="background-color: #050A1C; padding: 24px 20px; text-align: center; border-top: 1px solid #132252; font-size: 11px; color: #94a3b8; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
       <p style="margin: 0 0 6px 0; font-size: 12px; color: #cbd5e1;">
         Organised by <strong style="color: #FFB800;">Bidwar.in</strong> & <strong style="color: #38BDF8;">KV TechMedia</strong>
-      </p>
-      <p style="margin: 0 0 12px 0; color: #94a3b8;">
-        Official Support & Helpdesk: <a href="tel:8707488250" style="color: #FFB800; font-weight: bold; text-decoration: none;">8707488250</a>
       </p>
       <div style="margin: 12px 0 8px 0;">
         <a href="${bidwarUrl}" style="color: #38bdf8; text-decoration: none; margin: 0 8px; font-weight: 600;">Website</a> •
@@ -204,10 +187,12 @@ export function TeamDetailsCard(data: TeamCardData): string {
         <td style="color: #94a3b8; padding: 6px 0;">Squad Size:</td>
         <td style="color: #ffffff; font-weight: 600; text-align: right; padding: 6px 0;">${data.squadSize} Players (No Substitutes)</td>
       </tr>
+      ${data.brandingStatus ? `
       <tr>
         <td style="color: #94a3b8; padding: 6px 0;">Custom Branding Package:</td>
         <td style="color: ${data.brandingStatus === 'Included' ? '#FFB800' : '#94a3b8'}; font-weight: 700; text-align: right; padding: 6px 0;">${data.brandingStatus}</td>
       </tr>
+      ` : ''}
       <tr>
         <td style="color: #94a3b8; padding: 6px 0;">Tournament Dates:</td>
         <td style="color: #ffffff; font-weight: 600; text-align: right; padding: 6px 0;">${data.tournamentDates}</td>
@@ -289,8 +274,8 @@ export function PlayerTable(players: PlayerInfo[]): string {
         <td style="padding: 10px 8px; color: #FFB800; font-weight: 800; font-family: monospace; font-size: 12px; text-align: center;">#${idx}</td>
         <td style="padding: 10px 8px; color: #ffffff; font-weight: 700; font-size: 13px;">${p.playerName}</td>
         <td style="padding: 10px 8px; color: #cbd5e1; font-size: 12px; text-align: center;">Class ${p.studentClass}</td>
-        <td style="padding: 10px 8px; color: #38bdf8; font-weight: 800; font-family: monospace; font-size: 13px; text-align: center;">${p.jerseyNumber}</td>
-        <td style="padding: 10px 8px; color: #cbd5e1; font-size: 12px; text-align: center;">${p.jerseySize}</td>
+        <td style="padding: 10px 8px; color: #38bdf8; font-weight: 800; font-family: monospace; font-size: 13px; text-align: center;">${p.jerseyNumber ? `#${p.jerseyNumber}` : '-'}</td>
+        <td style="padding: 10px 8px; color: #cbd5e1; font-size: 12px; text-align: center;">${p.jerseySize || '-'}</td>
         <td style="padding: 10px 8px; color: #94a3b8; font-size: 12px;">${p.cricketRole}</td>
       </tr>
     `;
@@ -328,14 +313,18 @@ export function ParentChildCard(player: PlayerInfo): string {
         <td style="color: #94a3b8; padding: 6px 0;">Enrolled Class:</td>
         <td style="color: #ffffff; font-weight: 600; text-align: right; padding: 6px 0;">Class ${player.studentClass}</td>
       </tr>
+      ${player.jerseyNumber ? `
       <tr>
         <td style="color: #94a3b8; padding: 6px 0;">Official Jersey Number:</td>
         <td style="color: #FFB800; font-weight: 900; font-family: monospace; font-size: 16px; text-align: right; padding: 6px 0;">#${player.jerseyNumber}</td>
       </tr>
+      ` : ''}
+      ${player.jerseySize ? `
       <tr>
         <td style="color: #94a3b8; padding: 6px 0;">Jersey Size:</td>
         <td style="color: #ffffff; font-weight: 600; text-align: right; padding: 6px 0;">${player.jerseySize}</td>
       </tr>
+      ` : ''}
       <tr>
         <td style="color: #94a3b8; padding: 6px 0;">Cricket Role:</td>
         <td style="color: #38bdf8; font-weight: 700; text-align: right; padding: 6px 0;">${player.cricketRole}</td>

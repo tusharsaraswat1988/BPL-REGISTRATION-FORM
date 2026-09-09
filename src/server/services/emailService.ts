@@ -373,7 +373,8 @@ export async function triggerPaymentVerifiedEmails(registrationId: string, force
       }, forceResend);
     }
 
-    // --- STEP 4: TOURNAMENT RULES & IMPORTANT INFORMATION (Association, Mentor, All Parents) ---
+    // --- STEP 4: TOURNAMENT RULES & IMPORTANT INFORMATION (Association & Mentor ONLY) ---
+    // Parents will NOT receive rules email — parents receive strictly one welcome confirmation email.
     const rulesRecipients: { email: string; type: RecipientType }[] = [];
 
     if (reg.association?.email) {
@@ -381,11 +382,6 @@ export async function triggerPaymentVerifiedEmails(registrationId: string, force
     }
     if (reg.mentor?.email) {
       rulesRecipients.push({ email: reg.mentor.email, type: 'MENTOR' });
-    }
-    for (const p of reg.players) {
-      if (p.parentEmail) {
-        rulesRecipients.push({ email: p.parentEmail, type: 'PARENT' });
-      }
     }
 
     const rulesTpl = renderTournamentRulesEmail({

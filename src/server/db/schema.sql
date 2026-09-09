@@ -68,11 +68,11 @@ CREATE TABLE IF NOT EXISTS players (
   player_name VARCHAR(255) NOT NULL,
   student_class INTEGER NOT NULL,
   date_of_birth DATE NOT NULL,
-  parent_mobile VARCHAR(50) NOT NULL,
+  parent_mobile VARCHAR(50),
   parent_email VARCHAR(255) NOT NULL,
   player_photo TEXT NOT NULL,
-  jersey_number INTEGER NOT NULL CHECK (jersey_number >= 1 AND jersey_number <= 99),
-  jersey_size VARCHAR(10) NOT NULL,
+  jersey_number INTEGER CHECK (jersey_number IS NULL OR (jersey_number >= 1 AND jersey_number <= 99)),
+  jersey_size VARCHAR(10),
   cricket_role VARCHAR(50) NOT NULL,
   batting_style VARCHAR(50),
   bowling_style VARCHAR(50),
@@ -127,6 +127,9 @@ ALTER TABLE payments ADD COLUMN IF NOT EXISTS gateway_order_id VARCHAR(100);
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS gateway_payment_id VARCHAR(100);
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS gateway_raw_response JSONB;
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS confirmation_email_sent_at TIMESTAMPTZ;
+ALTER TABLE players ALTER COLUMN parent_mobile DROP NOT NULL;
+ALTER TABLE players ALTER COLUMN jersey_number DROP NOT NULL;
+ALTER TABLE players ALTER COLUMN jersey_size DROP NOT NULL;
 
 -- 7. Autosave / Server-Side Drafts Table
 CREATE TABLE IF NOT EXISTS drafts (

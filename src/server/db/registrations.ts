@@ -14,11 +14,11 @@ export interface PlayerInput {
   playerName: string;
   studentClass: number;
   dateOfBirth: string;
-  parentMobile: string;
+  parentMobile?: string;
   parentEmail: string;
   playerPhoto: string;
-  jerseyNumber: number;
-  jerseySize: string;
+  jerseyNumber?: number;
+  jerseySize?: string;
   cricketRole: string;
   battingStyle?: string;
   bowlingStyle?: string;
@@ -55,6 +55,7 @@ export interface PaymentInput {
 }
 
 export interface RegistrationSubmissionInput {
+  registrationId?: string;
   category: 'class_4_5_6' | 'class_7_8_9';
   teamName: string;
   includeBranding: boolean;
@@ -179,65 +180,53 @@ export async function generateUnique4DigitTeamCode(client: PoolClient): Promise<
 }
 
 /**
- * Normalize UTR / Transaction ID
+ * Normalize UTR strings for strict uniqueness enforcement
  */
 export function normalizeUtr(utr: string): string {
-  return utr.trim().toUpperCase().replace(/\s+/g, '');
+  if (!utr) return '';
+  return utr.trim().replace(/\s+/g, '').toUpperCase();
 }
 
 /**
- * Validate full registration submission payload according to tournament rules
+ * Strict Server-Side Payload Validation
  */
 export function validateRegistrationPayload(input: RegistrationSubmissionInput): { valid: boolean; error?: string } {
+  if (!input) return { valid: false, error: 'Registration payload is missing.' };
+
   // Category check
   if (input.category !== 'class_4_5_6' && input.category !== 'class_7_8_9') {
-    return { valid: false, error: 'Category must be strictly class_4_5_6 or class_7_8_9.' };
+    return { valid: false, error: "Invalid category. Must be 'class_4_5_6' or 'class_7_8_9'." };
   }
-
-  const allowedClasses = input.category === 'class_4_5_6' ? [4, 5, 6] : [7, 8, 9];
 
   // Association check
-  if (!input.association) {
-    return { valid: false, error: 'Association details are required.' };
-  }
-  const { associationName, branch, email: assocEmail, mobile: assocMobile, associationLogo } = input.association;
-  if (!associationName?.trim() || !branch?.trim() || !assocEmail?.trim() || !assocMobile?.trim() || !associationLogo?.trim()) {
-    return { valid: false, error: 'Association Name, Branch, Email, Mobile, and Logo are all required.' };
-  }
+  if (!input.association) return { valid: false, error: 'Association details are required.' };
+  if (!input.association.associationName?.trim()) return { valid: false, error: 'Association / School Name is required.' };
+  if (!input.association.branch?.trim()) return { valid: false, error: 'Branch / Campus is required.' };
+  if (!input.association.email?.trim()) return { valid: false, error: 'Association Email is required.' };
+  if (!input.association.mobile?.trim()) return { valid: false, error: 'Association Mobile is required.' };
+  if (!input.association.associationLogo?.trim()) return { valid: false, error: 'Association Logo is required.' };
 
   // Mentor check
-  if (!input.mentor) {
-    return { valid: false, error: 'Mentor details are required.' };
-  }
-  const { name: mentorName, mobile: mentorMobile, email: mentorEmail, photo: mentorPhoto } = input.mentor;
-  if (!mentorName?.trim() || !mentorMobile?.trim() || !mentorEmail?.trim() || !mentorPhoto?.trim()) {
-    return { valid: false, error: 'Mentor Name, Mobile, Email, and Photo are all required.' };
-  }
+  if (!input.mentor) return { valid: false, error: 'Mentor details are required.' };
+  if (!input.mentor.name?.trim()) return { valid: false, error: 'Mentor Name is required.' };
+  if (!input.mentor.mobile?.trim()) return { valid: false, error: 'Mentor Mobile is required.' };
+  if (!input.mentor.email?.trim()) return { valid: false, error: 'Mentor Email is required.' };
+  if (!input.mentor.photo?.trim()) return { valid: false, error: 'Mentor Photo is required.' };
 
-  // Team name check
-  if (!input.teamName?.trim()) {
-    return { valid: false, error: 'Team Name is required.' };
-  }
+  // Team Name check
+  if (!input.teamName?.trim()) return { valid: false, error: 'Team Name is required.' };
 
-  // Exact 8 players check
-  if (!Array.isArray(input.players) || input.players.length !== 8) {
+  // Roster size check: Strictly 8 players
+  if (!input.players || !Array.isArray(input.players) || input.players.length !== 8) {
     return {
       valid: false,
-      error: `Squad must contain EXACTLY 8 players with no substitutes. Received: ${Array.isArray(input.players) ? input.players.length : 0} players.`
+      error: `Squad must contain EXACTLY 8 players for Box Cricket. Received: ${input.players?.length || 0}.`
     };
   }
 
+  const allowedClasses = input.category === 'class_4_5_6' ? [4, 5, 6] : [7, 8, 9];
   const usedJerseyNumbers = new Set<number>();
   const validRoles = ['Batsman', 'Bowler', 'All Rounder', 'Wicket Keeper'];
-  const validBattingStyles = ['Right Hand', 'Left Hand'];
-  const validBowlingStyles = [
-    'Right Arm Fast',
-    'Right Arm Medium',
-    'Right Arm Spin',
-    'Left Arm Fast',
-    'Left Arm Medium',
-    'Left Arm Spin'
-  ];
 
   for (let i = 0; i < input.players.length; i++) {
     const p = input.players[i];
@@ -258,9 +247,6 @@ export function validateRegistrationPayload(input: RegistrationSubmissionInput):
     if (!p.dateOfBirth?.trim()) {
       return { valid: false, error: `Player #${playerNum}: Date of Birth is required.` };
     }
-    if (!p.parentMobile?.trim()) {
-      return { valid: false, error: `Player #${playerNum}: Parent Mobile is required.` };
-    }
     if (!p.parentEmail?.trim()) {
       return { valid: false, error: `Player #${playerNum}: Parent Email is required.` };
     }
@@ -268,18 +254,16 @@ export function validateRegistrationPayload(input: RegistrationSubmissionInput):
       return { valid: false, error: `Player #${playerNum}: Player Photo is required.` };
     }
 
-    const jNum = Number(p.jerseyNumber);
-    if (!jNum || jNum < 1 || jNum > 99) {
-      return { valid: false, error: `Player #${playerNum}: Jersey number must be between 1 and 99.` };
-    }
+    if (p.jerseyNumber !== undefined && p.jerseyNumber !== null && String(p.jerseyNumber).trim() !== '' && Number(p.jerseyNumber) > 0) {
+      const jNum = Number(p.jerseyNumber);
+      if (jNum < 1 || jNum > 99) {
+        return { valid: false, error: `Player #${playerNum}: Jersey number must be between 1 and 99.` };
+      }
 
-    if (usedJerseyNumbers.has(jNum)) {
-      return { valid: false, error: `Jersey Number #${jNum} is assigned to multiple players on this team. Jersey numbers must be unique.` };
-    }
-    usedJerseyNumbers.add(jNum);
-
-    if (!p.jerseySize?.trim()) {
-      return { valid: false, error: `Player #${playerNum}: Jersey size is required.` };
+      if (usedJerseyNumbers.has(jNum)) {
+        return { valid: false, error: `Jersey Number #${jNum} is assigned to multiple players on this team. Jersey numbers must be unique.` };
+      }
+      usedJerseyNumbers.add(jNum);
     }
 
     if (!validRoles.includes(p.cricketRole)) {
@@ -300,17 +284,30 @@ export function validateRegistrationPayload(input: RegistrationSubmissionInput):
     return { valid: false, error: 'Payment details are required.' };
   }
 
+  const isVerified = input.payment.paymentStatus === 'VERIFIED';
+  const hasBranding = Boolean(input.includeBranding);
+  const isBrandingAddonPending = isVerified && hasBranding && (!input.payment.brandingAmount || input.payment.brandingAmount === 0 || input.payment.totalAmount === 8000);
   const isCashfree = input.payment.method === 'CASHFREE' || (input.payment.gateway === 'CASHFREE' && input.payment.method !== 'UPI' && !input.payment.method?.includes('Bank Transfer'));
   const rawRef = input.payment.gatewayPaymentId || input.payment.utrTransactionId || (input.payment as any).transactionReference || input.payment.gatewayOrderId || '';
   const utr = normalizeUtr(rawRef);
   const screenshot = (input.payment.paymentScreenshot || (input.payment as any).paymentProofUrl || '').trim();
 
-  if (!utr) {
-    return { valid: false, error: isCashfree ? 'Cashfree payment reference is required.' : 'Payment UTR / Transaction Reference number is required.' };
-  }
+  if (!isVerified || isBrandingAddonPending) {
+    if (!utr) {
+      return { 
+        valid: false, 
+        error: isCashfree 
+          ? 'Cashfree payment reference is required.' 
+          : (isBrandingAddonPending ? 'Branding Add-on (₹5,000) UTR / Transaction Reference is required.' : 'Payment UTR / Transaction Reference number is required.') 
+      };
+    }
 
-  if (!isCashfree && !screenshot) {
-    return { valid: false, error: 'Payment screenshot proof is required.' };
+    if (!isCashfree && !screenshot) {
+      return { 
+        valid: false, 
+        error: isBrandingAddonPending ? 'Branding Add-on (₹5,000) payment screenshot proof is required.' : 'Payment screenshot proof is required.' 
+      };
+    }
   }
 
   return { valid: true };
@@ -338,6 +335,26 @@ export async function createRegistrationTransaction(
 
   // 3. Execute atomic transaction
   return withTransaction(async (client) => {
+    // Check if this is an update to an existing registration
+    let existingRegId: string | null = null;
+    if ((input as any).registrationId) {
+      const check = await client.query(
+        `SELECT id, team_code, auth_user_id FROM registrations WHERE id = $1 LIMIT 1`,
+        [(input as any).registrationId]
+      );
+      if (check.rows.length > 0) {
+        existingRegId = check.rows[0].id;
+      }
+    } else if (input.authUserId) {
+      const check = await client.query(
+        `SELECT id, team_code FROM registrations WHERE auth_user_id = $1 ORDER BY created_at DESC LIMIT 1`,
+        [input.authUserId]
+      );
+      if (check.rows.length > 0) {
+        existingRegId = check.rows[0].id;
+      }
+    }
+
     // A. Check idempotency if provided
     if (input.idempotencyKey) {
       const existingIdempotent = await client.query(
@@ -356,6 +373,165 @@ export async function createRegistrationTransaction(
     const brandingAmount = hasBranding ? config.fees.brandingAddonFee : 0; // ₹5,000 or ₹0
     const totalAmount = baseAmount + brandingAmount; // ₹13,000 or ₹8,000
 
+    // C. Handle existing registration UPDATE
+    if (existingRegId) {
+      const prevPayRes = await client.query(
+        `SELECT * FROM payments WHERE registration_id = $1 LIMIT 1`,
+        [existingRegId]
+      );
+      const prevPay = prevPayRes.rows[0] || {};
+
+      const rawRef = input.payment.gatewayPaymentId || input.payment.utrTransactionId || (input.payment as any).transactionReference || prevPay.utr_transaction_id || '';
+      const normalizedUtr = normalizeUtr(rawRef);
+      const screenshot = (input.payment.paymentScreenshot || (input.payment as any).paymentProofUrl || prevPay.payment_screenshot || '').trim();
+
+      // Check duplicate UTR against OTHER registrations
+      if (normalizedUtr) {
+        const utrCheck = await client.query(
+          `SELECT 1 FROM payments WHERE utr_transaction_id = $1 AND registration_id != $2 LIMIT 1`,
+          [normalizedUtr, existingRegId]
+        );
+        if (utrCheck.rows.length > 0) {
+          throw new Error(`This payment transaction reference '${normalizedUtr}' has already been submitted for another registration.`);
+        }
+      }
+
+      // Determine payment status on update
+      let targetPaymentStatus = prevPay.payment_status || 'PENDING_VERIFICATION';
+      let targetVerifiedBy = prevPay.verified_by;
+      let targetVerifiedAt = prevPay.verified_at;
+
+      const isNewBrandingAdded = hasBranding && (!prevPay.branding_amount || prevPay.branding_amount === 0 || prevPay.total_amount === 8000);
+
+      if (prevPay.payment_status === 'VERIFIED') {
+        if (isNewBrandingAdded) {
+          // New branding add-on was submitted, needs admin verification for the ₹5,000
+          targetPaymentStatus = 'PENDING_VERIFICATION';
+          targetVerifiedBy = null;
+          targetVerifiedAt = null;
+        } else {
+          targetPaymentStatus = 'VERIFIED';
+        }
+      } else if (prevPay.payment_status === 'PAYMENT_REJECTED') {
+        // User resubmitting fresh payment details
+        targetPaymentStatus = 'PENDING_VERIFICATION';
+        targetVerifiedBy = null;
+        targetVerifiedAt = null;
+      }
+
+      // 1. Update Master Registration Record
+      await client.query(
+        `UPDATE registrations
+         SET category = $1, team_name = $2, include_branding = $3, team_tagline = $4,
+             team_short_code = $5, notes = $6, updated_at = NOW()
+         WHERE id = $7`,
+        [
+          input.category,
+          input.teamName.trim(),
+          hasBranding,
+          input.teamTagline?.trim() || null,
+          input.teamShortCode?.trim() || 'BPL',
+          input.notes?.trim() || null,
+          existingRegId,
+        ]
+      );
+
+      // 2. Update Association Record
+      await client.query(
+        `UPDATE associations
+         SET association_name = $1, branch = $2, email = $3, mobile = $4,
+             association_logo = $5, association_type = $6, city = $7
+         WHERE registration_id = $8`,
+        [
+          input.association.associationName.trim(),
+          input.association.branch.trim(),
+          input.association.email.trim().toLowerCase(),
+          input.association.mobile.trim(),
+          input.association.associationLogo.trim(),
+          input.association.associationType || 'School',
+          input.association.city?.trim() || null,
+          existingRegId,
+        ]
+      );
+
+      // 3. Update Mentor Record
+      await client.query(
+        `UPDATE mentors
+         SET name = $1, mobile = $2, second_mobile = $3, email = $4,
+             photo = $5, designation = $6
+         WHERE registration_id = $7`,
+        [
+          input.mentor.name.trim(),
+          input.mentor.mobile.trim(),
+          input.mentor.secondMobile?.trim() || null,
+          input.mentor.email.trim().toLowerCase(),
+          input.mentor.photo.trim(),
+          input.mentor.designation?.trim() || 'Head Cricket Coach',
+          existingRegId,
+        ]
+      );
+
+      // 4. Update Players (Delete and re-insert)
+      await client.query(`DELETE FROM players WHERE registration_id = $1`, [existingRegId]);
+      for (let i = 0; i < input.players.length; i++) {
+        const p = input.players[i];
+        await client.query(
+          `INSERT INTO players (
+            registration_id, player_index, player_name, student_class, date_of_birth,
+            parent_mobile, parent_email, player_photo, jersey_number, jersey_size,
+            cricket_role, batting_style, bowling_style
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [
+            existingRegId,
+            i + 1,
+            p.playerName.trim(),
+            Number(p.studentClass),
+            p.dateOfBirth.trim(),
+            p.parentMobile ? p.parentMobile.trim() : null,
+            p.parentEmail.trim().toLowerCase(),
+            p.playerPhoto.trim(),
+            p.jerseyNumber ? Number(p.jerseyNumber) : null,
+            p.jerseySize ? p.jerseySize.trim() : null,
+            p.cricketRole.trim(),
+            p.battingStyle || null,
+            p.bowlingStyle || null,
+          ]
+        );
+      }
+
+      // 5. Update Payments
+      await client.query(
+        `UPDATE payments
+         SET utr_transaction_id = $1,
+             payment_screenshot = $2,
+             method = $3,
+             base_amount = $4,
+             branding_amount = $5,
+             total_amount = $6,
+             payment_status = $7,
+             verified_at = $8,
+             verified_by = $9
+         WHERE registration_id = $10`,
+        [
+          normalizedUtr || prevPay.utr_transaction_id,
+          screenshot || prevPay.payment_screenshot,
+          input.payment.method || prevPay.method || 'UPI',
+          baseAmount,
+          brandingAmount,
+          totalAmount,
+          targetPaymentStatus,
+          targetVerifiedAt,
+          targetVerifiedBy,
+          existingRegId,
+        ]
+      );
+
+      const fullUpdated = await getRegistrationById(existingRegId, client);
+      if (!fullUpdated) throw new Error('Failed to retrieve updated registration.');
+      return fullUpdated;
+    }
+
+    // D. Fresh registration creation path
     let normalizedUtr = '';
     let gatewayOrderId: string | null = null;
     let gatewayPaymentId: string | null = null;
@@ -513,11 +689,11 @@ export async function createRegistrationTransaction(
           p.playerName.trim(),
           Number(p.studentClass),
           p.dateOfBirth.trim(),
-          p.parentMobile.trim(),
+          p.parentMobile ? p.parentMobile.trim() : null,
           p.parentEmail.trim().toLowerCase(),
           p.playerPhoto.trim(),
-          Number(p.jerseyNumber),
-          p.jerseySize.trim(),
+          p.jerseyNumber ? Number(p.jerseyNumber) : null,
+          p.jerseySize ? p.jerseySize.trim() : null,
           p.cricketRole.trim(),
           p.battingStyle || null,
           p.bowlingStyle || null,
