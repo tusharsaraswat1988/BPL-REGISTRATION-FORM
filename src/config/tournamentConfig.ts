@@ -111,8 +111,8 @@ export const TOURNAMENT_CONFIG = {
   SPONSORS: [] as SponsorConfig[],
 
   // Community & Communications
-  WHATSAPP_LINK: "https://chat.whatsapp.com/bidwar-kids-bpl2026",
-  WHATSAPP_COMMUNITY_URL: "https://chat.whatsapp.com/bidwar-kids-bpl2026",
+  WHATSAPP_LINK: "https://chat.whatsapp.com/EKFpdfeY8XSHwZ7jDbKkPS",
+  WHATSAPP_COMMUNITY_URL: "https://chat.whatsapp.com/EKFpdfeY8XSHwZ7jDbKkPS",
 
   // Team Pass Feature Flag
   TEAM_PASS_ENABLED: false,

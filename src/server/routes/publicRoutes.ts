@@ -47,7 +47,7 @@ export const PUBLIC_TOURNAMENT_CONFIG = {
       totalSlots: 8,
     },
   ],
-  whatsappCommunityUrl: 'https://chat.whatsapp.com/bidwar-kids-bpl2026',
+  whatsappCommunityUrl: 'https://chat.whatsapp.com/EKFpdfeY8XSHwZ7jDbKkPS',
   paymentConfig: {
     gateway: 'CASHFREE',
     cashfreeMode: config.cashfree.environment === 'PRODUCTION' ? 'production' : 'sandbox',
