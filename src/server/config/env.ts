@@ -65,11 +65,27 @@ export const config: ServerConfig = {
   port: parseInt(process.env.PORT || '3000', 10),
   databaseUrl: process.env.DATABASE_URL,
 
-  cloudinary: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    apiKey: process.env.CLOUDINARY_API_KEY,
-    apiSecret: process.env.CLOUDINARY_API_SECRET,
-  },
+  cloudinary: (() => {
+    const fromUrl = (() => {
+      const rawUrl = process.env.CLOUDINARY_URL;
+      if (!rawUrl || !rawUrl.startsWith('cloudinary://')) return {};
+      const match = rawUrl.match(/^cloudinary:\/\/([^:]+):([^@]+)@(.+)$/);
+      if (match) {
+        return {
+          apiKey: match[1],
+          apiSecret: match[2],
+          cloudName: match[3],
+        };
+      }
+      return {};
+    })();
+
+    return {
+      cloudName: process.env.CLOUDINARY_CLOUD_NAME || fromUrl.cloudName,
+      apiKey: process.env.CLOUDINARY_API_KEY || fromUrl.apiKey,
+      apiSecret: process.env.CLOUDINARY_API_SECRET || fromUrl.apiSecret,
+    };
+  })(),
 
   adminApiKey: process.env.ADMIN_API_KEY || (process.env.NODE_ENV === 'production' ? undefined : 'bpl-admin-2026'),
 

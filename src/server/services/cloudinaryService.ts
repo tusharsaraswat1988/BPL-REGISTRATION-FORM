@@ -103,8 +103,9 @@ export async function uploadToCloudinary(
       },
       (error, result) => {
         if (error || !result) {
-          console.error('[Cloudinary Upload Error]', error?.message || 'Unknown error');
-          return reject(new Error('Failed to upload image to Cloudinary storage.'));
+          const detail = error ? (typeof error === 'object' ? JSON.stringify(error) : String(error)) : 'No result returned';
+          console.error('[Cloudinary Upload Error Details]', detail);
+          return reject(new Error(error?.message ? `Failed to upload image to Cloudinary: ${error.message}` : 'Failed to upload image to Cloudinary storage.'));
         }
 
         resolve({
