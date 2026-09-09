@@ -36,10 +36,12 @@ async function startServer() {
       throw new Error('Database initialization failed to complete despite DATABASE_URL being configured.');
     }
   } catch (err: any) {
-    console.error('[Server Startup FATAL] Database initialization failed:', err.message);
-    if (config.nodeEnv === 'production' || config.databaseUrl) {
-      console.error('[Server Startup FATAL] Refusing to start server with unverified database schema.');
+    console.error('[Server Startup Warning] Database initialization failed:', err.message);
+    if (config.nodeEnv === 'production') {
+      console.error('[Server Startup FATAL] Refusing to start production server with unverified database schema.');
       process.exit(1);
+    } else {
+      console.warn('[Server Dev Mode] Starting development server. Update DATABASE_URL in .env to enable full PostgreSQL persistence.');
     }
   }
 
