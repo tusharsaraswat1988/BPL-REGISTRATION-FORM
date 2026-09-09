@@ -4,7 +4,8 @@ import {
   rejectPaymentByAdmin,
   getRegistrationById,
   getAllRegistrationsForAdmin,
-  getAdminDashboardStats
+  getAdminDashboardStats,
+  deleteRegistrationByAdmin
 } from '../db/registrations';
 import { requireAdminKey } from '../middleware/auth';
 import { adminLimiter } from '../middleware/rateLimiter';
@@ -245,6 +246,35 @@ adminRoutes.post(
     }
   }
 );
+
+// Admin Delete Registration Completely
+adminRoutes.delete(
+  '/admin/registrations/:id',
+  adminLimiter,
+  requireAdminKey,
+  async (req, res, next) => {
+    try {
+      const registrationId = req.params.id;
+      const success = await deleteRegistrationByAdmin(registrationId);
+      if (!success) {
+        res.status(404).json({
+          success: false,
+          error: 'RegistrationNotFound',
+          message: `Registration ${registrationId} not found or could not be deleted.`,
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: `Team registration ${registrationId} has been completely deleted from the database.`,
+      });
+    } catch (err: any) {
+      next(err);
+    }
+  }
+);
+
 
 
 

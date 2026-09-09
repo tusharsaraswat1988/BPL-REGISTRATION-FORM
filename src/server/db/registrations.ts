@@ -1124,3 +1124,32 @@ export async function getAllRegistrationsForAdmin(filter?: {
   }));
 }
 
+/**
+ * Permanently Delete Registration Record & Cascading Dependencies
+ */
+export async function deleteRegistrationByAdmin(registrationId: string): Promise<boolean> {
+  return withTransaction(async (client) => {
+    // 1. Check if registration exists and get auth_user_id
+    const regRes = await client.query(
+      `SELECT id, auth_user_id FROM registrations WHERE id = $1 LIMIT 1`,
+      [registrationId]
+    );
+    if (regRes.rows.length === 0) {
+      return false;
+    }
+
+    const authUserId = regRes.rows[0].auth_user_id;
+
+    // 2. Delete registration (PostgreSQL CASCADE foreign keys will automatically delete associations, mentors, players, payments, email_deliveries)
+    await client.query(`DELETE FROM registrations WHERE id = $1`, [registrationId]);
+
+    // 3. Clean up associated draft if present
+    if (authUserId) {
+      await client.query(`DELETE FROM drafts WHERE auth_user_id = $1`, [authUserId]);
+    }
+
+    return true;
+  });
+}
+
+

@@ -4,7 +4,7 @@ import {
   CheckCircle2, Clock, XCircle, Users, Trophy, DollarSign,
   ExternalLink, Eye, ChevronRight, AlertTriangle, Check, X,
   User, Phone, Mail, MapPin, Calendar, Building, Sparkles,
-  FileSpreadsheet, ArrowUpDown, Copy, Layers
+  FileSpreadsheet, ArrowUpDown, Copy, Layers, Trash2
 } from 'lucide-react';
 import { BplLogo } from '../BplLogo';
 import { RegistrationFullRecord, PlayerInput } from '../../server/db/registrations';
@@ -58,6 +58,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
   const [resendingPlayerKey, setResendingPlayerKey] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [teamToDelete, setTeamToDelete] = useState<RegistrationFullRecord | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('');
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -304,6 +306,38 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       showToast(`Network error sending player email: ${err.message}`);
     } finally {
       setResendingPlayerKey(null);
+    }
+  };
+
+  // Permanently delete a team registration
+  const handleDeleteTeam = async (reg: RegistrationFullRecord) => {
+    if (!apiKey) return;
+    setDeletingId(reg.id);
+    try {
+      const res = await fetch(`/api/admin/registrations/${reg.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': apiKey,
+        },
+      });
+
+      if (res.ok) {
+        showToast(`Team "${reg.teamName}" (${reg.id}) completely deleted!`);
+        setRegistrations((prev) => prev.filter((r) => r.id !== reg.id));
+        if (selectedReg && selectedReg.id === reg.id) {
+          setSelectedReg(null);
+        }
+        setTeamToDelete(null);
+        fetchData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(`Delete failed: ${err.message || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      showToast(`Delete error: ${err.message}`);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -1111,6 +1145,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                                 <span>Verify</span>
                               </button>
                             )}
+
+                            <button
+                              onClick={() => setTeamToDelete(reg)}
+                              className="px-2.5 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                              title="Permanently Delete Team"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Delete</span>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -1160,6 +1203,14 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                 >
                   <Printer className="w-4 h-4 text-amber-400" />
                   <span>Print Dossier</span>
+                </button>
+                <button
+                  onClick={() => setTeamToDelete(selectedReg)}
+                  className="px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Permanently Delete Team"
+                >
+                  <Trash2 className="w-4 h-4 text-red-400" />
+                  <span>Delete Team</span>
                 </button>
                 <button
                   onClick={() => setSelectedReg(null)}
@@ -1525,6 +1576,70 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold cursor-pointer"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* DELETE TEAM CONFIRMATION MODAL */}
+      {/* ------------------------------------------------------------- */}
+      {teamToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#091230] border-2 border-red-500/50 rounded-2xl w-full max-w-lg p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-500/20 border border-red-500/40 text-red-400 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1 text-left">
+                <h3 className="text-lg font-bold text-white">Permanently Delete Team?</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Are you sure you want to completely delete team <strong className="text-white">"{teamToDelete.teamName}"</strong> (Code: <code className="text-amber-300 font-mono">{teamToDelete.teamCode}</code>, ID: <code className="text-amber-300 font-mono">{teamToDelete.id}</code>)?
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-red-950/30 border border-red-500/20 text-xs text-red-200 space-y-1 text-left">
+              <div className="font-bold flex items-center gap-1.5 text-red-300">
+                <AlertTriangle className="w-4 h-4 text-red-400" />
+                <span>This action is IRREVERSIBLE:</span>
+              </div>
+              <ul className="list-disc list-inside space-y-0.5 text-slate-300 text-[11px] pl-1">
+                <li>All 8 player profiles & verification data will be purged.</li>
+                <li>Mentor and school association records will be deleted.</li>
+                <li>Associated payment records & UTR locks will be released.</li>
+                <li>The team code and slot will become available again.</li>
+              </ul>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                disabled={deletingId === teamToDelete.id}
+                onClick={() => setTeamToDelete(null)}
+                className="px-4 py-2.5 rounded-xl bg-[#070D24] border border-[#1A2C68] hover:bg-[#101D48] text-slate-300 text-xs font-semibold cursor-pointer transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={deletingId === teamToDelete.id}
+                onClick={() => handleDeleteTeam(teamToDelete)}
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center gap-2 shadow-lg shadow-red-600/30 cursor-pointer transition-all disabled:opacity-50"
+              >
+                {deletingId === teamToDelete.id ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Deleting Team...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Yes, Permanently Delete Team</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
