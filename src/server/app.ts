@@ -12,6 +12,9 @@ import { errorHandler } from './middleware/errorHandler';
 export function createApp(): Express {
   const app = express();
 
+  // Trust Railway reverse proxy for accurate client IP identification and rate limiting
+  app.set('trust proxy', 1);
+
   // Security Headers & CORS
   app.use(cors({
     origin: true,
