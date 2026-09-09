@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+import { v2 as cloudinary, UploadApiOptions } from 'cloudinary';
 import { config } from '../config/env';
 
 export type UploadFolderType = 'associations' | 'players' | 'mentors' | 'payment-proofs';
@@ -18,11 +18,11 @@ export function configureCloudinary(): boolean {
   if (isCloudinaryConfigured) return true;
 
   const { cloudName, apiKey, apiSecret } = config.cloudinary;
-  if (cloudName && apiKey && apiSecret) {
+  if (cloudName) {
     cloudinary.config({
       cloud_name: cloudName,
-      api_key: apiKey,
-      api_secret: apiSecret,
+      ...(apiKey ? { api_key: apiKey } : {}),
+      ...(apiSecret ? { api_secret: apiSecret } : {}),
       secure: true,
     });
     isCloudinaryConfigured = true;
@@ -33,7 +33,8 @@ export function configureCloudinary(): boolean {
 }
 
 export function isCloudinaryReady(): boolean {
-  return configureCloudinary();
+  const { cloudName, uploadPreset, apiKey, apiSecret } = config.cloudinary;
+  return Boolean(cloudName && (uploadPreset || (apiKey && apiSecret)));
 }
 
 /**
@@ -81,26 +82,42 @@ export async function uploadToCloudinary(
     throw new Error('Invalid image file format or corrupted image payload. Must be JPG, PNG, or WEBP under 5MB.');
   }
 
-  const folder = `bpl-kids/${folderType}`;
-  const isPrivate = folderType === 'payment-proofs';
+  const { uploadPreset, apiKey, apiSecret } = config.cloudinary;
 
   const cleanFilename = originalFilename
     ? originalFilename.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 40)
     : 'upload';
 
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder,
+  // Determine upload options:
+  // If upload_preset is configured (e.g. bpl_kids_public), use unsigned stream which works with upload preset
+  // If signed upload credentials are provided without preset, use signed options.
+  const uploadOptions: UploadApiOptions = uploadPreset
+    ? {
+        upload_preset: uploadPreset,
+        unsigned: true,
+        resource_type: 'image',
+        tags: ['bpl-kids', folderType],
+      }
+    : {
+        folder: `bpl-kids/${folderType}`,
         resource_type: 'image',
         public_id: `${cleanFilename}_${Date.now()}`,
         overwrite: true,
-      },
+      };
+
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      uploadOptions,
       (error, result) => {
         if (error || !result) {
           const detail = error ? (typeof error === 'object' ? JSON.stringify(error) : String(error)) : 'No result returned';
           console.error('[Cloudinary Upload Error Details]', detail);
-          return reject(new Error(error?.message ? `Failed to upload image to Cloudinary: ${error.message}` : 'Failed to upload image to Cloudinary storage.'));
+
+          const safeMessage = error?.message && !error.message.toLowerCase().includes('secret')
+            ? `Cloudinary upload error: ${error.message}`
+            : 'Failed to upload image to Cloudinary storage.';
+
+          return reject(new Error(safeMessage));
         }
 
         resolve({

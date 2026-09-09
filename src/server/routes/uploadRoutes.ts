@@ -66,7 +66,12 @@ uploadRoutes.post(
         format: uploadResult.format,
       });
     } catch (err: any) {
-      next(err);
+      console.error('[Upload Route Handler Error]:', err.message || err);
+      res.status(500).json({
+        success: false,
+        error: 'UploadFailed',
+        message: err.message || 'Image upload failed. Please try again.',
+      });
     }
   }
 );

@@ -11,6 +11,7 @@ export interface ServerConfig {
     cloudName?: string;
     apiKey?: string;
     apiSecret?: string;
+    uploadPreset?: string;
   };
 
   // Admin Security
@@ -94,9 +95,10 @@ export const config: ServerConfig = {
     }
 
     return {
-      cloudName: clean(process.env.CLOUDINARY_CLOUD_NAME) || urlCloudName,
+      cloudName: clean(process.env.CLOUDINARY_CLOUD_NAME) || urlCloudName || 'dja0upxxe',
       apiKey: clean(process.env.CLOUDINARY_API_KEY) || urlApiKey,
       apiSecret: clean(process.env.CLOUDINARY_API_SECRET) || urlApiSecret,
+      uploadPreset: clean(process.env.CLOUDINARY_UPLOAD_PRESET) || 'bpl_kids_public',
     };
   })(),
 
@@ -158,13 +160,9 @@ export function validateEnv(isProduction: boolean = config.nodeEnv === 'producti
     if (isProduction) missingRequired.push('CLOUDINARY_CLOUD_NAME');
     else warnings.push('CLOUDINARY_CLOUD_NAME is not set.');
   }
-  if (!config.cloudinary.apiKey || config.cloudinary.apiKey.trim() === '') {
-    if (isProduction) missingRequired.push('CLOUDINARY_API_KEY');
-    else warnings.push('CLOUDINARY_API_KEY is not set.');
-  }
-  if (!config.cloudinary.apiSecret || config.cloudinary.apiSecret.trim() === '') {
-    if (isProduction) missingRequired.push('CLOUDINARY_API_SECRET');
-    else warnings.push('CLOUDINARY_API_SECRET is not set.');
+  if (!config.cloudinary.uploadPreset && (!config.cloudinary.apiKey || !config.cloudinary.apiSecret)) {
+    if (isProduction) missingRequired.push('CLOUDINARY_UPLOAD_PRESET or (CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET)');
+    else warnings.push('Cloudinary upload configuration (CLOUDINARY_UPLOAD_PRESET or CLOUDINARY_API_KEY/CLOUDINARY_API_SECRET) is not set.');
   }
 
   if (!config.otp.bulkSmsKey || config.otp.bulkSmsKey.trim() === '') {
