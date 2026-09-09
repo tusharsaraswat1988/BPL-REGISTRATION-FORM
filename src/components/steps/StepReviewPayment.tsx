@@ -458,32 +458,62 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
 
         {/* Method Instructions: Manual UPI */}
         {payment.method === 'UPI' && (
-          <div className="p-4 rounded-xl bg-[#0A1230] border border-[#1A2C68] space-y-4 mb-6">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="w-24 h-24 bg-white p-2 rounded-xl flex items-center justify-center flex-shrink-0 shadow">
-                <div className="text-center text-slate-950 font-mono text-[10px] font-bold">
-                  <QrCode className="w-12 h-12 mx-auto text-slate-900" />
-                  <span>BIDWAR UPI</span>
-                </div>
+          <div className="p-5 rounded-2xl bg-[#0A1230] border border-[#1A2C68] space-y-4 mb-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+              {/* Dynamic QR Code */}
+              <div className="w-36 h-36 bg-white p-2.5 rounded-2xl flex flex-col items-center justify-center flex-shrink-0 shadow-lg border border-slate-200">
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`upi://pay?pa=8707488250@ybl&pn=Tushar Saraswat&am=${totalAmount}&cu=INR&tn=BPL ${teamName || 'Registration'}`)}`}
+                  alt="UPI QR Code"
+                  className="w-28 h-28 object-contain"
+                />
+                <span className="text-[10px] font-bold text-slate-900 font-mono mt-1">Scan to Pay ₹{totalAmount.toLocaleString('en-IN')}</span>
               </div>
-              <div className="flex-1 text-left space-y-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs text-slate-400">Tournament VPA:</span>
-                  <code className="text-xs font-mono font-bold text-[#FFB800] bg-[#070D24] px-2.5 py-1 rounded border border-[#1A2C68]">
-                    {TOURNAMENT_CONFIG.PAYMENT_CONFIG.upiId}
-                  </code>
-                  <button
-                    type="button"
-                    onClick={handleCopyUpi}
-                    className="text-[11px] text-slate-300 hover:text-white bg-[#1A2C68] px-2.5 py-1 rounded flex items-center gap-1 cursor-pointer transition-colors active:scale-95"
-                  >
-                    {copiedUpi ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedUpi ? 'Copied!' : 'Copy'}</span>
-                  </button>
+
+              <div className="flex-1 text-left space-y-3 w-full">
+                <div>
+                  <span className="text-[10px] font-bold text-[#FFB800] uppercase tracking-wider font-mono-sport block">
+                    Instant UPI QR & Direct App Link
+                  </span>
+                  <h4 className="text-sm sm:text-base font-bold text-white font-heading">
+                    Pay with Any UPI App (GPay, PhonePe, Paytm, BHIM, CRED)
+                  </h4>
                 </div>
-                <p className="text-xs text-slate-400">
-                  Account: <strong className="text-white">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName}</strong>
-                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
+                    <span className="text-slate-400 block text-[10px] uppercase">Tournament UPI ID / VPA</span>
+                    <div className="flex items-center justify-between gap-2 mt-1">
+                      <code className="text-xs font-mono font-bold text-[#FFB800]">
+                        {TOURNAMENT_CONFIG.PAYMENT_CONFIG.upiId}
+                      </code>
+                      <button
+                        type="button"
+                        onClick={handleCopyUpi}
+                        className="text-[11px] text-slate-300 hover:text-white bg-[#1A2C68] hover:bg-[#253D88] px-2 py-1 rounded-lg flex items-center gap-1 cursor-pointer transition-colors active:scale-95"
+                      >
+                        {copiedUpi ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        <span>{copiedUpi ? 'Copied!' : 'Copy'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
+                    <span className="text-slate-400 block text-[10px] uppercase">Payee / Account Name</span>
+                    <strong className="text-white text-xs block mt-1">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName}</strong>
+                  </div>
+                </div>
+
+                {/* Direct UPI App Payment Link */}
+                <div>
+                  <a
+                    href={`upi://pay?pa=8707488250@ybl&pn=Tushar%20Saraswat&am=${totalAmount}&cu=INR&tn=BPL%20Registration`}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0E1B48] hover:bg-[#1A2C68] border border-[#1A2C68] text-xs font-bold text-[#FFB800] transition-colors active:scale-[0.98]"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Pay ₹{totalAmount.toLocaleString('en-IN')} directly via UPI App</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
@@ -491,23 +521,26 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
 
         {/* Method Instructions: Bank Transfer */}
         {payment.method === 'Bank Transfer (NEFT/RTGS/IMPS)' && (
-          <div className="p-4 rounded-xl bg-[#0A1230] border border-[#1A2C68] space-y-3 mb-6">
+          <div className="p-5 rounded-2xl bg-[#0A1230] border border-[#1A2C68] space-y-3 mb-6">
+            <div className="text-xs text-slate-400 mb-1">
+              Transfer registration fee of <strong className="text-[#FFB800]">₹{totalAmount.toLocaleString('en-IN')}</strong> to the official tournament account:
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="bg-[#070D24] p-2.5 rounded-lg border border-[#1A2C68]">
-                <span className="text-slate-400 block text-[10px] uppercase">Account Holder</span>
-                <strong className="text-white">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName}</strong>
+              <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Account Holder</span>
+                <strong className="text-white text-sm">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankAccountName}</strong>
               </div>
-              <div className="bg-[#070D24] p-2.5 rounded-lg border border-[#1A2C68]">
-                <span className="text-slate-400 block text-[10px] uppercase">Bank & Branch</span>
-                <strong className="text-white">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankName}</strong>
+              <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Bank & Branch</span>
+                <strong className="text-white text-sm">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.bankName}</strong>
               </div>
-              <div className="bg-[#070D24] p-2.5 rounded-lg border border-[#1A2C68]">
-                <span className="text-slate-400 block text-[10px] uppercase">Account Number</span>
-                <strong className="text-[#FFB800] font-mono font-bold">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.accountNumber}</strong>
+              <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">Account Number</span>
+                <strong className="text-[#FFB800] font-mono font-bold text-sm tracking-wide">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.accountNumber}</strong>
               </div>
-              <div className="bg-[#070D24] p-2.5 rounded-lg border border-[#1A2C68]">
-                <span className="text-slate-400 block text-[10px] uppercase">IFSC Code</span>
-                <strong className="text-white font-mono font-bold">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.ifscCode}</strong>
+              <div className="bg-[#070D24] p-3 rounded-xl border border-[#1A2C68]">
+                <span className="text-slate-400 block text-[10px] uppercase font-semibold">IFSC Code</span>
+                <strong className="text-white font-mono font-bold text-sm tracking-wide">{TOURNAMENT_CONFIG.PAYMENT_CONFIG.ifscCode}</strong>
               </div>
             </div>
           </div>

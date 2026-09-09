@@ -122,11 +122,12 @@ export const TOURNAMENT_CONFIG = {
   PAYMENT_CONFIG: {
     gateway: 'CASHFREE',
     cashfreeMode: (typeof process !== 'undefined' && process.env?.CASHFREE_ENV === 'PRODUCTION') ? 'production' : 'sandbox',
-    upiId: "bidwarsports@hdfcbank",
-    upiQrImage: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&auto=format&fit=crop&q=80",
-    bankAccountName: "BIDWAR SPORTS TECH SOLUTIONS PVT LTD",
-    bankName: "HDFC Bank Ltd",
-    accountNumber: "50200084918231",
-    ifscCode: "HDFC0000281"
+    upiId: "8707488250@ybl",
+    upiPayeeName: "Tushar Saraswat",
+    upiQrImage: "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=upi%3A%2F%2Fpay%3Fpa%3D8707488250%40ybl%26pn%3DTushar%2520Saraswat%26cu%3DINR",
+    bankAccountName: "TUSHAR SARASWAT",
+    bankName: "SBI, Bhelupura",
+    accountNumber: "20057482976",
+    ifscCode: "SBIN0001773"
   }
 };
