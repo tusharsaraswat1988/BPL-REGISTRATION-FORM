@@ -102,6 +102,7 @@ export function EmailFooter(): string {
   const kvUrl = TOURNAMENT_CONFIG.KV_TECHMEDIA_URL;
   const instagramUrl = TOURNAMENT_CONFIG.BIDWAR_INSTAGRAM_URL;
   const facebookUrl = TOURNAMENT_CONFIG.BIDWAR_FACEBOOK_URL;
+  const youtubeUrl = TOURNAMENT_CONFIG.BIDWAR_YOUTUBE_URL;
 
   return `
     <div style="background-color: #050A1C; padding: 24px 20px; text-align: center; border-top: 1px solid #132252; font-size: 11px; color: #94a3b8; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
@@ -115,7 +116,8 @@ export function EmailFooter(): string {
         <a href="${bidwarUrl}" style="color: #38bdf8; text-decoration: none; margin: 0 8px; font-weight: 600;">Website</a> •
         <a href="${kvUrl}" style="color: #38bdf8; text-decoration: none; margin: 0 8px; font-weight: 600;">KV TechMedia</a> •
         <a href="${instagramUrl}" style="color: #38bdf8; text-decoration: none; margin: 0 8px; font-weight: 600;">Instagram</a> •
-        <a href="${facebookUrl}" style="color: #38bdf8; text-decoration: none; margin: 0 8px; font-weight: 600;">Facebook</a>
+        <a href="${facebookUrl}" style="color: #38bdf8; text-decoration: none; margin: 0 8px; font-weight: 600;">Facebook</a> •
+        <a href="${youtubeUrl}" style="color: #38bdf8; text-decoration: none; margin: 0 8px; font-weight: 600;">YouTube</a>
       </div>
       <p style="margin: 8px 0 0 0; font-size: 10px; color: #64748b;">
         © 2026 BidWar Premier League. All rights reserved. Registered participants communication.

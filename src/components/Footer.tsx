@@ -1,5 +1,4 @@
-import React from 'react';
-import { ExternalLink, Shield, Instagram, Facebook, Lock, PlusCircle, Users, FileText, RefreshCw, Mail, Phone, MapPin } from 'lucide-react';
+import { ExternalLink, Shield, Instagram, Facebook, Youtube, Lock, PlusCircle, Users, FileText, RefreshCw, Mail, Phone, MapPin } from 'lucide-react';
 import { BplLogo } from './BplLogo';
 import { TOURNAMENT_CONFIG } from '../config/tournamentConfig';
 
@@ -216,6 +215,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   <Facebook className="w-3.5 h-3.5" />
                 </div>
                 <span>Facebook</span>
+              </a>
+
+              <a
+                href={TOURNAMENT_CONFIG.BIDWAR_YOUTUBE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Official BidWar YouTube"
+                className="inline-flex items-center gap-2 text-slate-300 hover:text-[#FFB800] text-xs transition-colors group cursor-pointer"
+              >
+                <div className="w-7 h-7 rounded-lg bg-[#091230] border border-[#1A2C68] group-hover:border-[#FFB800]/40 flex items-center justify-center text-slate-400 group-hover:text-[#FFB800] transition-colors">
+                  <Youtube className="w-3.5 h-3.5" />
+                </div>
+                <span>YouTube</span>
               </a>
             </div>
             <p className="text-[11px] text-slate-500 pt-1">

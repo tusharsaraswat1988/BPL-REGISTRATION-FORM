@@ -45,10 +45,13 @@ export const TOURNAMENT_CONFIG = {
   // Centralized Social Media Configurations
   BIDWAR_INSTAGRAM_URL: (typeof process !== 'undefined' && process.env?.BIDWAR_INSTAGRAM_URL) || 
     (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_BIDWAR_INSTAGRAM_URL) || 
-    "https://instagram.com/bidwar.in",
+    "https://www.instagram.com/bidwar.in",
   BIDWAR_FACEBOOK_URL: (typeof process !== 'undefined' && process.env?.BIDWAR_FACEBOOK_URL) || 
     (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_BIDWAR_FACEBOOK_URL) || 
-    "https://facebook.com/bidwar.in",
+    "https://www.facebook.com/bidwar.in",
+  BIDWAR_YOUTUBE_URL: (typeof process !== 'undefined' && process.env?.BIDWAR_YOUTUBE_URL) || 
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_BIDWAR_YOUTUBE_URL) || 
+    "https://www.youtube.com/@bidwarofficial",
 
   // Tournament Categories
   CATEGORY_1: {

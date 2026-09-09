@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { 
-  Trophy, Shield, Users, FileText, PlusCircle, 
-  ExternalLink, Menu, X, ShieldCheck, MapPin, Calendar,
-  ArrowLeft, Lock, LayoutDashboard
+  Users, FileText, PlusCircle, 
+  Menu, X, ShieldCheck, 
+  ArrowLeft, LayoutDashboard
 } from 'lucide-react';
 import { BplLogo } from './BplLogo';
 import { TOURNAMENT_CONFIG, SponsorConfig } from '../config/tournamentConfig';
@@ -64,57 +64,6 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-50 bg-[#070D24]/95 backdrop-blur-md border-b border-[#1A2C68]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Top Utility Bar */}
-        <div className="flex items-center justify-between py-1.5 border-b border-white/5 text-[11px] font-sans">
-          <div className="flex items-center gap-2 sm:gap-3 text-slate-300">
-            <span className="flex items-center gap-1.5 text-[#FFB800] font-bold tracking-wide uppercase">
-              <span className="live-dot" />
-              KIDS VERSION · SEASON 1
-            </span>
-            <span className="text-slate-600 hidden xs:inline">•</span>
-            <span className="flex items-center gap-1 text-slate-300 font-medium hidden sm:inline-flex">
-              <Calendar className="w-3 h-3 text-[#FFB800]" />
-              3–4 OCTOBER 2026
-            </span>
-            <span className="text-slate-600 hidden md:inline">•</span>
-            <span className="flex items-center gap-1 text-slate-300 font-medium hidden md:inline-flex">
-              <MapPin className="w-3 h-3 text-red-400" />
-              VARANASI, U.P.
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3 sm:gap-4 text-slate-400">
-            <span className="hidden lg:inline text-slate-400">
-              Organised by <strong className="text-slate-200 font-semibold">BidWar.in & KV TechMedia</strong>
-            </span>
-            {isAdmin ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30 text-[10px] uppercase font-mono">
-                <Lock className="w-2.5 h-2.5" />
-                <span>Admin Session</span>
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleNav('/admin')}
-                className="text-slate-400 hover:text-amber-400 transition-colors flex items-center gap-1 text-[11px] cursor-pointer"
-                title="Admin Portal"
-              >
-                <ShieldCheck className="w-3 h-3 text-amber-500" />
-                <span>Admin</span>
-              </button>
-            )}
-            <a 
-              href="https://bidwar.in" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-[#FFB800] hover:text-[#FFE066] font-semibold transition-colors flex items-center gap-1 active:scale-95 text-xs"
-            >
-              <span>bidwar.in</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-        </div>
-
         {/* Main Brand & Navigation Row */}
         <div className="flex items-center justify-between py-3 gap-4">
           {/* Left: Official Tournament Logo + Exact Required Title/Subtitle */}

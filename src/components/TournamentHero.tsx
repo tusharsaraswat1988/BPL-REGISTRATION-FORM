@@ -9,10 +9,18 @@ interface HeroProps {
 export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onCheckStatus }) => {
   return (
     <div className="relative overflow-hidden bg-[#070D24] border-b border-[#1A2C68] py-12 sm:py-16">
+      {/* Box Cricket Stadium Atmospheric Background */}
+      <div 
+        className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
+        style={{ backgroundImage: "url('/stadium-bg.jpg')" }}
+      />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[#070D24]/85 via-[#070D24]/40 to-[#070D24]/70" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#070D24]/50 via-transparent to-[#070D24]" />
+
       {/* Dynamic ambient sports light glow */}
-      <div className="pointer-events-none absolute inset-0 grid-bg opacity-35" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 max-w-4xl h-48 bg-[#FFB800]/10 blur-3xl pointer-events-none rounded-full" />
-      <div className="absolute -top-10 -right-10 w-72 h-72 bg-[#1A2C68]/40 blur-3xl pointer-events-none rounded-full" />
+      <div className="pointer-events-none absolute inset-0 grid-bg opacity-20" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 max-w-4xl h-48 bg-[#FFB800]/15 blur-3xl pointer-events-none rounded-full" />
+      <div className="absolute -top-10 -right-10 w-72 h-72 bg-blue-600/20 blur-3xl pointer-events-none rounded-full" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center max-w-3xl mx-auto">
