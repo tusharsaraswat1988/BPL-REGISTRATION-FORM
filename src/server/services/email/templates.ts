@@ -112,7 +112,7 @@ export function renderRegistrationConfirmationEmail(data: RegistrationEmailTempl
           Important Instructions for Match Days
         </h4>
         <ul style="margin: 0; padding-left: 18px; font-size: 12px; color: #cbd5e1; line-height: 1.7;">
-          <li>Matches will be played on <strong>${tournamentDates}</strong> in Varanasi.</li>
+          <li>Matches will be played on <strong>${tournamentDates}</strong> at <strong>Pitch and Paddle, Sigra</strong>.</li>
           <li>Please ensure your child brings a valid <strong>School Photo ID or Bonafide certificate</strong> for age & class verification.</li>
           <li>For team reporting time and coordination, please contact your designated Mentor: <strong style="color: #ffffff;">${mentorInfo.name}</strong>.</li>
         </ul>

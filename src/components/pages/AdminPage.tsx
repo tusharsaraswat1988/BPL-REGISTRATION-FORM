@@ -701,7 +701,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
           </form>
 
           <div className="mt-8 pt-6 border-t border-white/5 text-center text-[11px] text-slate-500">
-            BidWar Premier League (Season 1) · Varanasi Arena
+            BidWar Premier League (Season 1) · Pitch and Paddle, Sigra
           </div>
         </div>
       </div>
@@ -1764,7 +1764,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
 
             {/* Notice Footer */}
             <div className="text-[9px] text-gray-600 text-center border-t border-black pt-2">
-              Tournament Venue: Varanasi Sports Arena | Match Dates: 3–4 October 2026 | Inquiries: bpl@bidwar.in | bidwar.in
+              Tournament Venue: Pitch and Paddle, Sigra | Match Dates: 10–11 October 2026 | Inquiries: bpl@bidwar.in | bidwar.in
             </div>
           </div>
         </div>

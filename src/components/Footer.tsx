@@ -69,9 +69,9 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </div>
             
             <div className="space-y-1 text-xs text-slate-300">
-              <p className="font-semibold text-white">3–4 OCTOBER 2026</p>
+              <p className="font-semibold text-white">10–11 OCTOBER 2026</p>
               <p className="text-[11px] text-slate-400">
-                Varanasi, Uttar Pradesh, India
+                Pitch and Paddle, Sigra, Varanasi
               </p>
               <p className="text-[10px] text-slate-500 uppercase tracking-wider pt-1">
                 A BIDWAR.IN TOURNAMENT PROPERTY
@@ -100,7 +100,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             <div className="space-y-1 text-xs pt-1 text-slate-400">
               <p className="text-white font-semibold flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-[#FFB800]" />
-                <span>Varanasi Operations Desk</span>
+                <span>Pitch and Paddle, Sigra</span>
               </p>
               <p className="flex items-center gap-1.5">
                 <Phone className="w-3.5 h-3.5 text-[#FFB800]" />

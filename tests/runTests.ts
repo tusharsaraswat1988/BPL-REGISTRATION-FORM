@@ -1931,7 +1931,7 @@ async function runAllTests() {
   });
   assert(sampleRulesTemplate.html.includes('EXACTLY 8 PLAYERS'), 'Req 16g: Rules template specifies exactly 8 players');
   assert(sampleRulesTemplate.html.includes('No substitutes'), 'Req 16h: Rules template specifies no substitutes');
-  assert(sampleRulesTemplate.html.includes('3rd &amp; 4th October 2026') || sampleRulesTemplate.html.includes('3rd & 4th October 2026'), 'Req 16i: Rules template specifies approved tournament dates');
+  assert(sampleRulesTemplate.html.includes('10th &amp; 11th October 2026') || sampleRulesTemplate.html.includes('10th & 11th October 2026'), 'Req 16i: Rules template specifies approved tournament dates');
 
   // Restore original config
   config.email = origEmailConfig;

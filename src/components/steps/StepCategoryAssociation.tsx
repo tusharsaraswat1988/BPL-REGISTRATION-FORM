@@ -44,7 +44,7 @@ export const StepCategoryAssociation: React.FC<StepProps> = ({
             </p>
           </div>
           <span className="text-xs text-[#FFB800] font-semibold hidden sm:inline">
-            Oct 3-4, 2026 • Varanasi
+            Oct 10-11, 2026 • Pitch and Paddle, Sigra
           </span>
         </div>
 

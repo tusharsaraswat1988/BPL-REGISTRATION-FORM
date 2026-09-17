@@ -96,7 +96,8 @@ export const TeamPassModal: React.FC<TeamPassModalProps> = ({ registration, onCl
             </div>
             <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
               <span className="text-slate-500 block text-[10px] uppercase font-semibold">Tournament Dates</span>
-              <strong className="text-white">3rd & 4th Oct 2026</strong>
+              <strong className="text-white">10th & 11th Oct 2026</strong>
+              <span className="text-[10px] text-slate-400 block truncate">Pitch and Paddle, Sigra</span>
             </div>
             <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
               <span className="text-slate-500 block text-[10px] uppercase font-semibold">Fee Paid</span>
@@ -172,7 +173,7 @@ export const TeamPassModal: React.FC<TeamPassModalProps> = ({ registration, onCl
             <div className="text-slate-400 space-y-1">
               <p className="font-semibold text-white">Organised by Bidwar.in & KV TechMedia</p>
               <p className="text-[11px]">Box Cricket Rules Apply • Present digital pass at match check-in.</p>
-              <p className="text-[10px] text-amber-400 font-mono">Tournament Dates: 3rd & 4th October 2026</p>
+              <p className="text-[10px] text-amber-400 font-mono">Tournament Dates: 10th & 11th October 2026 • Venue: Pitch and Paddle, Sigra</p>
             </div>
             <div className="w-16 h-16 bg-white p-1 rounded-lg flex items-center justify-center flex-shrink-0 shadow">
               <QrCode className="w-14 h-14 text-slate-950" />

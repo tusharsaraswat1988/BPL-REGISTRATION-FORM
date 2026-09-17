@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
                   {isAdmin ? 'Admin Control Center' : 'Registration Portal'}
                 </span>
                 <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/10 text-slate-300 border border-white/15">
-                  Varanasi
+                  Pitch and Paddle, Sigra
                 </span>
               </div>
             </div>
@@ -230,8 +230,8 @@ export const Header: React.FC<HeaderProps> = ({
             })}
 
             <div className="pt-2 px-1 text-[11px] text-slate-400 flex items-center justify-between border-t border-white/5 mt-2 font-sans">
-              <span>Venue: <strong>Varanasi Arena</strong></span>
-              <span>Dates: <strong>3–4 Oct 2026</strong></span>
+              <span>Venue: <strong>Pitch and Paddle, Sigra</strong></span>
+              <span>Dates: <strong>10–11 Oct 2026</strong></span>
             </div>
           </div>
         )}

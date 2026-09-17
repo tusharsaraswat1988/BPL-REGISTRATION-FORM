@@ -337,7 +337,7 @@ export const LegalPage: React.FC<LegalPageProps> = ({ initialTab = 'terms', onNa
                 <span>3. Tournament Postponement & Inclement Weather</span>
               </h3>
               <p className="text-sm text-slate-300">
-                In the event of severe weather, rain, government directives, or force majeure events making gameplay unsafe on 3–4 October 2026:
+                In the event of severe weather, rain, government directives, or force majeure events making gameplay unsafe on 10–11 October 2026:
               </p>
               <ul className="space-y-2 text-sm text-slate-300 pl-4 list-disc marker:text-sky-400">
                 <li>Matches will be rescheduled to backup weekend dates announced by the organizing committee.</li>
@@ -387,7 +387,7 @@ export const LegalPage: React.FC<LegalPageProps> = ({ initialTab = 'terms', onNa
                     <MapPin className="w-5 h-5 text-[#FFB800] flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-white">BidWar Premier League (BPL)</p>
-                      <p className="text-xs text-slate-400 mt-0.5">Varanasi, Uttar Pradesh, India</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Pitch and Paddle, Sigra, Varanasi</p>
                     </div>
                   </div>
 
@@ -435,7 +435,7 @@ export const LegalPage: React.FC<LegalPageProps> = ({ initialTab = 'terms', onNa
 
                   <div className="p-3 rounded-lg bg-[#050A1C] border border-[#1A2C68]/60">
                     <p className="text-slate-400 text-[11px]">Operations & Management</p>
-                    <p className="text-white font-bold text-sm mt-0.5">Varanasi Operations Desk</p>
+                    <p className="text-white font-bold text-sm mt-0.5">Pitch and Paddle, Sigra</p>
                   </div>
 
                   <div className="p-3 rounded-lg bg-[#050A1C] border border-[#1A2C68]/60">

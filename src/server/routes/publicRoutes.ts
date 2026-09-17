@@ -10,7 +10,9 @@ export const publicRoutes = Router();
 export const PUBLIC_TOURNAMENT_CONFIG = {
   tournamentName: 'BIDWAR PREMIER LEAGUE',
   secondaryLabel: 'KIDS VERSION — SEASON 1',
-  dates: '3rd & 4th October 2026',
+  dates: '10th & 11th October 2026',
+  venue: 'Pitch and Paddle, Sigra',
+  venueFull: 'Pitch and Paddle, Sigra, Varanasi',
   organizers: ['Bidwar.in', 'KV TechMedia'],
   format: 'Box Cricket Tournament',
   officialWebsites: {

@@ -663,7 +663,7 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           />
           <label htmlFor="terms-check" className="text-xs text-slate-300 cursor-pointer leading-relaxed select-none">
             <strong className="text-white block font-medium mb-0.5">Tournament Undertaking & Squad Verification</strong>
-            I certify that all 8 players meet the official school class and age eligibility requirements for Category <strong>{category === 'class_4_5_6' ? 'Class 4–6 (8 Years to 11 Years 11 Months 29 Days)' : 'Class 7–9 (12 Years to 14 Years 11 Months 29 Days)'}</strong> for BidWar Premier League Kids Season 1 (3rd & 4th October 2026).
+            I certify that all 8 players meet the official school class and age eligibility requirements for Category <strong>{category === 'class_4_5_6' ? 'Class 4–6 (8 Years to 11 Years 11 Months 29 Days)' : 'Class 7–9 (12 Years to 14 Years 11 Months 29 Days)'}</strong> for BidWar Premier League Kids Season 1 (10th & 11th October 2026 at Pitch and Paddle, Sigra).
           </label>
         </div>
 

@@ -31,7 +31,7 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
               Official Registration Open · Deadline 15 Sept 2026
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B1538] text-slate-300 border border-[#1A2C68] text-xs font-semibold">
-              <span className="text-slate-400">Varanasi, UP • Organised by</span>
+              <span className="text-slate-400">Pitch and Paddle, Sigra • Organised by</span>
               <strong className="text-white">BidWar.in & KV TechMedia</strong>
             </span>
           </div>
@@ -41,11 +41,11 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
             BIDWAR PREMIER LEAGUE
           </h1>
           <div className="inline-block px-4 py-1.5 rounded-lg bg-[#FFB800]/15 border border-[#FFB800]/30 text-[#FFB800] font-bold text-xs sm:text-sm tracking-wider uppercase mb-4 font-sans">
-            KIDS BOX CRICKET — SEASON 1 • VARANASI TOURNAMENT
+            KIDS BOX CRICKET — SEASON 1 • PITCH AND PADDLE, SIGRA
           </div>
 
           <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed mb-8">
-            The premier youth box cricket championship bringing school and academy players together in Varanasi. 8 teams per division, 2 groups of 4, knockout Semi-Finals, and Grand Final with live digital scoring.
+            The premier youth box cricket championship bringing school and academy players together at Pitch and Paddle, Sigra. 8 teams per division, 2 groups of 4, knockout Semi-Finals, and Grand Final with live digital scoring.
           </p>
 
           {/* Tournament Vital Badges */}
@@ -56,7 +56,7 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Tournament Dates</p>
-                <p className="text-sm font-display font-bold text-white">3RD & 4TH OCTOBER 2026</p>
+                <p className="text-sm font-display font-bold text-white">10TH & 11TH OCTOBER 2026</p>
                 <p className="text-xs text-[#FFB800] font-medium">Deadline: 15 September 2026</p>
               </div>
             </div>

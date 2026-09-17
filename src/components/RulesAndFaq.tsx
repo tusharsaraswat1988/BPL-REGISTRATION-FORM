@@ -45,6 +45,10 @@ export const RulesAndFaq: React.FC<{ onNavigate?: (path: string) => void }> = ({
       a: "The official registration deadline is 15 September 2026. Slots are strictly capped at 8 teams per category on a first-confirmed basis."
     },
     {
+      q: "When and where will the tournament matches be held?",
+      a: "BidWar Premier League Kids Season 1 matches will be held on Saturday 10th & Sunday 11th October 2026 at Pitch and Paddle, Sigra. Individual fixture schedules and slot reporting times will be provided directly to team mentors."
+    },
+    {
       q: "What credentials and ID verification are required?",
       a: "Upon confirmed registration, teams receive an official Registration ID (e.g. BPL-2026-0001) and a 4-digit Team Code (e.g. 1027). Tournament management may conduct age, student class, and identity verification at any time. Any team fielding an ineligible player faces immediate disciplinary action or disqualification."
     }
@@ -498,7 +502,7 @@ export const RulesAndFaq: React.FC<{ onNavigate?: (path: string) => void }> = ({
               Match Schedule & Unforeseen Circumstances
             </div>
             <p className="leading-relaxed">
-              Teams will receive their individualized fixture schedules separately and must report well before their scheduled slot. In case of weather, technical issues, venue constraints or other unforeseen circumstances, tournament management reserves the right to modify match timings, sequence, format, playing conditions or fixture structure. All decisions of tournament management are final.
+              Teams will receive their individualized fixture schedules separately and must report well before their scheduled slot at Pitch and Paddle, Sigra. In case of weather, technical issues, venue constraints or other unforeseen circumstances, tournament management reserves the right to modify match timings, sequence, format, playing conditions or fixture structure. All decisions of tournament management are final.
             </p>
           </div>
         </div>

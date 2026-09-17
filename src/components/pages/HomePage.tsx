@@ -58,7 +58,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1 text-xs font-semibold text-slate-300">
                   <MapPin className="w-3 h-3 text-[#FFB800]" />
-                  VARANASI ARENA · 3–4 OCT 2026
+                  PITCH AND PADDLE, SIGRA · 10–11 OCT 2026
                 </span>
               </div>
 
@@ -77,17 +77,17 @@ export const HomePage: React.FC<HomePageProps> = ({
               {/* Tournament Dates & Category Tag */}
               <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-semibold text-slate-200">
                 <span className="px-2.5 py-1 rounded bg-[#FFB800]/15 text-[#FFB800] border border-[#FFB800]/30 font-bold">
-                  3RD & 4TH OCTOBER 2026
+                  10TH & 11TH OCTOBER 2026
                 </span>
                 <span className="text-slate-500">•</span>
-                <span className="text-slate-300">VARANASI, UTTAR PRADESH</span>
+                <span className="text-slate-300">PITCH AND PADDLE, SIGRA</span>
                 <span className="text-slate-500">•</span>
                 <span className="text-[#FFB800] font-bold">₹1,000 / PLAYER</span>
               </div>
 
               {/* Description */}
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl">
-                The premier youth box cricket championship bringing school and academy players together in Varanasi. 8 teams per category across two verified age divisions with 2-group league stages, Semi-Finals, Grand Final, and live digital scoring.
+                The premier youth box cricket championship bringing school and academy players together at Pitch and Paddle, Sigra. 8 teams per category across two verified age divisions with 2-group league stages, Semi-Finals, Grand Final, and live digital scoring.
               </p>
 
               {/* Primary Action Buttons */}
@@ -231,9 +231,9 @@ export const HomePage: React.FC<HomePageProps> = ({
             </div>
             <div>
               <div className="text-xs font-bold uppercase tracking-wide text-slate-400">SCHEDULE & VENUE</div>
-              <h3 className="font-display text-lg font-bold text-white mt-1">3–4 OCTOBER 2026</h3>
+              <h3 className="font-display text-lg font-bold text-white mt-1">10–11 OCTOBER 2026</h3>
               <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
-                Saturday & Sunday tournament weekend held in Varanasi, Uttar Pradesh. Registration closes 15 September 2026.
+                Saturday & Sunday tournament weekend held at Pitch and Paddle, Sigra. Registration closes 15 September 2026.
               </p>
             </div>
           </div>
@@ -455,7 +455,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             Tournament Sponsors & Partners
           </h2>
           <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-            Official partners supporting BidWar Premier League — Kids Version Season 01 in Varanasi.
+            Official partners supporting BidWar Premier League — Kids Version Season 01 at Pitch and Paddle, Sigra.
           </p>
         </div>
 
@@ -611,7 +611,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 Registered Teams Showcase
               </h3>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Browse confirmed school and academy teams entering Season 01 in Varanasi. Review team rosters and category assignments.
+                Browse confirmed school and academy teams entering Season 01 at Pitch and Paddle, Sigra. Review team rosters and category assignments.
               </p>
             </div>
 
