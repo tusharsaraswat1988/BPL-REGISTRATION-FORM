@@ -61,9 +61,24 @@ export interface ServerConfig {
   devMockAuthEnabled: boolean;
 }
 
+const resolveServerPort = (): number => {
+  // In Google AI Studio sandbox container, internal reverse proxy strictly routes port 8080 -> 3000
+  if (process.env.APPLET_ID || process.env.DEFAULT_APP_PORT) {
+    return 3000;
+  }
+  // On external deployment platforms (Railway, Render, Fly.io, Heroku, Docker), honor platform-injected PORT
+  if (process.env.PORT) {
+    const parsed = parseInt(process.env.PORT, 10);
+    if (!isNaN(parsed) && parsed > 0) {
+      return parsed;
+    }
+  }
+  return 3000;
+};
+
 export const config: ServerConfig = {
   nodeEnv: process.env.NODE_ENV || 'development',
-  port: 3000,
+  port: resolveServerPort(),
   databaseUrl: process.env.DATABASE_URL,
 
   cloudinary: (() => {

@@ -30,6 +30,11 @@ export function createApp(): Express {
   }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+  // Load balancer and Railway deployment health check probes
+  app.get(['/health', '/api/health'], (_req, res) => {
+    res.status(200).json({ status: 'ok', service: 'bpl-portal', timestamp: new Date().toISOString() });
+  });
+
   // API Routes
   app.use('/api', publicRoutes);
   app.use('/api', uploadRoutes);
