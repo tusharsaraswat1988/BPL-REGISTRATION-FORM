@@ -1,5 +1,6 @@
 import React from 'react';
-import { Calendar, Trophy, ShieldCheck, Tv, Radio, Sparkles, Award } from 'lucide-react';
+import { Calendar, Trophy, ShieldCheck, Tv, Radio, Sparkles, Award, Shield } from 'lucide-react';
+import { TOURNAMENT_CONFIG } from '../config/tournamentConfig';
 
 interface HeroProps {
   onStartRegistration: () => void;
@@ -28,7 +29,7 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
           <div className="inline-flex flex-wrap items-center justify-center gap-2 mb-4 font-sans">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/30 text-xs font-bold uppercase">
               <span className="live-dot" />
-              Official Registration Open · Deadline 15 Sept 2026
+              Official Registration Open · Deadline 25 Sept 2026
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B1538] text-slate-300 border border-[#1A2C68] text-xs font-semibold">
               <span className="text-slate-400">Pitch and Paddle, Sigra • Organised by</span>
@@ -44,9 +45,54 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
             KIDS BOX CRICKET — SEASON 1 • PITCH AND PADDLE, SIGRA
           </div>
 
-          <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed mb-8">
+          <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed mb-6">
             The premier youth box cricket championship bringing school and academy players together at Pitch and Paddle, Sigra. 8 teams per division, 2 groups of 4, knockout Semi-Finals, and Grand Final with live digital scoring.
           </p>
+
+          {/* Prominent Official Sponsors Showcase */}
+          {TOURNAMENT_CONFIG.SPONSORS && TOURNAMENT_CONFIG.SPONSORS.length > 0 && (
+            <div className="max-w-3xl mx-auto mb-8 p-3.5 sm:p-5 rounded-2xl bg-[#091333]/90 border border-[#1E3272] shadow-2xl backdrop-blur">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-1.5 border-b border-white/10 pb-2.5 mb-3.5">
+                <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#FFB800] flex items-center gap-1.5 font-sans">
+                  <Shield className="w-3.5 h-3.5 text-[#FFB800]" />
+                  Official Tournament Sponsors & Partners
+                </span>
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-sans">
+                  Pitch and Paddle, Sigra · Season 01
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {TOURNAMENT_CONFIG.SPONSORS.map((sp) => (
+                  <div 
+                    key={sp.id}
+                    className="p-3 rounded-xl bg-[#060B1E] border border-white/10 flex flex-col items-center justify-between text-center transition-all hover:border-[#FFB800]/40 group"
+                  >
+                    <div className="w-full flex flex-col items-center">
+                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#FFB800] mb-2 px-2 py-0.5 rounded bg-[#FFB800]/10 border border-[#FFB800]/20">
+                        {sp.type}
+                      </span>
+                      {sp.logoUrl && (
+                        <div className="w-full h-16 bg-white rounded-lg p-2 flex items-center justify-center mb-2.5 shadow-sm group-hover:scale-105 transition-transform duration-200">
+                          <img 
+                            src={sp.logoUrl} 
+                            alt={`${sp.name} logo`} 
+                            className="max-h-full max-w-full object-contain"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
+                      <span className="font-display font-black text-white text-base tracking-wide leading-tight">
+                        {sp.name}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wide mt-1.5 pt-1.5 border-t border-white/5 w-full">
+                      {sp.tagline}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Tournament Vital Badges */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto mb-8 text-left font-sans">
@@ -57,7 +103,7 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Tournament Dates</p>
                 <p className="text-sm font-display font-bold text-white">10TH & 11TH OCTOBER 2026</p>
-                <p className="text-xs text-[#FFB800] font-medium">Deadline: 15 September 2026</p>
+                <p className="text-xs text-[#FFB800] font-medium">Deadline: 25 September 2026</p>
               </div>
             </div>
 

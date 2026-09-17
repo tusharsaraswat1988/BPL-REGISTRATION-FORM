@@ -42,7 +42,7 @@ export const RulesAndFaq: React.FC<{ onNavigate?: (path: string) => void }> = ({
     },
     {
       q: "What is the registration deadline?",
-      a: "The official registration deadline is 15 September 2026. Slots are strictly capped at 8 teams per category on a first-confirmed basis."
+      a: "The official registration deadline is 25 September 2026. Slots are strictly capped at 8 teams per category on a first-confirmed basis."
     },
     {
       q: "When and where will the tournament matches be held?",
@@ -520,7 +520,7 @@ export const RulesAndFaq: React.FC<{ onNavigate?: (path: string) => void }> = ({
                 Registration Fees & Official Deadline
               </h2>
             </div>
-            <span className="text-xs text-[#FFB800] font-bold uppercase font-mono-sport">DEADLINE: 15 SEPT 2026</span>
+            <span className="text-xs text-[#FFB800] font-bold uppercase font-mono-sport">DEADLINE: 25 SEPT 2026</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -565,7 +565,7 @@ export const RulesAndFaq: React.FC<{ onNavigate?: (path: string) => void }> = ({
             <div className="space-y-0.5 text-center sm:text-left">
               <div className="text-xs font-bold text-white flex items-center justify-center sm:justify-start gap-1.5">
                 <Calendar className="w-4 h-4 text-[#FFB800]" />
-                <span>Registration Deadline: <strong>15 September 2026</strong></span>
+                <span>Registration Deadline: <strong>25 September 2026</strong></span>
               </div>
               <p className="text-[11px] text-slate-400">Strictly 8 teams per category on a first-come, first-confirmed basis.</p>
             </div>

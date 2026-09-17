@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 210" width="100%" height="100%">
+  <defs>
+    <filter id="gm-shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <!-- Clean Base Frame -->
+  <rect x="10" y="10" width="360" height="190" rx="20" ry="20" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2.5" filter="url(#gm-shadow)" />
+
+  <g transform="translate(40, 20)">
+    <!-- Iconic Curved Green Badge -->
+    <path d="M 18 36 C 100 16, 200 16, 282 36 L 256 142 C 180 128, 120 128, 44 142 Z" fill="#009432" stroke="#007A28" stroke-width="1.5" />
+
+    <!-- Radiant Golden Sun and Rays -->
+    <g transform="translate(195, 48)">
+      <!-- Sun Rays -->
+      <polygon points="0,-2 6,-24 10,-2" fill="#FFC400" />
+      <polygon points="12,4 28,-14 20,8" fill="#FFC400" />
+      <polygon points="20,12 38,0 24,18" fill="#FFC400" />
+      <polygon points="24,22 42,16 24,28" fill="#FFC400" />
+      <polygon points="-8,4 -22,-14 -16,8" fill="#FFC400" />
+      <polygon points="-16,12 -34,0 -20,18" fill="#FFC400" />
+      <polygon points="-5,1 -8,-22 0,-1" fill="#FFC400" />
+      <!-- Semi-circle Sun Disk -->
+      <ellipse cx="4" cy="22" rx="28" ry="20" fill="#FFBA00" />
+    </g>
+
+    <!-- White Script Brand: "Good Morning" -->
+    <!-- Good -->
+    <text x="145" y="74" font-family="'Brush Script MT', 'Dancing Script', 'Pacifico', 'Playfair Display', Georgia, cursive, serif" font-style="italic" font-size="44" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">Good</text>
+    
+    <!-- Morning -->
+    <text x="142" y="112" font-family="'Brush Script MT', 'Dancing Script', 'Pacifico', 'Playfair Display', Georgia, cursive, serif" font-style="italic" font-size="42" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="0.5">Morning</text>
+    
+    <!-- TM symbol -->
+    <text x="218" y="96" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#FFFFFF">TM</text>
+
+    <!-- Golden Underline Arc -->
+    <path d="M 68 118 C 120 124, 180 124, 232 118" fill="none" stroke="#FFBA00" stroke-width="3.5" stroke-linecap="round" />
+
+    <!-- Subtitle: SINCE 1996 -->
+    <text x="150" y="133" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="10.5" font-weight="800" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">SINCE 1996</text>
+  </g>
+</svg>

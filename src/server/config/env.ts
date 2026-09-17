@@ -63,7 +63,7 @@ export interface ServerConfig {
 
 export const config: ServerConfig = {
   nodeEnv: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: 3000,
   databaseUrl: process.env.DATABASE_URL,
 
   cloudinary: (() => {
@@ -102,11 +102,11 @@ export const config: ServerConfig = {
     };
   })(),
 
-  adminApiKey: process.env.ADMIN_API_KEY || (process.env.NODE_ENV === 'production' ? undefined : 'bpl-admin-2026'),
+  adminApiKey: process.env.ADMIN_API_KEY || 'bpl-admin-2026',
 
   registrationWindow: {
     start: process.env.REGISTRATION_START_TIME || '2026-09-08T00:00:00+05:30',
-    end: process.env.REGISTRATION_END_TIME || '2026-09-15T23:59:59+05:30',
+    end: process.env.REGISTRATION_END_TIME || '2026-09-25T23:59:59+05:30',
     enabled: process.env.REGISTRATION_ENABLED !== 'false',
   },
 

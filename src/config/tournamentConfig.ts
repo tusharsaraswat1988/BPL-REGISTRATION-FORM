@@ -106,11 +106,39 @@ export const TOURNAMENT_CONFIG = {
 
   // Registration Window & Deadline
   REGISTRATION_START: "2026-09-08T00:00:00+05:30",
-  REGISTRATION_END: "2026-09-15T23:59:59+05:30",
-  REGISTRATION_DEADLINE_DISPLAY: "15 September 2026",
+  REGISTRATION_END: "2026-09-25T23:59:59+05:30",
+  REGISTRATION_DEADLINE_DISPLAY: "25 September 2026",
 
-  // Sponsors Architecture (Multiple sponsors supported; defaults to empty array to render reserved placeholder)
-  SPONSORS: [] as SponsorConfig[],
+  // Sponsors Architecture (Multiple sponsors supported)
+  SPONSORS: [
+    {
+      id: "heritage-hospital",
+      name: "Heritage Hospital",
+      type: "TITLE SPONSOR",
+      logoUrl: "/sponsors/heritage-hospital.svg",
+      tagline: "Official Title Sponsor · BPL Kids S1",
+      order: 1,
+      active: true
+    },
+    {
+      id: "live-studio-vns",
+      name: "Live Studio Vns",
+      type: "CO-SPONSOR",
+      logoUrl: "/sponsors/live-studio-vns.svg",
+      tagline: "Official Co-Sponsor · BPL Kids S1",
+      order: 2,
+      active: true
+    },
+    {
+      id: "good-morning",
+      name: "Good Morning",
+      type: "GIFTING PARTNER",
+      logoUrl: "/sponsors/good-morning.svg",
+      tagline: "Official Gifting Partner · BPL Kids S1",
+      order: 3,
+      active: true
+    }
+  ] as SponsorConfig[],
 
   // Community & Communications
   WHATSAPP_LINK: "https://chat.whatsapp.com/EKFpdfeY8XSHwZ7jDbKkPS",

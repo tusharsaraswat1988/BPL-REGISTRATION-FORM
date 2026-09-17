@@ -83,6 +83,19 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="text-base sm:text-xl font-display font-extrabold text-white tracking-tight uppercase leading-tight group-hover:text-[#FFB800] transition-colors">
                   BIDWAR PREMIER LEAGUE
                 </span>
+                {activeSponsor && (
+                  <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#FFB800]/15 text-[#FFB800] border border-[#FFB800]/30 text-[9px] font-bold uppercase tracking-wider">
+                    {activeSponsor.logoUrl && (
+                      <img 
+                        src={activeSponsor.logoUrl} 
+                        alt={activeSponsor.name} 
+                        className="h-3.5 w-auto max-w-[48px] object-contain rounded-xs bg-white px-0.5" 
+                        referrerPolicy="no-referrer"
+                      />
+                    )}
+                    <span>{activeSponsor.type}: {activeSponsor.name}</span>
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-xs sm:text-sm font-semibold text-[#FFB800] tracking-wide">

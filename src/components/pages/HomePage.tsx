@@ -54,7 +54,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <div className="flex flex-wrap items-center gap-2.5">
                 <span className="inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-500/10 px-3.5 py-1 text-xs font-bold text-red-400 uppercase tracking-wide">
                   <span className="live-dot" />
-                  REGISTRATION OPEN · DEADLINE 15 SEPT 2026
+                  REGISTRATION OPEN · DEADLINE 25 SEPT 2026
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1 text-xs font-semibold text-slate-300">
                   <MapPin className="w-3 h-3 text-[#FFB800]" />
@@ -193,7 +193,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                   </div>
 
                   <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-                    <span>Deadline: <strong className="text-[#FFB800]">15 Sept 2026</strong></span>
+                    <span>Deadline: <strong className="text-[#FFB800]">25 Sept 2026</strong></span>
                     <span className="text-emerald-400 font-semibold flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                       SLOTS OPEN
@@ -233,7 +233,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <div className="text-xs font-bold uppercase tracking-wide text-slate-400">SCHEDULE & VENUE</div>
               <h3 className="font-display text-lg font-bold text-white mt-1">10–11 OCTOBER 2026</h3>
               <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
-                Saturday & Sunday tournament weekend held at Pitch and Paddle, Sigra. Registration closes 15 September 2026.
+                Saturday & Sunday tournament weekend held at Pitch and Paddle, Sigra. Registration closes 25 September 2026.
               </p>
             </div>
           </div>
@@ -350,7 +350,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <span className="text-slate-400">Brand Association Package: +₹5,000 (Total ₹13k)</span>
               <div className="flex items-center gap-1.5 text-xs text-[#FFB800] font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FFB800] animate-pulse" />
-                <span>DEADLINE: 15 SEPT</span>
+                <span>DEADLINE: 25 SEPT</span>
               </div>
             </div>
           </div>
@@ -403,7 +403,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <span className="text-slate-400">Brand Association Package: +₹5,000 (Total ₹13k)</span>
               <div className="flex items-center gap-1.5 text-xs text-sky-400 font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-                <span>DEADLINE: 15 SEPT</span>
+                <span>DEADLINE: 25 SEPT</span>
               </div>
             </div>
           </div>
@@ -460,56 +460,122 @@ export const HomePage: React.FC<HomePageProps> = ({
         </div>
 
         {activeSponsors.length > 0 ? (
-          <div className="relative overflow-hidden panel p-4 sm:p-6 border border-[#1A2C68]">
-            <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-[#070D24] to-transparent z-10" />
-            <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#070D24] to-transparent z-10" />
-
-            <div className="sponsor-ticker-track gap-4 py-2">
-              {tickerSponsors.map((sp, idx) => {
+          <div className="space-y-6">
+            {/* Prominent Featured Sponsors Spotlight Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {activeSponsors.map((sp) => {
                 const CardWrapper = sp.websiteUrl ? 'a' : 'div';
                 const wrapperProps = sp.websiteUrl 
                   ? { href: sp.websiteUrl, target: '_blank', rel: 'noopener noreferrer' } 
                   : {};
 
+                // Tier-specific styling
+                const isTitle = sp.type.includes('TITLE');
+                const isCoSponsor = sp.type.includes('CO-SPONSOR');
+                const badgeColor = isTitle 
+                  ? 'bg-[#FFB800]/15 text-[#FFB800] border-[#FFB800]/40' 
+                  : isCoSponsor 
+                    ? 'bg-sky-500/15 text-sky-400 border-sky-500/40' 
+                    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40';
+
                 return (
                   <CardWrapper
-                    key={`${sp.id}-${idx}`}
+                    key={sp.id}
                     {...wrapperProps}
-                    className={`scoreboard-tile p-4 sm:p-5 flex flex-col justify-between min-w-[260px] sm:min-w-[300px] border border-white/10 transition-transform duration-200 hover:scale-[1.02] select-none ${
-                      sp.websiteUrl ? 'cursor-pointer group' : ''
-                    }`}
+                    className={`panel p-5 sm:p-6 flex flex-col justify-between border transition-all duration-300 hover:scale-[1.02] shadow-xl ${
+                      isTitle 
+                        ? 'border-[#FFB800]/40 bg-gradient-to-b from-[#0F1D4A] to-[#070D24]' 
+                        : 'border-[#1A2C68] bg-[#091333]'
+                    } ${sp.websiteUrl ? 'cursor-pointer group' : ''}`}
                   >
                     <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#FFB800]">
+                      {/* Sponsor Tier Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${badgeColor}`}>
                           {sp.type}
                         </span>
                         {sp.websiteUrl && (
-                          <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#FFB800] transition-colors" />
+                          <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-[#FFB800] transition-colors" />
                         )}
                       </div>
 
-                      {sp.logoUrl ? (
-                        <div className="h-10 flex items-center mb-2">
+                      {/* Prominent Sponsor Logo Box */}
+                      {sp.logoUrl && (
+                        <div className="w-full h-24 sm:h-28 bg-white rounded-xl p-3 flex items-center justify-center mb-4 shadow-md transition-transform duration-200 group-hover:scale-[1.02]">
                           <img 
                             src={sp.logoUrl} 
-                            alt={sp.name} 
-                            className="max-h-9 max-w-[160px] object-contain object-left" 
+                            alt={`${sp.name} logo`} 
+                            className="max-h-full max-w-full object-contain"
+                            referrerPolicy="no-referrer"
                           />
                         </div>
-                      ) : (
-                        <div className="font-display text-lg font-bold text-white tracking-wide mt-1">
-                          {sp.name}
-                        </div>
                       )}
+
+                      {/* Sponsor Name - Always Visible Prominently */}
+                      <div className="mt-1">
+                        <h3 className="font-display text-xl sm:text-2xl font-black text-white tracking-wide group-hover:text-[#FFB800] transition-colors">
+                          {sp.name}
+                        </h3>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider mt-1">
+                          {sp.tagline || 'Official Tournament Partner · BPL Kids S1'}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="text-xs text-slate-400 pt-2 border-t border-white/5 uppercase">
-                      {sp.tagline || 'Official Partner · BPL Kids S1'}
+                    <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+                      <span className="font-medium">Pitch and Paddle, Sigra</span>
+                      <span className="text-[#FFB800] font-bold">Season 01</span>
                     </div>
                   </CardWrapper>
                 );
               })}
+            </div>
+
+            {/* Seamless Ticker Strip */}
+            <div className="relative overflow-hidden panel p-4 sm:p-5 border border-[#1A2C68]">
+              <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-[#070D24] to-transparent z-10" />
+              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#070D24] to-transparent z-10" />
+
+              <div className="sponsor-ticker-track gap-4 py-2">
+                {tickerSponsors.map((sp, idx) => {
+                  const CardWrapper = sp.websiteUrl ? 'a' : 'div';
+                  const wrapperProps = sp.websiteUrl 
+                    ? { href: sp.websiteUrl, target: '_blank', rel: 'noopener noreferrer' } 
+                    : {};
+
+                  return (
+                    <CardWrapper
+                      key={`${sp.id}-${idx}`}
+                      {...wrapperProps}
+                      className={`scoreboard-tile p-3.5 sm:p-4 flex items-center gap-3.5 min-w-[280px] sm:min-w-[320px] border border-white/10 transition-transform duration-200 hover:scale-[1.02] select-none ${
+                        sp.websiteUrl ? 'cursor-pointer group' : ''
+                      }`}
+                    >
+                      {sp.logoUrl && (
+                        <div className="w-14 h-12 bg-white rounded-lg p-1.5 flex items-center justify-center flex-shrink-0 shadow-sm">
+                          <img 
+                            src={sp.logoUrl} 
+                            alt={sp.name} 
+                            className="max-h-full max-w-full object-contain" 
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#FFB800] block truncate">
+                          {sp.type}
+                        </span>
+                        <div className="font-display text-sm font-bold text-white tracking-wide truncate">
+                          {sp.name}
+                        </div>
+                        <div className="text-[10px] text-slate-400 uppercase truncate">
+                          {sp.tagline || 'Official Partner'}
+                        </div>
+                      </div>
+                    </CardWrapper>
+                  );
+                })}
+              </div>
             </div>
           </div>
         ) : (

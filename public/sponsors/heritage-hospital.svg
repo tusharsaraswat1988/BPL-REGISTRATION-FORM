@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 210" width="100%" height="100%">
+  <defs>
+    <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.12" />
+    </filter>
+  </defs>
+
+  <!-- Outer Rounded Card Frame -->
+  <rect x="10" y="10" width="440" height="190" rx="20" ry="20" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="2.5" filter="url(#card-shadow)" />
+
+  <!-- Left Icon Emblem Box -->
+  <g transform="translate(26, 28)">
+    <rect width="96" height="96" rx="14" fill="#255883" />
+    <!-- Caregiver & Child silhouette with Stethoscope -->
+    <path d="M 48 18 A 12 12 0 1 0 48 42 A 12 12 0 1 0 48 18 Z" fill="none" stroke="#FFFFFF" stroke-width="4.5" />
+    <path d="M 48 37 C 48 44 43 51 34 54 C 25 57 20 66 18 78 L 18 86 L 56 86 L 80 86 C 78 72 71 58 60 52 C 54 49 48 44 48 37 Z" fill="#FFFFFF" />
+    <!-- Child head cutout inside white chest -->
+    <circle cx="36" cy="74" r="9.5" fill="#255883" />
+    <!-- Stethoscope tube -->
+    <path d="M 52 38 C 55 45 58 55 57 66 C 56 73 54 78 50 82" fill="none" stroke="#255883" stroke-width="3" stroke-linecap="round" />
+    <circle cx="50" cy="83" r="3" fill="#255883" />
+  </g>
+
+  <!-- Right Typography Section -->
+  <!-- Heritage Brand Name -->
+  <text x="140" y="82" font-family="Georgia, 'Times New Roman', serif" font-size="54" font-weight="700" fill="#1D4D75" letter-spacing="-1">Heritage</text>
+  
+  <!-- Registered Trademark -->
+  <circle cx="388" cy="52" r="8" fill="none" stroke="#1D4D75" stroke-width="1.5" />
+  <text x="388" y="55" font-family="'Plus Jakarta Sans', Arial, sans-serif" font-size="9" font-weight="700" fill="#1D4D75" text-anchor="middle">R</text>
+
+  <!-- HOSPITALS subtitle in Teal -->
+  <text x="142" y="118" font-family="'Plus Jakarta Sans', 'Arial Black', Arial, sans-serif" font-size="28" font-weight="800" fill="#009797" letter-spacing="7">HOSPITALS</text>
+
+  <!-- Bottom Blue Motto Banner -->
+  <rect x="26" y="140" width="408" height="42" rx="7" fill="#1D4D75" />
+  <text x="230" y="167" font-family="Georgia, serif" font-size="18" font-weight="700" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">॥ चिरंजीवी भव ॥  CHIRANJEEVI BHAVA</text>
+</svg>

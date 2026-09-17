@@ -126,7 +126,7 @@ export function isRegistrationWindowOpen(): { open: boolean; reason?: string } {
   }
 
   if (now > endTime) {
-    return { open: false, reason: `Registration closed on 15 October 2026 at 23:59:59 IST.` };
+    return { open: false, reason: `Registration closed on 25 September 2026 at 23:59:59 IST.` };
   }
 
   return { open: true };

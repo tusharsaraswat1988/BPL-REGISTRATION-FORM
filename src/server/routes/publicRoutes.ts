@@ -14,6 +14,32 @@ export const PUBLIC_TOURNAMENT_CONFIG = {
   venue: 'Pitch and Paddle, Sigra',
   venueFull: 'Pitch and Paddle, Sigra, Varanasi',
   organizers: ['Bidwar.in', 'KV TechMedia'],
+  sponsors: [
+    {
+      id: 'heritage-hospital',
+      name: 'Heritage Hospital',
+      type: 'TITLE SPONSOR',
+      logoUrl: '/sponsors/heritage-hospital.svg',
+      tagline: 'Official Title Sponsor · BPL Kids S1',
+      order: 1,
+    },
+    {
+      id: 'live-studio-vns',
+      name: 'Live Studio Vns',
+      type: 'CO-SPONSOR',
+      logoUrl: '/sponsors/live-studio-vns.svg',
+      tagline: 'Official Co-Sponsor · BPL Kids S1',
+      order: 2,
+    },
+    {
+      id: 'good-morning',
+      name: 'Good Morning',
+      type: 'GIFTING PARTNER',
+      logoUrl: '/sponsors/good-morning.svg',
+      tagline: 'Official Gifting Partner · BPL Kids S1',
+      order: 3,
+    },
+  ],
   format: 'Box Cricket Tournament',
   officialWebsites: {
     bidwar: 'https://bidwar.in',
