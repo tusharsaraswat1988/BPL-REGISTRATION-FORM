@@ -52,6 +52,9 @@ export interface PaymentInput {
   gatewayPaymentId?: string;
   gatewayRawResponse?: any;
   paymentStatus?: string;
+  baseAmount?: number;
+  brandingAmount?: number;
+  totalAmount?: number;
 }
 
 export interface RegistrationSubmissionInput {
