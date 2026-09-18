@@ -158,16 +158,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   <span>Verify Status</span>
                 </button>
               </li>
-              <li>
-                <button
-                  type="button"
-                  onClick={() => handleNav('/admin')}
-                  className="text-slate-400 hover:text-amber-400 transition-colors cursor-pointer text-left flex items-center gap-2 text-[11px]"
-                >
-                  <Lock className="w-3.5 h-3.5 text-amber-500" />
-                  <span>Admin Control Portal</span>
-                </button>
-              </li>
             </ul>
           </div>
 
