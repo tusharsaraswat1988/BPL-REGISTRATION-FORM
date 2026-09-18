@@ -65,27 +65,27 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-50 bg-[#070D24]/95 backdrop-blur-md border-b border-[#1A2C68]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Brand & Navigation Row */}
-        <div className="flex items-center justify-between py-3 gap-4">
+        <div className="flex items-center justify-between py-2.5 sm:py-3 gap-2 sm:gap-4">
           {/* Left: Official Tournament Logo + Exact Required Title/Subtitle */}
           <div 
-            className="flex items-center gap-3.5 cursor-pointer group select-none min-w-0"
+            className="flex items-center gap-2 sm:gap-3.5 cursor-pointer group select-none min-w-0"
             onClick={() => handleNav('/')}
             title="BidWar Premier League — Home"
           >
             {/* Logo */}
             <div className="flex-shrink-0 transition-transform duration-200 group-hover:scale-105">
-              <BplLogo size={48} className="sm:w-[54px] sm:h-[54px]" />
+              <BplLogo size={42} className="w-[38px] h-[38px] sm:w-[50px] sm:h-[50px]" />
             </div>
 
             {/* Titles */}
             <div className="min-w-0 flex flex-col justify-center">
               <div className="flex items-center gap-2">
-                <span className="text-base sm:text-xl font-display font-extrabold text-white tracking-tight uppercase leading-tight group-hover:text-[#FFB800] transition-colors">
+                <span className="text-xs sm:text-base md:text-xl font-display font-extrabold text-white tracking-tight uppercase leading-tight group-hover:text-[#FFB800] transition-colors truncate">
                   BIDWAR PREMIER LEAGUE
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-xs sm:text-sm font-semibold text-[#FFB800] tracking-wide">
+                <span className="text-[11px] sm:text-sm font-semibold text-[#FFB800] tracking-wide truncate">
                   {isAdmin ? 'Admin Control Center' : 'Registration Portal'}
                 </span>
               </div>

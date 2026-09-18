@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Trophy, Calendar, Users, FileText, Tv, ShieldCheck, 
   Award, ChevronRight, CheckCircle2,
-  Sparkles, Layers, Shield, ExternalLink, MapPin
+  Sparkles, Layers, Shield, ExternalLink, MapPin, Crown
 } from 'lucide-react';
 import { TournamentCategory, PublicTeamDTO } from '../../types';
 import { TOURNAMENT_CONFIG, SponsorConfig, SchoolBrandConfig } from '../../config/tournamentConfig';
@@ -142,7 +142,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <div className="pointer-events-none absolute w-72 h-72 rounded-full bg-blue-500/25 blur-2xl -bottom-4 -right-4" />
 
               {/* Logo Card Container */}
-              <div className="relative group max-w-md w-full flex flex-col items-center">
+              <div className="relative group max-w-[290px] sm:max-w-sm md:max-w-md w-full flex flex-col items-center">
                 <div className="relative overflow-hidden rounded-3xl p-3 sm:p-4 bg-gradient-to-b from-[#0F2052]/90 via-[#0A163B]/90 to-[#060D24]/95 border-2 border-[#FFB800]/40 shadow-2xl shadow-blue-950/80 backdrop-blur-xl transition-all duration-500 group-hover:scale-[1.02] group-hover:border-[#FFB800]/70 group-hover:shadow-[0_0_50px_rgba(255,184,0,0.3)]">
                   {/* High-Resolution 3D Official Emblem */}
                   <div className="relative overflow-hidden rounded-2xl">
@@ -433,30 +433,52 @@ export const HomePage: React.FC<HomePageProps> = ({
                 // Tier-specific styling
                 const isTitle = sp.type.includes('TITLE');
                 const isCoSponsor = sp.type.includes('CO-SPONSOR');
-                const badgeColor = isTitle 
-                  ? 'bg-[#FFB800]/15 text-[#FFB800] border-[#FFB800]/40' 
-                  : isCoSponsor 
-                    ? 'bg-sky-500/15 text-sky-400 border-sky-500/40' 
-                    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/40';
+
+                const cardClasses = isTitle
+                  ? 'border-2 border-[#FFB800]/70 bg-gradient-to-b from-[#16275e] via-[#0b1840] to-[#070D24] shadow-2xl shadow-amber-500/15 hover:border-[#FFB800] hover:shadow-[0_0_40px_rgba(255,184,0,0.25)] relative overflow-hidden'
+                  : isCoSponsor
+                    ? 'border-2 border-sky-500/50 bg-gradient-to-b from-[#0c1f4d] via-[#081538] to-[#060D24] shadow-xl shadow-sky-500/10 hover:border-sky-400 hover:shadow-sky-500/25 relative overflow-hidden'
+                    : 'border border-[#1A2C68] bg-[#091333] shadow-lg hover:border-slate-600';
+
+                const badgeClasses = isTitle
+                  ? 'bg-gradient-to-r from-amber-500/25 via-[#FFB800]/30 to-amber-500/25 text-[#FFB800] border-amber-400/60 shadow-md shadow-amber-500/20 font-black'
+                  : isCoSponsor
+                    ? 'bg-sky-500/20 text-sky-300 border-sky-400/50 font-extrabold'
+                    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 font-bold';
+
+                const logoBoxClasses = isTitle
+                  ? 'w-full h-32 sm:h-36 bg-white rounded-2xl p-4 flex items-center justify-center mb-4 shadow-xl ring-2 ring-[#FFB800]/40 transition-transform duration-200 group-hover:scale-[1.03]'
+                  : isCoSponsor
+                    ? 'w-full h-28 sm:h-32 bg-white rounded-xl p-3.5 flex items-center justify-center mb-4 shadow-md ring-1 ring-sky-500/30 transition-transform duration-200 group-hover:scale-[1.03]'
+                    : 'w-full h-28 sm:h-32 bg-white rounded-xl p-3.5 flex items-center justify-center mb-4 shadow-md transition-transform duration-200 group-hover:scale-[1.03]';
 
                 return (
                   <CardWrapper
                     key={sp.id}
                     {...wrapperProps}
-                    className={`panel p-5 sm:p-6 flex flex-col justify-between border transition-all duration-300 hover:scale-[1.02] shadow-xl ${
-                      isTitle 
-                        ? 'border-[#FFB800]/40 bg-gradient-to-b from-[#0F1D4A] to-[#070D24]' 
-                        : 'border-[#1A2C68] bg-[#091333]'
-                    } ${sp.websiteUrl ? 'cursor-pointer group' : ''}`}
+                    className={`panel p-5 sm:p-6 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] ${cardClasses} ${
+                      sp.websiteUrl ? 'cursor-pointer group' : ''
+                    }`}
                   >
+                    {/* Top Tier Accent Bar */}
+                    {isTitle && (
+                      <div className="pointer-events-none absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-[#FFB800] to-amber-300 shadow-[0_0_12px_rgba(255,184,0,0.8)]" />
+                    )}
+                    {isCoSponsor && (
+                      <div className="pointer-events-none absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-sky-400 via-cyan-400 to-sky-300" />
+                    )}
+
                     <div>
                       {/* Sponsor Tier Header */}
                       <div className="flex items-center justify-between mb-4">
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${badgeColor}`}>
-                          {sp.type}
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase tracking-wider border flex items-center gap-1.5 ${badgeClasses}`}>
+                          {isTitle && <Crown className="w-3 h-3 text-[#FFB800]" />}
+                          <span>{sp.type}</span>
                         </span>
                         {sp.websiteUrl && (
-                          <span className="flex items-center gap-1 text-[11px] text-slate-400 group-hover:text-[#FFB800] font-semibold transition-colors">
+                          <span className={`flex items-center gap-1 text-[11px] font-semibold transition-colors ${
+                            isTitle ? 'text-amber-300 group-hover:text-white' : 'text-slate-400 group-hover:text-white'
+                          }`}>
                             <span>Visit Official Site</span>
                             <ExternalLink className="w-3.5 h-3.5" />
                           </span>
@@ -465,7 +487,7 @@ export const HomePage: React.FC<HomePageProps> = ({
 
                       {/* Prominent Sponsor Logo Box */}
                       {sp.logoUrl && (
-                        <div className="w-full h-28 sm:h-32 bg-white rounded-xl p-3.5 flex items-center justify-center mb-4 shadow-md transition-transform duration-200 group-hover:scale-[1.03]">
+                        <div className={logoBoxClasses}>
                           <img 
                             src={sp.logoUrl} 
                             alt={`${sp.name} logo`} 
@@ -475,12 +497,14 @@ export const HomePage: React.FC<HomePageProps> = ({
                         </div>
                       )}
 
-                      {/* Sponsor Name - Always Visible Prominently */}
+                      {/* Sponsor Name */}
                       <div className="mt-1">
-                        <h3 className="font-display text-xl sm:text-2xl font-black text-white tracking-wide group-hover:text-[#FFB800] transition-colors flex items-center justify-between">
+                        <h3 className={`font-display text-xl sm:text-2xl font-black tracking-wide transition-colors flex items-center justify-between ${
+                          isTitle ? 'text-[#FFB800] group-hover:text-white' : 'text-white group-hover:text-sky-300'
+                        }`}>
                           <span>{sp.name}</span>
                           {sp.websiteUrl && (
-                            <span className="text-xs text-slate-500 group-hover:text-[#FFB800] transition-colors">↗</span>
+                            <span className="text-xs text-slate-500 group-hover:text-white transition-colors">↗</span>
                           )}
                         </h3>
                         <p className="text-xs text-slate-400 uppercase tracking-wider mt-1">
@@ -491,7 +515,9 @@ export const HomePage: React.FC<HomePageProps> = ({
 
                     <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
                       <span className="font-medium">Pitch and Paddle, Sigra</span>
-                      <span className="text-[#FFB800] font-bold">Season 01</span>
+                      <span className={isTitle ? 'text-[#FFB800] font-black' : isCoSponsor ? 'text-sky-400 font-bold' : 'text-slate-400 font-semibold'}>
+                        Season 01
+                      </span>
                     </div>
                   </CardWrapper>
                 );

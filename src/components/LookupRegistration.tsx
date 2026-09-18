@@ -51,21 +51,23 @@ export const LookupRegistration: React.FC = () => {
 
       {/* Search Input Bar */}
       <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-6">
-        <div className="relative flex items-center">
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Enter 4-digit Team Code (e.g. 4821) or Registration ID (e.g. BPL-2026-0001)..."
-            className="w-full pl-11 pr-32 py-3.5 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#FFB800] shadow-xl"
-          />
-          <Search className="w-5 h-5 text-slate-500 absolute left-3.5" />
+        <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Enter 4-digit Team Code or Registration ID..."
+              className="w-full pl-11 pr-4 py-3.5 bg-[#0A1230] border border-[#1A2C68] rounded-xl text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#FFB800] shadow-xl"
+            />
+            <Search className="w-5 h-5 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          </div>
           <button
             type="submit"
             disabled={isSearching || !query.trim()}
-            className="absolute right-2 px-4 py-2 rounded-lg bg-[#FFB800] hover:bg-[#FBBF24] disabled:bg-slate-800 disabled:text-slate-600 text-slate-950 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+            className="px-6 py-3.5 rounded-xl bg-[#FFB800] hover:bg-[#FBBF24] disabled:bg-slate-800 disabled:text-slate-600 text-slate-950 font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-[#FFB800]/20 active:scale-[0.98]"
           >
-            {isSearching ? 'Searching...' : 'Search'}
+            {isSearching ? 'Searching...' : 'Search Status'}
           </button>
         </div>
       </form>
