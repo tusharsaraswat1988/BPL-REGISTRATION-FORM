@@ -116,6 +116,7 @@ export const TOURNAMENT_CONFIG = {
       name: "Heritage Hospital",
       type: "TITLE SPONSOR",
       logoUrl: "/sponsors/heritage-hospital.svg",
+      websiteUrl: "https://heritagehospitals.com/",
       tagline: "Official Title Sponsor · BPL Kids S1",
       order: 1,
       active: true
@@ -124,7 +125,8 @@ export const TOURNAMENT_CONFIG = {
       id: "live-studio-vns",
       name: "Live Studio Vns",
       type: "CO-SPONSOR",
-      logoUrl: "/sponsors/live-studio-vns.svg",
+      logoUrl: "/sponsors/live-studio-vns.jpg",
+      websiteUrl: "https://www.hotelvaruna.com/vns-live-studio",
       tagline: "Official Co-Sponsor · BPL Kids S1",
       order: 2,
       active: true
@@ -133,7 +135,8 @@ export const TOURNAMENT_CONFIG = {
       id: "good-morning",
       name: "Good Morning",
       type: "GIFTING PARTNER",
-      logoUrl: "/sponsors/good-morning.svg",
+      logoUrl: "/sponsors/good-morning.jpg",
+      websiteUrl: "https://www.mygm.in/",
       tagline: "Official Gifting Partner · BPL Kids S1",
       order: 3,
       active: true

@@ -24,7 +24,6 @@ export const HomePage: React.FC<HomePageProps> = ({
   const div2 = categories.find(c => c.id === 'class_7_8_9') || categories[1];
 
   const activeSponsors = sponsors.filter(s => s.active !== false);
-  const tickerSponsors = activeSponsors.length > 0 ? [...activeSponsors, ...activeSponsors, ...activeSponsors] : [];
 
   return (
     <div className="space-y-16 sm:space-y-20 pb-20">
@@ -132,73 +131,32 @@ export const HomePage: React.FC<HomePageProps> = ({
               </div>
             </div>
 
-            {/* Right Column: Hero Match Info Card */}
-            <div className="relative">
-              <div className="relative mx-auto max-w-md w-full">
-                <div className="absolute -inset-4 -z-10 rounded-2xl bg-gradient-to-r from-blue-600/20 via-[#FFB800]/15 to-transparent blur-2xl" />
+            {/* Right Column: Prominent BPL 3D Official Logo with Premium Glow */}
+            <div className="relative flex items-center justify-center">
+              {/* Dynamic Multi-layered Ambient Glow Effects */}
+              <div className="pointer-events-none absolute -inset-6 -z-10 rounded-full bg-gradient-to-tr from-[#FFB800]/25 via-blue-600/30 to-[#FFB800]/20 blur-3xl animate-pulse" />
+              <div className="pointer-events-none absolute w-72 h-72 rounded-full bg-[#FFB800]/20 blur-2xl -top-4 -left-4" />
+              <div className="pointer-events-none absolute w-72 h-72 rounded-full bg-blue-500/25 blur-2xl -bottom-4 -right-4" />
 
-                <div className="panel-rail p-6 space-y-5 relative overflow-hidden">
-                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                    <span className="text-xs font-bold text-[#FFB800] uppercase tracking-wide flex items-center gap-1.5">
-                      <span className="live-dot" />
-                      TOURNAMENT STRUCTURE
-                    </span>
-                    <span className="text-xs text-slate-400 font-semibold">VARANASI, UP</span>
+              {/* Logo Card Container */}
+              <div className="relative group max-w-md w-full flex flex-col items-center">
+                <div className="relative overflow-hidden rounded-3xl p-3 sm:p-4 bg-gradient-to-b from-[#0F2052]/90 via-[#0A163B]/90 to-[#060D24]/95 border-2 border-[#FFB800]/40 shadow-2xl shadow-blue-950/80 backdrop-blur-xl transition-all duration-500 group-hover:scale-[1.02] group-hover:border-[#FFB800]/70 group-hover:shadow-[0_0_50px_rgba(255,184,0,0.3)]">
+                  {/* High-Resolution 3D Official Emblem */}
+                  <div className="relative overflow-hidden rounded-2xl">
+                    <img
+                      src="/bpl-hero-logo.jpg"
+                      alt="BidWar Premier League Official Emblem"
+                      className="w-full h-auto object-cover rounded-2xl shadow-inner transition-transform duration-500 group-hover:scale-105"
+                    />
                   </div>
+                </div>
 
-                  <div>
-                    <h3 className="font-display text-xl font-bold text-white">
-                      BidWar Premier League — Season 01
-                    </h3>
-                    <p className="text-xs text-slate-300 mt-1">
-                      Kids Box Cricket Edition · 8 Teams / Division · 2 Groups of 4
-                    </p>
-                  </div>
-
-                  {/* Two Division Quick Cards */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="scoreboard-tile p-3.5 space-y-1">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-[#FFB800]">
-                        <span>CATEGORY 1</span>
-                        <span>8 TEAMS</span>
-                      </div>
-                      <div className="font-display text-base font-bold text-white">CLASS 4 TO 6</div>
-                      <div className="text-[11px] text-[#FFB800] font-semibold">8 to 11y 11m 29d</div>
-                      <div className="text-xs text-slate-400 pt-0.5">₹1k/player · ₹8k squad</div>
-                    </div>
-
-                    <div className="scoreboard-tile p-3.5 space-y-1">
-                      <div className="flex items-center justify-between text-[11px] font-bold text-sky-400">
-                        <span>CATEGORY 2</span>
-                        <span>8 TEAMS</span>
-                      </div>
-                      <div className="font-display text-base font-bold text-white">CLASS 7 TO 9</div>
-                      <div className="text-[11px] text-sky-400 font-semibold">12 to 14y 11m 29d</div>
-                      <div className="text-xs text-slate-400 pt-0.5">₹1k/player · ₹8k squad</div>
-                    </div>
-                  </div>
-
-                  {/* Summary Checklist */}
-                  <div className="scoreboard-tile p-3.5 space-y-2 text-xs text-slate-300">
-                    <div className="font-bold text-white flex items-center justify-between">
-                      <span>COMPETITION PATHWAY</span>
-                      <span className="text-emerald-400">OFFICIAL FORMAT</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-1.5 pt-1 text-[11px]">
-                      <div>• Groups: <strong>2 Groups of 4</strong></div>
-                      <div>• League: <strong>3 Matches / Team</strong></div>
-                      <div>• Qualifiers: <strong>Top 2 per Group</strong></div>
-                      <div>• Knockouts: <strong>4 Semi-Finalists</strong></div>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-                    <span>Deadline: <strong className="text-[#FFB800]">25 Sept 2026</strong></span>
-                    <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                      SLOTS OPEN
-                    </span>
-                  </div>
+                {/* Subtle Official Tagline Under Logo */}
+                <div className="mt-4 flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#091333]/90 border border-[#FFB800]/30 shadow-lg">
+                  <span className="w-2 h-2 rounded-full bg-[#FFB800] animate-ping" />
+                  <span className="text-xs font-bold font-display uppercase tracking-widest text-[#FFB800]">
+                    SEASON 1 - KIDS EDITION
+                  </span>
                 </div>
               </div>
             </div>
@@ -495,13 +453,16 @@ export const HomePage: React.FC<HomePageProps> = ({
                           {sp.type}
                         </span>
                         {sp.websiteUrl && (
-                          <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-[#FFB800] transition-colors" />
+                          <span className="flex items-center gap-1 text-[11px] text-slate-400 group-hover:text-[#FFB800] font-semibold transition-colors">
+                            <span>Visit Official Site</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </span>
                         )}
                       </div>
 
                       {/* Prominent Sponsor Logo Box */}
                       {sp.logoUrl && (
-                        <div className="w-full h-24 sm:h-28 bg-white rounded-xl p-3 flex items-center justify-center mb-4 shadow-md transition-transform duration-200 group-hover:scale-[1.02]">
+                        <div className="w-full h-28 sm:h-32 bg-white rounded-xl p-3.5 flex items-center justify-center mb-4 shadow-md transition-transform duration-200 group-hover:scale-[1.03]">
                           <img 
                             src={sp.logoUrl} 
                             alt={`${sp.name} logo`} 
@@ -513,8 +474,11 @@ export const HomePage: React.FC<HomePageProps> = ({
 
                       {/* Sponsor Name - Always Visible Prominently */}
                       <div className="mt-1">
-                        <h3 className="font-display text-xl sm:text-2xl font-black text-white tracking-wide group-hover:text-[#FFB800] transition-colors">
-                          {sp.name}
+                        <h3 className="font-display text-xl sm:text-2xl font-black text-white tracking-wide group-hover:text-[#FFB800] transition-colors flex items-center justify-between">
+                          <span>{sp.name}</span>
+                          {sp.websiteUrl && (
+                            <span className="text-xs text-slate-500 group-hover:text-[#FFB800] transition-colors">↗</span>
+                          )}
                         </h3>
                         <p className="text-xs text-slate-400 uppercase tracking-wider mt-1">
                           {sp.tagline || 'Official Tournament Partner · BPL Kids S1'}
@@ -529,53 +493,6 @@ export const HomePage: React.FC<HomePageProps> = ({
                   </CardWrapper>
                 );
               })}
-            </div>
-
-            {/* Seamless Ticker Strip */}
-            <div className="relative overflow-hidden panel p-4 sm:p-5 border border-[#1A2C68]">
-              <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-[#070D24] to-transparent z-10" />
-              <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-[#070D24] to-transparent z-10" />
-
-              <div className="sponsor-ticker-track gap-4 py-2">
-                {tickerSponsors.map((sp, idx) => {
-                  const CardWrapper = sp.websiteUrl ? 'a' : 'div';
-                  const wrapperProps = sp.websiteUrl 
-                    ? { href: sp.websiteUrl, target: '_blank', rel: 'noopener noreferrer' } 
-                    : {};
-
-                  return (
-                    <CardWrapper
-                      key={`${sp.id}-${idx}`}
-                      {...wrapperProps}
-                      className={`scoreboard-tile p-3.5 sm:p-4 flex items-center gap-3.5 min-w-[280px] sm:min-w-[320px] border border-white/10 transition-transform duration-200 hover:scale-[1.02] select-none ${
-                        sp.websiteUrl ? 'cursor-pointer group' : ''
-                      }`}
-                    >
-                      {sp.logoUrl && (
-                        <div className="w-14 h-12 bg-white rounded-lg p-1.5 flex items-center justify-center flex-shrink-0 shadow-sm">
-                          <img 
-                            src={sp.logoUrl} 
-                            alt={sp.name} 
-                            className="max-h-full max-w-full object-contain" 
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#FFB800] block truncate">
-                          {sp.type}
-                        </span>
-                        <div className="font-display text-sm font-bold text-white tracking-wide truncate">
-                          {sp.name}
-                        </div>
-                        <div className="text-[10px] text-slate-400 uppercase truncate">
-                          {sp.tagline || 'Official Partner'}
-                        </div>
-                      </div>
-                    </CardWrapper>
-                  );
-                })}
-              </div>
             </div>
           </div>
         ) : (
@@ -653,78 +570,6 @@ export const HomePage: React.FC<HomePageProps> = ({
         )}
       </section>
 
-      {/* =================================================================== */}
-      {/* 5. DIRECT ACCESS GATEWAY CARDS (No duplicate info, clean pathways) */}
-      {/* =================================================================== */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Registered Teams Gateway */}
-          <div className="panel p-6 sm:p-8 flex flex-col justify-between space-y-5">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-[#070D24] border border-[#1A2C68] text-[#FFB800] flex items-center justify-center">
-                    <Users className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-bold text-[#FFB800] uppercase tracking-wide">
-                    PUBLIC DIRECTORY ({teams.length} CONFIRMED)
-                  </span>
-                </div>
-                <span className="text-xs text-emerald-400 font-semibold">LIVE ROSTER</span>
-              </div>
-
-              <h3 className="font-display text-xl font-bold text-white">
-                Registered Teams Showcase
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Browse confirmed school and academy teams entering Season 01 at Pitch and Paddle, Sigra. Review team rosters and category assignments.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('/teams')}
-              className="ghost-button ghost-button-hover w-full py-3 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>VIEW ALL REGISTERED TEAMS ({teams.length})</span>
-              <ChevronRight className="w-4 h-4 text-[#FFB800]" />
-            </button>
-          </div>
-
-          {/* Rules & Format Gateway */}
-          <div className="panel p-6 sm:p-8 flex flex-col justify-between space-y-5">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-[#070D24] border border-[#1A2C68] text-sky-400 flex items-center justify-center">
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <span className="text-xs font-bold text-sky-400 uppercase tracking-wide">
-                    OFFICIAL HANDBOOK
-                  </span>
-                </div>
-                <span className="text-xs text-slate-400 font-semibold">RULES V1.0</span>
-              </div>
-
-              <h3 className="font-display text-xl font-bold text-white">
-                Rules & Tournament Regulations
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Read match regulations, 8-player squad requirements, 1-mentor rule, no-substitutes policy, and fee guidelines.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('/rules')}
-              className="ghost-button ghost-button-hover w-full py-3 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <span>VIEW COMPLETE RULES & FORMAT</span>
-              <ChevronRight className="w-4 h-4 text-sky-400" />
-            </button>
-          </div>
-        </div>
-      </section>
     </div>
   );
 };

@@ -20,51 +20,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Official Tournament WhatsApp Community Highlight Banner */}
         <div className="pt-8 sm:pt-10 space-y-4">
-          {/* Tournament Official Sponsors Showcase */}
-          {TOURNAMENT_CONFIG.SPONSORS && TOURNAMENT_CONFIG.SPONSORS.length > 0 && (
-            <div className="p-4 sm:p-5 rounded-2xl bg-[#091230] border border-[#1A2C68] shadow-md">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-white/10 pb-3 mb-3">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#FFB800] flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5" />
-                  Official Tournament Sponsors & Partners
-                </span>
-                <span className="text-[10px] text-slate-400 uppercase tracking-wide">
-                  BidWar Premier League — Season 01
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {TOURNAMENT_CONFIG.SPONSORS.map((sp) => (
-                  <div 
-                    key={sp.id} 
-                    className="p-3.5 rounded-xl bg-[#070D24] border border-white/10 flex items-center gap-3"
-                  >
-                    {sp.logoUrl && (
-                      <div className="w-16 h-14 bg-white rounded-lg p-1.5 flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <img 
-                          src={sp.logoUrl} 
-                          alt={`${sp.name} logo`} 
-                          className="max-h-full max-w-full object-contain"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#FFB800] block">
-                        {sp.type}
-                      </span>
-                      <span className="font-display font-bold text-white text-base tracking-wide block truncate">
-                        {sp.name}
-                      </span>
-                      <span className="text-[10px] text-slate-400 uppercase block truncate">
-                        {sp.tagline}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-950/60 via-[#091535] to-emerald-950/60 border border-emerald-500/30 flex flex-col md:flex-row items-center justify-between gap-4 shadow-lg shadow-black/40">
             <div className="flex items-center gap-3.5 text-left">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 flex-shrink-0">

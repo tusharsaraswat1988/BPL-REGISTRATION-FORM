@@ -62,34 +62,44 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {TOURNAMENT_CONFIG.SPONSORS.map((sp) => (
-                  <div 
-                    key={sp.id}
-                    className="p-3 rounded-xl bg-[#060B1E] border border-white/10 flex flex-col items-center justify-between text-center transition-all hover:border-[#FFB800]/40 group"
-                  >
-                    <div className="w-full flex flex-col items-center">
-                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#FFB800] mb-2 px-2 py-0.5 rounded bg-[#FFB800]/10 border border-[#FFB800]/20">
-                        {sp.type}
+                {TOURNAMENT_CONFIG.SPONSORS.map((sp) => {
+                  const CardWrapper = sp.websiteUrl ? 'a' : 'div';
+                  const wrapperProps = sp.websiteUrl 
+                    ? { href: sp.websiteUrl, target: '_blank', rel: 'noopener noreferrer' } 
+                    : {};
+
+                  return (
+                    <CardWrapper 
+                      key={sp.id}
+                      {...wrapperProps}
+                      className={`p-3 rounded-xl bg-[#060B1E] border border-white/10 flex flex-col items-center justify-between text-center transition-all hover:border-[#FFB800]/40 group ${
+                        sp.websiteUrl ? 'cursor-pointer' : ''
+                      }`}
+                    >
+                      <div className="w-full flex flex-col items-center">
+                        <span className="text-[9px] font-extrabold uppercase tracking-widest text-[#FFB800] mb-2 px-2 py-0.5 rounded bg-[#FFB800]/10 border border-[#FFB800]/20">
+                          {sp.type}
+                        </span>
+                        {sp.logoUrl && (
+                          <div className="w-full h-16 bg-white rounded-lg p-2 flex items-center justify-center mb-2.5 shadow-sm group-hover:scale-105 transition-transform duration-200">
+                            <img 
+                              src={sp.logoUrl} 
+                              alt={`${sp.name} logo`} 
+                              className="max-h-full max-w-full object-contain"
+                              referrerPolicy="no-referrer"
+                            />
+                          </div>
+                        )}
+                        <span className="font-display font-black text-white text-base tracking-wide leading-tight group-hover:text-[#FFB800] transition-colors">
+                          {sp.name}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wide mt-1.5 pt-1.5 border-t border-white/5 w-full">
+                        {sp.tagline}
                       </span>
-                      {sp.logoUrl && (
-                        <div className="w-full h-16 bg-white rounded-lg p-2 flex items-center justify-center mb-2.5 shadow-sm group-hover:scale-105 transition-transform duration-200">
-                          <img 
-                            src={sp.logoUrl} 
-                            alt={`${sp.name} logo`} 
-                            className="max-h-full max-w-full object-contain"
-                            referrerPolicy="no-referrer"
-                          />
-                        </div>
-                      )}
-                      <span className="font-display font-black text-white text-base tracking-wide leading-tight">
-                        {sp.name}
-                      </span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wide mt-1.5 pt-1.5 border-t border-white/5 w-full">
-                      {sp.tagline}
-                    </span>
-                  </div>
-                ))}
+                    </CardWrapper>
+                  );
+                })}
               </div>
             </div>
           )}
