@@ -5,25 +5,28 @@ import {
   Sparkles, Layers, Shield, ExternalLink, MapPin
 } from 'lucide-react';
 import { TournamentCategory, PublicTeamDTO } from '../../types';
-import { TOURNAMENT_CONFIG, SponsorConfig } from '../../config/tournamentConfig';
+import { TOURNAMENT_CONFIG, SponsorConfig, SchoolBrandConfig } from '../../config/tournamentConfig';
 
 interface HomePageProps {
   categories: TournamentCategory[];
   teams: PublicTeamDTO[];
   onNavigate: (path: string) => void;
   sponsors?: SponsorConfig[];
+  schools?: SchoolBrandConfig[];
 }
 
 export const HomePage: React.FC<HomePageProps> = ({
   categories,
   teams,
   onNavigate,
-  sponsors = TOURNAMENT_CONFIG.SPONSORS
+  sponsors = TOURNAMENT_CONFIG.SPONSORS,
+  schools = TOURNAMENT_CONFIG.REGISTERED_SCHOOLS
 }) => {
   const div1 = categories.find(c => c.id === 'class_4_5_6') || categories[0];
   const div2 = categories.find(c => c.id === 'class_7_8_9') || categories[1];
 
   const activeSponsors = sponsors.filter(s => s.active !== false);
+  const registeredSchools = (schools || TOURNAMENT_CONFIG.REGISTERED_SCHOOLS).filter(s => s.active !== false);
 
   return (
     <div className="space-y-16 sm:space-y-20 pb-20">
@@ -570,7 +573,90 @@ export const HomePage: React.FC<HomePageProps> = ({
         )}
       </section>
 
+      {/* =================================================================== */}
+      {/* 4. REGISTERED SCHOOL BRANDS                                         */}
+      {/* =================================================================== */}
+      {registeredSchools.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-left mb-6">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#FFB800]">
+              04 / REGISTERED SCHOOL BRANDS
+            </span>
+            <h2 className="text-display-md text-white mt-1">
+              Registered School Brands
+            </h2>
+            <p className="text-sm text-slate-400 mt-1 max-w-2xl">
+              Official schools and educational institutions participating in BidWar Premier League — Season 01.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {registeredSchools.map((school) => {
+              const CardWrapper = school.websiteUrl ? 'a' : 'div';
+              const wrapperProps = school.websiteUrl 
+                ? { href: school.websiteUrl, target: '_blank', rel: 'noopener noreferrer' } 
+                : {};
+
+              return (
+                <CardWrapper
+                  key={school.id}
+                  {...wrapperProps}
+                  className={`panel p-5 sm:p-6 flex flex-col justify-between border border-[#1A2C68] bg-[#091333] transition-all duration-300 hover:scale-[1.02] hover:border-[#FFB800]/50 shadow-xl ${
+                    school.websiteUrl ? 'cursor-pointer group' : ''
+                  }`}
+                >
+                  <div>
+                    {/* School Tier Header */}
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border bg-[#FFB800]/15 text-[#FFB800] border-[#FFB800]/40">
+                        {school.badge || 'PARTICIPATING SCHOOL'}
+                      </span>
+                      {school.websiteUrl && (
+                        <span className="flex items-center gap-1 text-[11px] text-slate-400 group-hover:text-[#FFB800] font-semibold transition-colors">
+                          <span>Visit Official Site</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </span>
+                      )}
+                    </div>
+
+                    {/* School Logo Box */}
+                    {school.logoUrl && (
+                      <div className="w-full h-28 sm:h-32 bg-white rounded-xl p-3 flex items-center justify-center mb-4 shadow-md transition-transform duration-200 group-hover:scale-[1.03]">
+                        <img 
+                          src={school.logoUrl} 
+                          alt={`${school.name} logo`} 
+                          className="max-h-full max-w-full object-contain"
+                          referrerPolicy="no-referrer"
+                        />
+                      </div>
+                    )}
+
+                    {/* School Name */}
+                    <div className="mt-1">
+                      <h3 className="font-display text-xl sm:text-2xl font-black text-white tracking-wide group-hover:text-[#FFB800] transition-colors flex items-center justify-between">
+                        <span>{school.name}</span>
+                        {school.websiteUrl && (
+                          <span className="text-xs text-slate-500 group-hover:text-[#FFB800] transition-colors">↗</span>
+                        )}
+                      </h3>
+                      <p className="text-xs text-slate-400 uppercase tracking-wider mt-1">
+                        {school.tagline || 'Official Participating Institution · BPL Kids S1'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+                    <span className="font-medium">{school.location || 'Pitch and Paddle, Sigra'}</span>
+                    <span className="text-[#FFB800] font-bold">Season 01</span>
+                  </div>
+                </CardWrapper>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 };
+
 

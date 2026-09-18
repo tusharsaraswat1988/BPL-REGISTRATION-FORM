@@ -43,6 +43,18 @@ export const PUBLIC_TOURNAMENT_CONFIG = {
       order: 3,
     },
   ],
+  registeredSchools: [
+    {
+      id: 'unique-academy',
+      name: 'Unique Academy',
+      badge: 'PARTICIPATING SCHOOL',
+      logoUrl: '/schools/unique-academy.png',
+      websiteUrl: 'https://www.uniqueacademyschools.in/',
+      tagline: 'Perfection is our Motto · Est. 1995',
+      location: 'Pitch and Paddle, Sigra',
+      order: 1,
+    },
+  ],
   format: 'Box Cricket Tournament',
   officialWebsites: {
     bidwar: 'https://bidwar.in',

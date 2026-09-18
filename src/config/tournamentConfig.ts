@@ -11,6 +11,18 @@ export interface SponsorConfig {
   active?: boolean;
 }
 
+export interface SchoolBrandConfig {
+  id: string;
+  name: string;
+  badge?: string;
+  logoUrl: string;
+  websiteUrl: string;
+  tagline?: string;
+  location?: string;
+  order?: number;
+  active?: boolean;
+}
+
 export interface TournamentCategoryConfig {
   id: CategoryId;
   name: string;
@@ -142,6 +154,21 @@ export const TOURNAMENT_CONFIG = {
       active: true
     }
   ] as SponsorConfig[],
+
+  // Registered School Brands & Institutions
+  REGISTERED_SCHOOLS: [
+    {
+      id: "unique-academy",
+      name: "Unique Academy",
+      badge: "PARTICIPATING SCHOOL",
+      logoUrl: "/schools/unique-academy.png",
+      websiteUrl: "https://www.uniqueacademyschools.in/",
+      tagline: "Perfection is our Motto · Est. 1995",
+      location: "Pitch and Paddle, Sigra",
+      order: 1,
+      active: true
+    }
+  ] as SchoolBrandConfig[],
 
   // Community & Communications
   WHATSAPP_LINK: "https://chat.whatsapp.com/EKFpdfeY8XSHwZ7jDbKkPS",
