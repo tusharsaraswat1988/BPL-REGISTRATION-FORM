@@ -616,7 +616,7 @@ export const HomePage: React.FC<HomePageProps> = ({
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             {registeredSchools.map((school) => {
               const CardWrapper = school.websiteUrl ? 'a' : 'div';
               const wrapperProps = school.websiteUrl 

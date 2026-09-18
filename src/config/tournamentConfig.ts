@@ -167,6 +167,39 @@ export const TOURNAMENT_CONFIG = {
       location: "Pitch and Paddle, Sigra",
       order: 1,
       active: true
+    },
+    {
+      id: "sunbeam-suncity",
+      name: "Sunbeam School Suncity",
+      badge: "PARTICIPATING SCHOOL",
+      logoUrl: "https://res.cloudinary.com/dja0upxxe/image/upload/v1789122542/xwupbcjncb17rw2gz0jt.png",
+      websiteUrl: "https://www.sunbeamschools.com/school/suncity/",
+      tagline: "Duty, Devotion, Discipline",
+      location: "Suncity, Varanasi",
+      order: 2,
+      active: true
+    },
+    {
+      id: "sunbeam-varuna",
+      name: "Sunbeam School Varuna",
+      badge: "PARTICIPATING SCHOOL",
+      logoUrl: "https://res.cloudinary.com/dja0upxxe/image/upload/v1789122518/u1ltamzqgzpporm04rsy.jpg",
+      websiteUrl: "https://www.sunbeamschools.com/school/varuna/",
+      tagline: "Duty, Devotion, Discipline",
+      location: "Varuna, Varanasi",
+      order: 3,
+      active: true
+    },
+    {
+      id: "ishita-school",
+      name: "Ishita School",
+      badge: "PARTICIPATING SCHOOL",
+      logoUrl: "https://res.cloudinary.com/dja0upxxe/image/upload/v1788956122/m0flqfkpgcfzqzlbeocf.jpg",
+      websiteUrl: "https://www.facebook.com/ishitaschool/",
+      tagline: "Nurturing Excellence & Values",
+      location: "Gurudham Colony, Varanasi",
+      order: 4,
+      active: true
     }
   ] as SchoolBrandConfig[],
 

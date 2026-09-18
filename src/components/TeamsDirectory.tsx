@@ -1,10 +1,37 @@
 import React, { useState } from 'react';
 import { PublicTeamDTO } from '../types';
-import { Search, Trophy, Shield } from 'lucide-react';
+import { Search, Trophy, Shield, ExternalLink } from 'lucide-react';
+import { TOURNAMENT_CONFIG } from '../config/tournamentConfig';
 
 interface DirectoryProps {
   teams: PublicTeamDTO[];
 }
+
+// Helper to find website for an association/school name
+const getSchoolWebsite = (associationName?: string): string | null => {
+  if (!associationName) return null;
+  const name = associationName.toLowerCase().trim();
+  
+  // Check against TOURNAMENT_CONFIG.REGISTERED_SCHOOLS
+  const foundInConfig = TOURNAMENT_CONFIG.REGISTERED_SCHOOLS?.find(s => {
+    const sName = s.name.toLowerCase();
+    return name.includes(sName) || sName.includes(name) ||
+      (s.id === 'sunbeam-suncity' && name.includes('suncity')) ||
+      (s.id === 'sunbeam-varuna' && name.includes('varuna')) ||
+      (s.id === 'ishita-school' && name.includes('ishita')) ||
+      (s.id === 'unique-academy' && name.includes('unique'));
+  });
+
+  if (foundInConfig?.websiteUrl) return foundInConfig.websiteUrl;
+
+  // Fallback explicit map
+  if (name.includes('suncity')) return 'https://www.sunbeamschools.com/school/suncity/';
+  if (name.includes('varuna')) return 'https://www.sunbeamschools.com/school/varuna/';
+  if (name.includes('ishita')) return 'https://www.facebook.com/ishitaschool/';
+  if (name.includes('unique')) return 'https://www.uniqueacademyschools.in/';
+
+  return null;
+};
 
 export const TeamsDirectory: React.FC<DirectoryProps> = ({ teams }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -90,40 +117,82 @@ export const TeamsDirectory: React.FC<DirectoryProps> = ({ teams }) => {
           {filteredTeams.map((team, idx) => {
             const isCategory1 = team.category.includes('4') || team.category === 'class_4_5_6';
             const categoryLabel = isCategory1 ? 'Class 4–5–6' : 'Class 7–8–9';
+            const schoolUrl = getSchoolWebsite(team.associationName);
 
             return (
               <div
                 key={`${team.teamName}-${idx}`}
                 className="bg-[#0B1538] border border-[#1A2C68] hover:border-[#FFB800]/60 rounded-2xl p-6 transition-all duration-200 hover:shadow-xl hover:shadow-[#FFB800]/10 flex flex-col items-center text-center group"
               >
-                {/* 1. LARGE ASSOCIATION LOGO (Visual Focal Point) */}
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-[#070D24] border border-[#1A2C68] group-hover:border-[#FFB800]/40 p-2 flex items-center justify-center mb-5 shadow-lg relative overflow-hidden transition-colors">
-                  {team.associationLogo ? (
-                    <img
-                      src={team.associationLogo}
-                      alt={team.associationName}
-                      className="w-full h-full object-contain"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center text-[#FFB800]">
-                      <Shield className="w-10 h-10 stroke-1" />
-                      <span className="text-[10px] font-black uppercase font-mono-sport mt-1 text-slate-400">
-                        {team.associationName?.slice(0, 3).toUpperCase() || 'BPL'}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                {/* 1. LARGE ASSOCIATION LOGO (Clickable if website exists) */}
+                {schoolUrl ? (
+                  <a
+                    href={schoolUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`Visit official website of ${team.associationName}`}
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-white border border-[#1A2C68] group-hover:border-[#FFB800]/60 p-2.5 flex items-center justify-center mb-5 shadow-lg relative overflow-hidden transition-transform duration-200 hover:scale-105 cursor-pointer"
+                  >
+                    {team.associationLogo ? (
+                      <img
+                        src={team.associationLogo}
+                        alt={team.associationName}
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-[#FFB800]">
+                        <Shield className="w-10 h-10 stroke-1" />
+                        <span className="text-[10px] font-black uppercase font-mono-sport mt-1 text-slate-700">
+                          {team.associationName?.slice(0, 3).toUpperCase() || 'BPL'}
+                        </span>
+                      </div>
+                    )}
+                  </a>
+                ) : (
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-[#070D24] border border-[#1A2C68] group-hover:border-[#FFB800]/40 p-2 flex items-center justify-center mb-5 shadow-lg relative overflow-hidden transition-colors">
+                    {team.associationLogo ? (
+                      <img
+                        src={team.associationLogo}
+                        alt={team.associationName}
+                        className="w-full h-full object-contain"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-[#FFB800]">
+                        <Shield className="w-10 h-10 stroke-1" />
+                        <span className="text-[10px] font-black uppercase font-mono-sport mt-1 text-slate-400">
+                          {team.associationName?.slice(0, 3).toUpperCase() || 'BPL'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* 2. TEAM NAME */}
                 <h3 className="text-lg sm:text-xl font-black text-white font-heading tracking-wide uppercase leading-tight line-clamp-2">
                   {team.teamName}
                 </h3>
 
-                {/* 3. ASSOCIATION NAME */}
-                <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1.5 mb-5 line-clamp-2">
-                  {team.associationName}
-                </p>
+                {/* 3. ASSOCIATION NAME & WEBSITE LINK */}
+                {schoolUrl ? (
+                  <a
+                    href={schoolUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={`Visit ${team.associationName} website`}
+                    className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm text-slate-300 hover:text-[#FFB800] font-medium mt-1.5 mb-4 line-clamp-2 transition-colors group/link"
+                  >
+                    <span>{team.associationName}</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover/link:text-[#FFB800] shrink-0" />
+                  </a>
+                ) : (
+                  <p className="text-xs sm:text-sm text-slate-300 font-medium mt-1.5 mb-4 line-clamp-2">
+                    {team.associationName}
+                  </p>
+                )}
 
                 {/* 4. CATEGORY BADGE */}
                 <div className="mt-auto pt-2 w-full flex justify-center">
