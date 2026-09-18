@@ -51,7 +51,7 @@ export const PUBLIC_TOURNAMENT_CONFIG = {
       logoUrl: '/schools/unique-academy.png',
       websiteUrl: 'https://www.uniqueacademyschools.in/',
       tagline: 'Perfection is our Motto · Est. 1995',
-      location: 'Pitch and Paddle, Sigra',
+      location: 'Sigra, Varanasi',
       order: 1,
     },
     {

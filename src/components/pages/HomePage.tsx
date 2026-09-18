@@ -476,7 +476,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                           <span>{sp.type}</span>
                         </span>
                         {sp.websiteUrl && (
-                          <span className={`flex items-center gap-1 text-[11px] font-semibold transition-colors ${
+                          <span className={`flex items-center gap-1 text-[11px] font-semibold transition-colors whitespace-nowrap ${
                             isTitle ? 'text-amber-300 group-hover:text-white' : 'text-slate-400 group-hover:text-white'
                           }`}>
                             <span>Visit Official Site</span>
@@ -627,27 +627,27 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <CardWrapper
                   key={school.id}
                   {...wrapperProps}
-                  className={`panel p-5 sm:p-6 flex flex-col justify-between border border-[#1A2C68] bg-[#091333] transition-all duration-300 hover:scale-[1.02] hover:border-[#FFB800]/50 shadow-xl ${
+                  className={`panel p-5 flex flex-col justify-between border border-[#1A2C68] bg-[#091333] transition-all duration-300 hover:scale-[1.02] hover:border-[#FFB800]/50 shadow-xl ${
                     school.websiteUrl ? 'cursor-pointer group' : ''
                   }`}
                 >
-                  <div>
+                  <div className="flex flex-col h-full">
                     {/* School Tier Header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border bg-[#FFB800]/15 text-[#FFB800] border-[#FFB800]/40">
+                    <div className="flex items-center justify-between gap-2 mb-4">
+                      <span className="px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider border bg-[#FFB800]/15 text-[#FFB800] border-[#FFB800]/40 shrink-0">
                         {school.badge || 'PARTICIPATING SCHOOL'}
                       </span>
                       {school.websiteUrl && (
-                        <span className="flex items-center gap-1 text-[11px] text-slate-400 group-hover:text-[#FFB800] font-semibold transition-colors">
-                          <span>Visit Official Site</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
+                        <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 group-hover:text-[#FFB800] font-semibold transition-colors whitespace-nowrap">
+                          <span>Visit Site</span>
+                          <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                         </span>
                       )}
                     </div>
 
                     {/* School Logo Box */}
                     {school.logoUrl && (
-                      <div className="w-full h-28 sm:h-32 bg-white rounded-xl p-3 flex items-center justify-center mb-4 shadow-md transition-transform duration-200 group-hover:scale-[1.03]">
+                      <div className="w-full h-28 bg-white rounded-xl p-3 flex items-center justify-center mb-4 shadow-md transition-transform duration-200 group-hover:scale-[1.02]">
                         <img 
                           src={school.logoUrl} 
                           alt={`${school.name} logo`} 
@@ -657,23 +657,20 @@ export const HomePage: React.FC<HomePageProps> = ({
                       </div>
                     )}
 
-                    {/* School Name */}
-                    <div className="mt-1">
-                      <h3 className="font-display text-xl sm:text-2xl font-black text-white tracking-wide group-hover:text-[#FFB800] transition-colors flex items-center justify-between">
-                        <span>{school.name}</span>
-                        {school.websiteUrl && (
-                          <span className="text-xs text-slate-500 group-hover:text-[#FFB800] transition-colors">↗</span>
-                        )}
+                    {/* School Name & Tagline */}
+                    <div className="mt-1 flex-1 flex flex-col justify-start min-h-[60px]">
+                      <h3 className="font-display text-lg sm:text-xl font-black text-white tracking-wide leading-snug group-hover:text-[#FFB800] transition-colors">
+                        {school.name}
                       </h3>
-                      <p className="text-xs text-slate-400 uppercase tracking-wider mt-1">
+                      <p className="text-[11px] text-slate-400 uppercase tracking-wider mt-1 line-clamp-1">
                         {school.tagline || 'Official Participating Institution · BPL Kids S1'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="pt-4 mt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
-                    <span className="font-medium">{school.location || 'Pitch and Paddle, Sigra'}</span>
-                    <span className="text-[#FFB800] font-bold">Season 01</span>
+                  <div className="pt-3.5 mt-4 border-t border-white/10 flex items-center justify-between text-xs text-slate-400">
+                    <span className="font-medium truncate max-w-[65%]">{school.location || 'Sigra, Varanasi'}</span>
+                    <span className="text-[#FFB800] font-bold shrink-0">Season 01</span>
                   </div>
                 </CardWrapper>
               );
@@ -684,5 +681,6 @@ export const HomePage: React.FC<HomePageProps> = ({
     </div>
   );
 };
+
 
 
