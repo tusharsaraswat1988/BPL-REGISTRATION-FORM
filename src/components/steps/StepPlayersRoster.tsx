@@ -40,11 +40,21 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
       const player = { ...updated[index], [field]: value };
 
       if (field === 'cricketRole') {
-        if (value === 'Batsman' || value === 'Wicket Keeper') {
+        if (value === 'Batsman') {
+          player.battingStyle = player.battingStyle || 'Right Hand';
           player.bowlingStyle = undefined;
-        }
-        if (value === 'Bowler') {
+        } else if (value === 'Bowler') {
+          player.bowlingStyle = player.bowlingStyle || 'Right Arm Medium';
           player.battingStyle = undefined;
+        } else if (value === 'All Rounder') {
+          player.battingStyle = player.battingStyle || 'Right Hand';
+          player.bowlingStyle = player.bowlingStyle || 'Right Arm Medium';
+        } else if (value === 'Wicket Keeper') {
+          player.battingStyle = player.battingStyle || 'Right Hand';
+          player.bowlingStyle = undefined;
+        } else {
+          player.battingStyle = undefined;
+          player.bowlingStyle = undefined;
         }
       }
 
@@ -112,6 +122,12 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
   const activePlayer = players[activePlayerIndex] || players[0];
 
   const isPlayerComplete = (p: PlayerDetails) => {
+    const hasValidRoleAndStyles = 
+      Boolean(p.cricketRole) &&
+      (p.cricketRole === 'Bowler' ? Boolean(p.bowlingStyle) : true) &&
+      (p.cricketRole === 'Batsman' || p.cricketRole === 'Wicket Keeper' ? Boolean(p.battingStyle) : true) &&
+      (p.cricketRole === 'All Rounder' ? Boolean(p.battingStyle && p.bowlingStyle) : true);
+
     return Boolean(
       p.playerName?.trim() &&
       p.studentClass &&
@@ -119,7 +135,7 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
       p.parentEmail?.trim() &&
       isValidEmail(p.parentEmail) &&
       p.playerPhoto?.trim() &&
-      p.cricketRole &&
+      hasValidRoleAndStyles &&
       (!p.parentMobile?.trim() || isValidIndianMobile(p.parentMobile)) &&
       (!p.jerseyNumber || (p.jerseyNumber >= 1 && p.jerseyNumber <= 99 && (jerseyNumberCounts[p.jerseyNumber] || 0) <= 1))
     );

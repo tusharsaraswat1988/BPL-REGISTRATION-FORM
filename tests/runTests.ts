@@ -190,6 +190,22 @@ async function runAllTests() {
   const checkMissingProof = validateRegistrationPayload(missingProof);
   assert(checkMissingProof.valid === false && (checkMissingProof.error?.includes('screenshot') ?? false), 'Missing payment proof screenshot is rejected');
 
+  // Check missing bowling style for All Rounder
+  const missingAllRounderBowl = {
+    ...validSubmission,
+    players: valid8Players.map((p, idx) => idx === 0 ? { ...p, cricketRole: 'All Rounder', battingStyle: 'Right Hand', bowlingStyle: undefined } : p)
+  };
+  const checkAllRounderBowl = validateRegistrationPayload(missingAllRounderBowl);
+  assert(checkAllRounderBowl.valid === false && (checkAllRounderBowl.error?.includes('Bowling style is required') ?? false), 'Missing bowling style for All Rounder is rejected');
+
+  // Check missing batting style for All Rounder
+  const missingAllRounderBat = {
+    ...validSubmission,
+    players: valid8Players.map((p, idx) => idx === 0 ? { ...p, cricketRole: 'All Rounder', battingStyle: undefined, bowlingStyle: 'Right Arm Medium' } : p)
+  };
+  const checkAllRounderBat = validateRegistrationPayload(missingAllRounderBat);
+  assert(checkAllRounderBat.valid === false && (checkAllRounderBat.error?.includes('Batting style is required') ?? false), 'Missing batting style for All Rounder is rejected');
+
   // -------------------------------------------------------------
   // TEST SUITE 4: Cloudinary Buffer & MIME Validation
   // -------------------------------------------------------------

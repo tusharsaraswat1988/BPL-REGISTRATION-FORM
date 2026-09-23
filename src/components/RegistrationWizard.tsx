@@ -134,7 +134,20 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
   // 4. Exactly 8 Players (Initialized with restored draft or clean slots)
   const [players, setPlayers] = useState<PlayerDetails[]>(() => {
     if (initialDraft?.players && Array.isArray(initialDraft.players) && initialDraft.players.length === 8) {
-      return initialDraft.players;
+      return initialDraft.players.map(p => {
+        const pCopy = { ...p };
+        if (pCopy.cricketRole === 'Batsman' || pCopy.cricketRole === 'Wicket Keeper') {
+          if (!pCopy.battingStyle) pCopy.battingStyle = 'Right Hand';
+          pCopy.bowlingStyle = undefined;
+        } else if (pCopy.cricketRole === 'Bowler') {
+          if (!pCopy.bowlingStyle) pCopy.bowlingStyle = 'Right Arm Medium';
+          pCopy.battingStyle = undefined;
+        } else if (pCopy.cricketRole === 'All Rounder') {
+          if (!pCopy.battingStyle) pCopy.battingStyle = 'Right Hand';
+          if (!pCopy.bowlingStyle) pCopy.bowlingStyle = 'Right Arm Medium';
+        }
+        return pCopy;
+      });
     }
     return createEmptyPlayers(initialDraft?.category || 'class_4_5_6');
   });
@@ -477,6 +490,16 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
           newErrors.players = `${pLabel} is missing a Cricket Role.`;
           break;
         }
+
+        if ((p.cricketRole === 'Batsman' || p.cricketRole === 'All Rounder' || p.cricketRole === 'Wicket Keeper') && !p.battingStyle) {
+          newErrors.players = `${pLabel}: Batting style is required for ${p.cricketRole}.`;
+          break;
+        }
+
+        if ((p.cricketRole === 'Bowler' || p.cricketRole === 'All Rounder') && !p.bowlingStyle) {
+          newErrors.players = `${pLabel}: Bowling style is required for ${p.cricketRole}.`;
+          break;
+        }
       }
     } else if (stepIndex === 4) {
       const isVerified = payment.paymentStatus === 'VERIFIED';
@@ -554,6 +577,21 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         paymentScreenshot: proofUrl,
       };
 
+      const sanitizedPlayers = players.map(p => {
+        const pCopy = { ...p };
+        if (pCopy.cricketRole === 'Batsman' || pCopy.cricketRole === 'Wicket Keeper') {
+          if (!pCopy.battingStyle) pCopy.battingStyle = 'Right Hand';
+          pCopy.bowlingStyle = undefined;
+        } else if (pCopy.cricketRole === 'Bowler') {
+          if (!pCopy.bowlingStyle) pCopy.bowlingStyle = 'Right Arm Medium';
+          pCopy.battingStyle = undefined;
+        } else if (pCopy.cricketRole === 'All Rounder') {
+          if (!pCopy.battingStyle) pCopy.battingStyle = 'Right Hand';
+          if (!pCopy.bowlingStyle) pCopy.bowlingStyle = 'Right Arm Medium';
+        }
+        return pCopy;
+      });
+
       const payload = {
         draftToken,
         category,
@@ -562,7 +600,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         teamName,
         includeBranding,
         teamTagline,
-        players,
+        players: sanitizedPlayers,
         payment: normalizedPayment
       };
 
