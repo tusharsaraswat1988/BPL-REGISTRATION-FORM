@@ -28,21 +28,53 @@ export interface FormDraftData {
  */
 export function hasEnteredFormData(draft: Partial<FormDraftData>): boolean {
   if (!draft) return false;
+  if (draft.category) return true;
   if (draft.teamName && draft.teamName.trim()) return true;
-  if (draft.association?.associationName && draft.association.associationName.trim()) return true;
-  if (draft.association?.mobile && draft.association.mobile.trim()) return true;
-  if (draft.association?.associationLogo && draft.association.associationLogo.trim()) return true;
-  if (draft.mentor?.name && draft.mentor.name.trim()) return true;
-  if (draft.mentor?.photo && draft.mentor.photo.trim()) return true;
+  if (draft.teamTagline && draft.teamTagline.trim()) return true;
+
+  if (draft.association) {
+    if (draft.association.associationName?.trim()) return true;
+    if (draft.association.branch?.trim()) return true;
+    if (draft.association.email?.trim()) return true;
+    if (draft.association.mobile?.trim()) return true;
+    if (draft.association.associationLogo?.trim()) return true;
+  }
+
+  if (draft.mentor) {
+    if (draft.mentor.name?.trim()) return true;
+    if (draft.mentor.mobile?.trim()) return true;
+    if (draft.mentor.secondMobile?.trim()) return true;
+    if (draft.mentor.email?.trim()) return true;
+    if (draft.mentor.photo?.trim()) return true;
+  }
 
   if (Array.isArray(draft.players)) {
     const hasPlayer = draft.players.some(
-      p => (p.playerName && p.playerName.trim()) ||
-           (p.playerPhoto && p.playerPhoto.trim()) ||
-           (p.parentMobile && p.parentMobile.trim()) ||
-           (p.jerseyNumber && p.jerseyNumber > 0)
+      p => Boolean(
+        p.playerName?.trim() ||
+        p.playerPhoto?.trim() ||
+        p.parentMobile?.trim() ||
+        p.parentEmail?.trim() ||
+        p.dateOfBirth?.trim() ||
+        (p.jerseyNumber && Number(p.jerseyNumber) > 0) ||
+        p.cricketRole ||
+        p.battingStyle ||
+        p.bowlingStyle ||
+        p.jerseySize
+      )
     );
     if (hasPlayer) return true;
+  }
+
+  if (draft.payment) {
+    if (
+      draft.payment.transactionReference?.trim() ||
+      draft.payment.utrTransactionId?.trim() ||
+      draft.payment.paymentProofUrl?.trim() ||
+      draft.payment.paymentScreenshot?.trim()
+    ) {
+      return true;
+    }
   }
 
   return false;

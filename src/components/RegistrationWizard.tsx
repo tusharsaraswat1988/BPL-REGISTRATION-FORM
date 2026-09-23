@@ -133,9 +133,12 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
 
   // 4. Exactly 8 Players (Initialized with restored draft or clean slots)
   const [players, setPlayers] = useState<PlayerDetails[]>(() => {
-    if (initialDraft?.players && Array.isArray(initialDraft.players) && initialDraft.players.length === 8) {
-      return initialDraft.players.map(p => {
-        const pCopy = { ...p };
+    const baseEmpty = createEmptyPlayers(initialDraft?.category || 'class_4_5_6');
+    if (initialDraft?.players && Array.isArray(initialDraft.players) && initialDraft.players.length > 0) {
+      return baseEmpty.map((emptySlot, idx) => {
+        const savedPlayer = initialDraft.players[idx];
+        if (!savedPlayer) return emptySlot;
+        const pCopy = { ...emptySlot, ...savedPlayer };
         if (pCopy.cricketRole === 'Batsman' || pCopy.cricketRole === 'Wicket Keeper') {
           if (!pCopy.battingStyle) pCopy.battingStyle = 'Right Hand';
           pCopy.bowlingStyle = undefined;
@@ -149,7 +152,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         return pCopy;
       });
     }
-    return createEmptyPlayers(initialDraft?.category || 'class_4_5_6');
+    return baseEmpty;
   });
 
   // 5. Payment Details
@@ -183,7 +186,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
     };
   });
 
-  // Track online / offline events
+  // Track online / offline events and instant save on pageunload / refresh
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -196,14 +199,37 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
       setSaveStatus('offline_saved');
     };
 
+    const handleBeforeUnload = () => {
+      const currentDraftData = {
+        draftToken,
+        currentStep,
+        category,
+        association,
+        mentor,
+        teamName,
+        includeBranding,
+        teamTagline,
+        players,
+        payment,
+        updatedAt: new Date().toISOString()
+      };
+      if (hasEnteredFormData(currentDraftData)) {
+        saveDraftLocally(currentDraftData);
+      }
+    };
+
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handleBeforeUnload);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handleBeforeUnload);
     };
-  }, []);
+  }, [category, association, mentor, teamName, includeBranding, teamTagline, players, payment, currentStep, draftToken]);
 
   // Server-Side & Local Auto-Save Function
   const persistDraftToServer = useCallback(async (stepToSave = currentStep) => {
@@ -339,13 +365,40 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         const data = await res.json();
         if (isMounted && data.success && data.draft) {
           const d = data.draft;
+          const serverUpdated = d.updatedAt ? new Date(d.updatedAt).getTime() : 0;
+          const localUpdated = initialDraft?.updatedAt ? new Date(initialDraft.updatedAt).getTime() : 0;
+
+          // If local draft is newer, do not overwrite local state with older server draft
+          if (localUpdated > serverUpdated + 1000) {
+            return;
+          }
+
           if (d.category) setCategory(d.category);
           if (d.association) setAssociation(prev => ({ ...prev, ...d.association }));
           if (d.mentor) setMentor(prev => ({ ...prev, ...d.mentor }));
           if (d.teamName) setTeamName(d.teamName);
           if (typeof d.includeBranding === 'boolean') setIncludeBranding(d.includeBranding);
           if (d.teamTagline) setTeamTagline(d.teamTagline);
-          if (Array.isArray(d.players) && d.players.length === 8) setPlayers(d.players);
+          if (Array.isArray(d.players) && d.players.length > 0) {
+            setPlayers(prev => {
+              return prev.map((currSlot, idx) => {
+                const sPlayer = d.players[idx];
+                if (!sPlayer) return currSlot;
+                const merged = { ...currSlot, ...sPlayer };
+                if (merged.cricketRole === 'Batsman' || merged.cricketRole === 'Wicket Keeper') {
+                  if (!merged.battingStyle) merged.battingStyle = 'Right Hand';
+                  merged.bowlingStyle = undefined;
+                } else if (merged.cricketRole === 'Bowler') {
+                  if (!merged.bowlingStyle) merged.bowlingStyle = 'Right Arm Medium';
+                  merged.battingStyle = undefined;
+                } else if (merged.cricketRole === 'All Rounder') {
+                  if (!merged.battingStyle) merged.battingStyle = 'Right Hand';
+                  if (!merged.bowlingStyle) merged.bowlingStyle = 'Right Arm Medium';
+                }
+                return merged;
+              });
+            });
+          }
           if (d.payment) {
             const isManual = d.payment.method === 'UPI' || d.payment.method?.includes('Bank Transfer') || d.payment.method !== 'CASHFREE';
             const utr = d.payment.transactionReference || d.payment.utrTransactionId || '';
