@@ -3,7 +3,7 @@ import { AuthOtpScreen } from '../AuthOtpScreen';
 import { RegistrationWizard } from '../RegistrationWizard';
 import { TournamentCategory, RegistrationConfirmationDTO } from '../../types';
 import { AuthSession, fetchAuthSession, clearStoredAuthToken } from '../../utils/auth';
-import { ShieldCheck, LogOut, Loader2, Sparkles } from 'lucide-react';
+import { ShieldCheck, LogOut, Loader2, Sparkles, FileSpreadsheet } from 'lucide-react';
 
 interface RegisterPageProps {
   categories: TournamentCategory[];
@@ -94,14 +94,26 @@ export const RegisterPage: React.FC<RegisterPageProps> = ({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="px-3 py-1.5 rounded-lg bg-[#070D24] hover:bg-[#0E1B48] text-slate-400 hover:text-slate-200 border border-[#1A2C68] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Switch Number</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href="/BPL_Team_Registration_Template.xlsx"
+              download="BPL_Team_Registration_Template.xlsx"
+              className="px-3 py-1.5 rounded-lg bg-[#FFB800]/10 hover:bg-[#FFB800]/20 text-[#FFB800] border border-[#FFB800]/30 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Download official Excel Registration sheet"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-[#FFB800]" />
+              <span>Download Excel Form</span>
+            </a>
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="px-3 py-1.5 rounded-lg bg-[#070D24] hover:bg-[#0E1B48] text-slate-400 hover:text-slate-200 border border-[#1A2C68] text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Switch Number</span>
+            </button>
+          </div>
         </div>
       </div>
 

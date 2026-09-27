@@ -660,6 +660,15 @@ export const RulesAndFaq: React.FC<{ onNavigate?: (path: string) => void }> = ({
             </button>
           )}
 
+          <a
+            href="/BPL_Team_Registration_Template.xlsx"
+            download="BPL_Team_Registration_Template.xlsx"
+            className="ghost-button ghost-button-hover px-6 py-3 text-xs sm:text-sm font-semibold flex items-center gap-2 cursor-pointer text-[#FFB800] border border-[#FFB800]/40"
+          >
+            <FileText className="w-4 h-4 text-[#FFB800]" />
+            <span>DOWNLOAD EXCEL FORM (.XLSX)</span>
+          </a>
+
           {onNavigate && (
             <button
               type="button"
