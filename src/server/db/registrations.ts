@@ -1195,6 +1195,9 @@ export interface AdminUpdateRegistrationInput {
   };
 }
 
+const safeStr = (v: any): string => (v !== null && v !== undefined ? String(v).trim() : '');
+const safeNullStr = (v: any): string | null => (v !== null && v !== undefined && String(v).trim() ? String(v).trim() : null);
+
 /**
  * Full Admin Update of Registration Record
  */
@@ -1211,12 +1214,12 @@ export async function updateRegistrationByAdmin(
 
     // 2. Update registrations master record
     const category = input.category || existing.category;
-    const teamName = input.teamName !== undefined ? input.teamName.trim() : existing.teamName;
+    const teamName = input.teamName !== undefined ? safeStr(input.teamName) : existing.teamName;
     const includeBranding = input.includeBranding !== undefined ? Boolean(input.includeBranding) : existing.includeBranding;
-    const teamTagline = input.teamTagline !== undefined ? (input.teamTagline.trim() || null) : (existing.branding.teamTagline || null);
-    const teamShortCode = input.teamShortCode !== undefined ? (input.teamShortCode.trim() || 'BPL') : (existing.branding.teamShortCode || 'BPL');
-    const status = input.status !== undefined ? input.status : existing.status;
-    const notes = input.notes !== undefined ? (input.notes.trim() || null) : null;
+    const teamTagline = input.teamTagline !== undefined ? safeNullStr(input.teamTagline) : (existing.branding.teamTagline || null);
+    const teamShortCode = input.teamShortCode !== undefined ? (safeNullStr(input.teamShortCode) || 'BPL') : (existing.branding.teamShortCode || 'BPL');
+    const status = input.status !== undefined ? safeStr(input.status) || 'SUBMITTED' : existing.status;
+    const notes = input.notes !== undefined ? safeNullStr(input.notes) : (existing as any).notes || null;
 
     await client.query(
       `UPDATE registrations
@@ -1240,13 +1243,13 @@ export async function updateRegistrationByAdmin(
              city = COALESCE($7, city)
          WHERE registration_id = $8`,
         [
-          a.associationName !== undefined ? a.associationName.trim() : null,
-          a.branch !== undefined ? a.branch.trim() : null,
-          a.email !== undefined ? a.email.trim().toLowerCase() : null,
-          a.mobile !== undefined ? a.mobile.trim() : null,
-          a.associationLogo !== undefined ? a.associationLogo.trim() : null,
-          a.associationType !== undefined ? a.associationType.trim() : null,
-          a.city !== undefined ? a.city.trim() : null,
+          a.associationName !== undefined ? safeStr(a.associationName) : null,
+          a.branch !== undefined ? safeStr(a.branch) : null,
+          a.email !== undefined ? safeStr(a.email).toLowerCase() : null,
+          a.mobile !== undefined ? safeStr(a.mobile) : null,
+          a.associationLogo !== undefined ? safeStr(a.associationLogo) : null,
+          a.associationType !== undefined ? safeStr(a.associationType) : null,
+          a.city !== undefined ? safeNullStr(a.city) : null,
           registrationId
         ]
       );
@@ -1265,12 +1268,12 @@ export async function updateRegistrationByAdmin(
              designation = COALESCE($6, designation)
          WHERE registration_id = $7`,
         [
-          m.name !== undefined ? m.name.trim() : null,
-          m.mobile !== undefined ? m.mobile.trim() : null,
-          m.secondMobile !== undefined ? (m.secondMobile.trim() || null) : (existing.mentor.secondMobile || null),
-          m.email !== undefined ? (m.email.trim() ? m.email.trim().toLowerCase() : null) : (existing.mentor.email || null),
-          m.photo !== undefined ? (m.photo.trim() || null) : (existing.mentor.photo || null),
-          m.designation !== undefined ? m.designation.trim() : null,
+          m.name !== undefined ? safeStr(m.name) : null,
+          m.mobile !== undefined ? safeStr(m.mobile) : null,
+          m.secondMobile !== undefined ? safeNullStr(m.secondMobile) : (existing.mentor.secondMobile || null),
+          m.email !== undefined ? (safeNullStr(m.email) ? safeNullStr(m.email)!.toLowerCase() : null) : (existing.mentor.email || null),
+          m.photo !== undefined ? safeNullStr(m.photo) : (existing.mentor.photo || null),
+          m.designation !== undefined ? safeStr(m.designation) : null,
           registrationId
         ]
       );
@@ -1291,17 +1294,17 @@ export async function updateRegistrationByAdmin(
           [
             registrationId,
             i + 1,
-            p.playerName?.trim() || `Player ${i + 1}`,
+            safeStr(p.playerName) || `Player ${i + 1}`,
             Number(p.studentClass) || (category === 'class_4_5_6' ? 4 : 7),
-            p.dateOfBirth?.trim() || '2014-01-01',
-            p.parentMobile?.trim() || null,
-            p.parentEmail?.trim() ? p.parentEmail.trim().toLowerCase() : null,
-            p.playerPhoto?.trim() || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300',
+            safeStr(p.dateOfBirth) || '2014-01-01',
+            safeNullStr(p.parentMobile),
+            safeNullStr(p.parentEmail) ? safeNullStr(p.parentEmail)!.toLowerCase() : null,
+            safeStr(p.playerPhoto) || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300',
             p.jerseyNumber ? Number(p.jerseyNumber) : null,
-            p.jerseySize?.trim() || null,
-            p.cricketRole?.trim() || 'All Rounder',
-            p.battingStyle || null,
-            p.bowlingStyle || null,
+            safeNullStr(p.jerseySize) || '32',
+            safeStr(p.cricketRole) || 'All Rounder',
+            safeNullStr(p.battingStyle),
+            safeNullStr(p.bowlingStyle),
           ]
         );
       }
@@ -1310,7 +1313,7 @@ export async function updateRegistrationByAdmin(
     // 6. Update payment
     if (input.payment) {
       const pay = input.payment;
-      const normalizedUtr = pay.utrTransactionId ? normalizeUtr(pay.utrTransactionId) : null;
+      const normalizedUtr = pay.utrTransactionId ? normalizeUtr(safeStr(pay.utrTransactionId)) : null;
 
       // Check UTR uniqueness against other registrations
       if (normalizedUtr) {
@@ -1341,12 +1344,12 @@ export async function updateRegistrationByAdmin(
           pay.method || null,
           pay.gateway || null,
           normalizedUtr,
-          pay.paymentScreenshot ? pay.paymentScreenshot.trim() : null,
+          safeNullStr(pay.paymentScreenshot),
           pay.baseAmount !== undefined ? pay.baseAmount : null,
           pay.brandingAmount !== undefined ? pay.brandingAmount : null,
           pay.totalAmount !== undefined ? pay.totalAmount : null,
           pay.paymentStatus || null,
-          pay.verifiedBy !== undefined ? pay.verifiedBy : null,
+          pay.verifiedBy !== undefined ? safeNullStr(pay.verifiedBy) : null,
           pay.verifiedAt !== undefined ? pay.verifiedAt : null,
           pay.paidAt ? pay.paidAt : null,
           registrationId
@@ -1358,6 +1361,7 @@ export async function updateRegistrationByAdmin(
     return await getRegistrationById(registrationId, client);
   });
 }
+
 
 
 

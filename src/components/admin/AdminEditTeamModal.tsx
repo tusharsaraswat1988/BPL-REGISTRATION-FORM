@@ -31,6 +31,9 @@ const BOWLING_STYLES: BowlingStyle[] = [
 ];
 const JERSEY_SIZES: JerseySize[] = ['28', '30', '32', '34', '36', '38', '40', 'S', 'M', 'L'];
 
+const safeStr = (v: any): string => (v !== null && v !== undefined ? String(v).trim() : '');
+const safeNullStr = (v: any): string | null => (v !== null && v !== undefined && String(v).trim() ? String(v).trim() : null);
+
 export const AdminEditTeamModal: React.FC<AdminEditTeamModalProps> = ({
   registration,
   apiKey,
@@ -42,36 +45,36 @@ export const AdminEditTeamModal: React.FC<AdminEditTeamModalProps> = ({
   const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Form State initialized from registration
+  // Form State initialized from registration safely
   const [category, setCategory] = useState<'class_4_5_6' | 'class_7_8_9'>(
     (registration.category as 'class_4_5_6' | 'class_7_8_9') || 'class_4_5_6'
   );
-  const [teamName, setTeamName] = useState(registration.teamName || '');
-  const [teamTagline, setTeamTagline] = useState(registration.branding?.teamTagline || '');
-  const [teamShortCode, setTeamShortCode] = useState(registration.branding?.teamShortCode || 'BPL');
+  const [teamName, setTeamName] = useState(safeStr(registration.teamName));
+  const [teamTagline, setTeamTagline] = useState(safeStr(registration.branding?.teamTagline));
+  const [teamShortCode, setTeamShortCode] = useState(safeStr(registration.branding?.teamShortCode) || 'BPL');
   const [includeBranding, setIncludeBranding] = useState<boolean>(Boolean(registration.includeBranding));
-  const [status, setStatus] = useState<string>(registration.status || 'SUBMITTED');
-  const [notes, setNotes] = useState<string>(registration.notes || '');
+  const [status, setStatus] = useState<string>(safeStr(registration.status) || 'SUBMITTED');
+  const [notes, setNotes] = useState<string>(safeStr(registration.notes));
 
   // Association State
   const [association, setAssociation] = useState({
-    associationName: registration.association.associationName || '',
-    branch: registration.association.branch || '',
-    city: registration.association.city || '',
-    email: registration.association.email || '',
-    mobile: registration.association.mobile || '',
-    associationType: registration.association.associationType || 'School',
-    associationLogo: registration.association.associationLogo || '',
+    associationName: safeStr(registration.association?.associationName),
+    branch: safeStr(registration.association?.branch),
+    city: safeStr(registration.association?.city),
+    email: safeStr(registration.association?.email),
+    mobile: safeStr(registration.association?.mobile),
+    associationType: safeStr(registration.association?.associationType) || 'School',
+    associationLogo: safeStr(registration.association?.associationLogo),
   });
 
   // Mentor State
   const [mentor, setMentor] = useState({
-    name: registration.mentor.name || '',
-    designation: registration.mentor.designation || 'Head Coach',
-    mobile: registration.mentor.mobile || '',
-    secondMobile: registration.mentor.secondMobile || '',
-    email: registration.mentor.email || '',
-    photo: registration.mentor.photo || '',
+    name: safeStr(registration.mentor?.name),
+    designation: safeStr(registration.mentor?.designation) || 'Head Coach',
+    mobile: safeStr(registration.mentor?.mobile),
+    secondMobile: safeStr(registration.mentor?.secondMobile),
+    email: safeStr(registration.mentor?.email),
+    photo: safeStr(registration.mentor?.photo),
   });
 
   // Players State (Guaranteed 8 players)
@@ -84,17 +87,17 @@ export const AdminEditTeamModal: React.FC<AdminEditTeamModalProps> = ({
       const p = existing[i];
       if (p) {
         fullList.push({
-          playerName: p.playerName || `Player ${i + 1}`,
+          playerName: safeStr(p.playerName) || `Player ${i + 1}`,
           studentClass: p.studentClass || allowedClasses[0],
-          dateOfBirth: p.dateOfBirth || (category === 'class_4_5_6' ? '2015-05-15' : '2012-05-15'),
-          parentMobile: p.parentMobile || '',
-          parentEmail: p.parentEmail || '',
-          playerPhoto: p.playerPhoto || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300',
-          jerseyNumber: p.jerseyNumber,
-          jerseySize: p.jerseySize || '32',
-          cricketRole: p.cricketRole || 'All Rounder',
-          battingStyle: p.battingStyle || 'Right Hand',
-          bowlingStyle: p.bowlingStyle || 'Right Arm Medium',
+          dateOfBirth: safeStr(p.dateOfBirth) || (category === 'class_4_5_6' ? '2015-05-15' : '2012-05-15'),
+          parentMobile: safeStr(p.parentMobile),
+          parentEmail: safeStr(p.parentEmail),
+          playerPhoto: safeStr(p.playerPhoto) || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300',
+          jerseyNumber: p.jerseyNumber ? Number(p.jerseyNumber) : undefined,
+          jerseySize: safeStr(p.jerseySize) || '32',
+          cricketRole: (p.cricketRole as CricketRole) || 'All Rounder',
+          battingStyle: p.battingStyle as BattingStyle,
+          bowlingStyle: p.bowlingStyle as BowlingStyle,
         });
       } else {
         fullList.push({
@@ -117,16 +120,16 @@ export const AdminEditTeamModal: React.FC<AdminEditTeamModalProps> = ({
 
   // Payment State
   const [payment, setPayment] = useState({
-    method: registration.payment.method || 'UPI',
-    gateway: registration.payment.gateway || 'MANUAL',
-    utrTransactionId: registration.payment.utrTransactionId || '',
-    paymentScreenshot: registration.payment.paymentScreenshot || '',
-    baseAmount: registration.payment.baseAmount ?? 8000,
-    brandingAmount: registration.payment.brandingAmount ?? (includeBranding ? 5000 : 0),
-    totalAmount: registration.payment.totalAmount ?? (8000 + (includeBranding ? 5000 : 0)),
-    paymentStatus: registration.payment.paymentStatus || 'PENDING_VERIFICATION',
-    verifiedBy: registration.payment.verifiedBy || '',
-    paidAt: registration.payment.paidAt ? registration.payment.paidAt.split('T')[0] : new Date().toISOString().split('T')[0],
+    method: safeStr(registration.payment?.method) || 'UPI',
+    gateway: safeStr(registration.payment?.gateway) || 'MANUAL',
+    utrTransactionId: safeStr(registration.payment?.utrTransactionId),
+    paymentScreenshot: safeStr(registration.payment?.paymentScreenshot),
+    baseAmount: registration.payment?.baseAmount ?? 8000,
+    brandingAmount: registration.payment?.brandingAmount ?? (includeBranding ? 5000 : 0),
+    totalAmount: registration.payment?.totalAmount ?? (8000 + (includeBranding ? 5000 : 0)),
+    paymentStatus: safeStr(registration.payment?.paymentStatus) || 'PENDING_VERIFICATION',
+    verifiedBy: safeStr(registration.payment?.verifiedBy),
+    paidAt: registration.payment?.paidAt ? String(registration.payment.paidAt).split('T')[0] : new Date().toISOString().split('T')[0],
   });
 
   const allowedClasses = category === 'class_4_5_6' ? [4, 5, 6] : [7, 8, 9];
@@ -173,28 +176,34 @@ export const AdminEditTeamModal: React.FC<AdminEditTeamModalProps> = ({
   const handleSave = async () => {
     setErrorMsg(null);
 
+    const cleanTeamName = safeStr(teamName);
+    const cleanAssocName = safeStr(association.associationName);
+    const cleanAssocMobile = safeStr(association.mobile);
+    const cleanMentorName = safeStr(mentor.name);
+    const cleanMentorMobile = safeStr(mentor.mobile);
+
     // Basic Validation
-    if (!teamName.trim()) {
+    if (!cleanTeamName) {
       setErrorMsg('Team Name is required.');
       setActiveTab('team');
       return;
     }
-    if (!association.associationName.trim()) {
+    if (!cleanAssocName) {
       setErrorMsg('Association / School Name is required.');
       setActiveTab('association');
       return;
     }
-    if (!association.mobile.trim() || !isValidIndianMobile(association.mobile)) {
+    if (!cleanAssocMobile || !isValidIndianMobile(cleanAssocMobile)) {
       setErrorMsg('Valid Association Mobile is required.');
       setActiveTab('association');
       return;
     }
-    if (!mentor.name.trim()) {
+    if (!cleanMentorName) {
       setErrorMsg('Mentor Name is required.');
       setActiveTab('mentor');
       return;
     }
-    if (!mentor.mobile.trim() || !isValidIndianMobile(mentor.mobile)) {
+    if (!cleanMentorMobile || !isValidIndianMobile(cleanMentorMobile)) {
       setErrorMsg('Valid Mentor Mobile is required.');
       setActiveTab('mentor');
       return;
@@ -203,15 +212,16 @@ export const AdminEditTeamModal: React.FC<AdminEditTeamModalProps> = ({
     // Players DOB & Name validation
     for (let i = 0; i < players.length; i++) {
       const p = players[i];
-      if (!p.playerName?.trim()) {
+      const pName = safeStr(p.playerName);
+      if (!pName) {
         setErrorMsg(`Player #${i + 1} Name is required.`);
         setActiveTab('players');
         setActivePlayerIdx(i);
         return;
       }
-      const dobCheck = validatePlayerDob(p.dateOfBirth, Number(p.studentClass));
+      const dobCheck = validatePlayerDob(safeStr(p.dateOfBirth), Number(p.studentClass));
       if (!dobCheck.valid) {
-        setErrorMsg(`Player #${i + 1} (${p.playerName}): ${dobCheck.error}`);
+        setErrorMsg(`Player #${i + 1} (${pName}): ${dobCheck.error}`);
         setActiveTab('players');
         setActivePlayerIdx(i);
         return;
@@ -222,52 +232,52 @@ export const AdminEditTeamModal: React.FC<AdminEditTeamModalProps> = ({
     try {
       const payload = {
         category,
-        teamName: teamName.trim(),
+        teamName: cleanTeamName,
         includeBranding,
-        teamTagline: teamTagline.trim() || null,
-        teamShortCode: teamShortCode.trim() || 'BPL',
-        status,
-        notes: notes.trim() || null,
+        teamTagline: safeNullStr(teamTagline),
+        teamShortCode: safeNullStr(teamShortCode) || 'BPL',
+        status: safeStr(status) || 'SUBMITTED',
+        notes: safeNullStr(notes),
         association: {
-          associationName: association.associationName.trim(),
-          branch: association.branch.trim(),
-          city: association.city.trim() || null,
-          email: association.email.trim(),
-          mobile: association.mobile.trim(),
-          associationType: association.associationType || 'School',
-          associationLogo: association.associationLogo.trim(),
+          associationName: cleanAssocName,
+          branch: safeStr(association.branch),
+          city: safeNullStr(association.city),
+          email: safeStr(association.email),
+          mobile: cleanAssocMobile,
+          associationType: safeStr(association.associationType) || 'School',
+          associationLogo: safeStr(association.associationLogo),
         },
         mentor: {
-          name: mentor.name.trim(),
-          designation: mentor.designation.trim() || 'Head Coach',
-          mobile: mentor.mobile.trim(),
-          secondMobile: mentor.secondMobile.trim() || null,
-          email: mentor.email.trim() || null,
-          photo: mentor.photo.trim() || null,
+          name: cleanMentorName,
+          designation: safeStr(mentor.designation) || 'Head Coach',
+          mobile: cleanMentorMobile,
+          secondMobile: safeNullStr(mentor.secondMobile),
+          email: safeNullStr(mentor.email),
+          photo: safeNullStr(mentor.photo),
         },
         players: players.map((p, idx) => ({
-          playerName: p.playerName.trim(),
+          playerName: safeStr(p.playerName) || `Player ${idx + 1}`,
           studentClass: Number(p.studentClass),
-          dateOfBirth: p.dateOfBirth.trim(),
-          parentMobile: p.parentMobile?.trim() || null,
-          parentEmail: p.parentEmail?.trim() || null,
-          playerPhoto: p.playerPhoto.trim(),
+          dateOfBirth: safeStr(p.dateOfBirth),
+          parentMobile: safeNullStr(p.parentMobile),
+          parentEmail: safeNullStr(p.parentEmail),
+          playerPhoto: safeStr(p.playerPhoto) || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300',
           jerseyNumber: p.jerseyNumber ? Number(p.jerseyNumber) : undefined,
-          jerseySize: p.jerseySize?.trim() || '32',
+          jerseySize: safeStr(p.jerseySize) || '32',
           cricketRole: p.cricketRole,
           battingStyle: p.battingStyle || undefined,
           bowlingStyle: p.bowlingStyle || undefined,
         })),
         payment: {
-          method: payment.method,
-          gateway: payment.gateway,
-          utrTransactionId: payment.utrTransactionId.trim(),
-          paymentScreenshot: payment.paymentScreenshot.trim() || 'CASHFREE_GATEWAY_VERIFIED',
+          method: safeStr(payment.method) || 'UPI',
+          gateway: safeStr(payment.gateway) || 'MANUAL',
+          utrTransactionId: safeStr(payment.utrTransactionId),
+          paymentScreenshot: safeNullStr(payment.paymentScreenshot) || 'CASHFREE_GATEWAY_VERIFIED',
           baseAmount: Number(payment.baseAmount) || 8000,
           brandingAmount: Number(payment.brandingAmount) || 0,
           totalAmount: Number(payment.totalAmount) || 8000,
-          paymentStatus: payment.paymentStatus,
-          verifiedBy: payment.verifiedBy.trim() || (payment.paymentStatus === 'VERIFIED' ? 'Admin' : null),
+          paymentStatus: safeStr(payment.paymentStatus) || 'PENDING_VERIFICATION',
+          verifiedBy: safeNullStr(payment.verifiedBy) || (payment.paymentStatus === 'VERIFIED' ? 'Admin' : null),
           paidAt: payment.paidAt ? new Date(payment.paidAt).toISOString() : new Date().toISOString(),
         },
       };
