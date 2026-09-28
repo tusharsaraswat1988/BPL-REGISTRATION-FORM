@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { PlayerDetails, CategoryId, CricketRole, BattingStyle, BowlingStyle, JerseySize } from '../../types';
 import { Users, AlertCircle, Sparkles, CheckCircle2, Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import { ImageUploadField } from '../ImageUploadField';
-import { isValidIndianMobile, isValidEmail, getMobileValidationError, getEmailValidationError } from '../../utils/validation';
+import { DateChooserField } from '../DateChooserField';
+import { isValidIndianMobile, isValidEmail, getMobileValidationError, getEmailValidationError, validatePlayerDob } from '../../utils/validation';
 
 interface StepPlayersRosterProps {
   players: PlayerDetails[];
@@ -128,10 +129,12 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
       (p.cricketRole === 'Batsman' || p.cricketRole === 'Wicket Keeper' ? Boolean(p.battingStyle) : true) &&
       (p.cricketRole === 'All Rounder' ? Boolean(p.battingStyle && p.bowlingStyle) : true);
 
+    const isDobValid = Boolean(p.dateOfBirth?.trim()) && validatePlayerDob(p.dateOfBirth, p.studentClass).valid;
+
     return Boolean(
       p.playerName?.trim() &&
       p.studentClass &&
-      p.dateOfBirth?.trim() &&
+      isDobValid &&
       (!p.parentEmail?.trim() || isValidEmail(p.parentEmail)) &&
       p.playerPhoto?.trim() &&
       hasValidRoleAndStyles &&
@@ -281,16 +284,14 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
               </select>
             </div>
 
-            {/* Date of Birth */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Date of Birth <span className="text-[#FFB800]">*</span>
-              </label>
-              <input
-                type="date"
-                value={activePlayer.dateOfBirth}
-                onChange={e => handlePlayerChange(activePlayerIndex, 'dateOfBirth', e.target.value)}
-                className="w-full px-4 py-2.5 bg-[#070D24] border border-[#1A2C68] rounded-xl text-sm text-white focus:outline-none focus:border-[#FFB800]"
+            {/* Date of Birth with Class-Constrained DateChooserField */}
+            <div className="sm:col-span-1 lg:col-span-1">
+              <DateChooserField
+                label="Date of Birth"
+                value={activePlayer.dateOfBirth || ''}
+                onChange={val => handlePlayerChange(activePlayerIndex, 'dateOfBirth', val)}
+                studentClass={activePlayer.studentClass || allowedClasses[0]}
+                required
               />
             </div>
 

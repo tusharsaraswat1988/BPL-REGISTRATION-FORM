@@ -14,8 +14,7 @@ import {
   Loader2, CheckCircle2, Lock, MessageCircle, ExternalLink, Copy,
   Wifi, WifiOff, HardDrive, Trash2
 } from 'lucide-react';
-import { TOURNAMENT_CONFIG } from '../config/tournamentConfig';
-import { isValidIndianMobile, isValidEmail } from '../utils/validation';
+import { isValidIndianMobile, isValidEmail, validatePlayerDob } from '../utils/validation';
 import { 
   getDraftFromLocalStorage, 
   saveDraftLocally, 
@@ -504,8 +503,9 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
           newErrors.players = `${pLabel} must be in Class ${allowedClasses.join(', ')}.`;
           break;
         }
-        if (!p.dateOfBirth?.trim()) {
-          newErrors.players = `${pLabel} is missing a Date of Birth.`;
+        const dobCheck = validatePlayerDob(p.dateOfBirth, p.studentClass);
+        if (!dobCheck.valid) {
+          newErrors.players = `${pLabel}: ${dobCheck.error || 'Invalid Date of Birth.'}`;
           break;
         }
         if (p.parentMobile?.trim() && !isValidIndianMobile(p.parentMobile)) {

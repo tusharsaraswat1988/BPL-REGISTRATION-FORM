@@ -2,6 +2,7 @@ import { PoolClient } from 'pg';
 import crypto from 'crypto';
 import { query, withTransaction, getPool } from './index';
 import { config } from '../config/env';
+import { validatePlayerDob } from '../../utils/validation';
 
 export interface PublicTeamDTO {
   teamName: string;
@@ -246,8 +247,9 @@ export function validateRegistrationPayload(input: RegistrationSubmissionInput):
       };
     }
 
-    if (!p.dateOfBirth?.trim()) {
-      return { valid: false, error: `Player #${playerNum}: Date of Birth is required.` };
+    const dobValidation = validatePlayerDob(p.dateOfBirth, studentClass);
+    if (!dobValidation.valid) {
+      return { valid: false, error: `Player #${playerNum} (${p.playerName || 'Unnamed'}): ${dobValidation.error || 'Invalid Date of Birth.'}` };
     }
     // Parent email is optional
     if (!p.playerPhoto?.trim()) {
