@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Shield, Sparkles, CheckCircle2 } from 'lucide-react';
 import { TOURNAMENT_CONFIG } from '../../config/tournamentConfig';
 
@@ -21,9 +21,14 @@ export const StepTeamBranding: React.FC<StepTeamBrandingProps> = ({
   setTeamTagline,
   errors
 }) => {
-  const baseFee = TOURNAMENT_CONFIG.REGISTRATION_FEE;
-  const brandingAddon = TOURNAMENT_CONFIG.BRANDING_FEE;
-  const totalAmount = includeBranding ? baseFee + brandingAddon : baseFee;
+  const totalAmount = TOURNAMENT_CONFIG.TOTAL_WITH_BRANDING || 13000;
+
+  // Always ensure official full team registration package is active
+  useEffect(() => {
+    if (!includeBranding) {
+      setIncludeBranding(true);
+    }
+  }, [includeBranding, setIncludeBranding]);
 
   return (
     <div className="space-y-8">
@@ -32,16 +37,16 @@ export const StepTeamBranding: React.FC<StepTeamBrandingProps> = ({
         <div>
           <h3 className="text-lg font-bold text-white flex items-center gap-2 font-heading">
             <Shield className="w-5 h-5 text-[#FFB800]" />
-            Team Identity & Branding Option
+            Team Identity & Registration Charges
           </h3>
           <p className="text-xs text-slate-400">
-            Specify your official team name and choose whether to include the tournament branding add-on package.
+            Specify your official team name and confirm your tournament registration charges.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        {/* Left Column: Team Details & Branding Choice */}
+        {/* Left Column: Team Details & Single Unified Package */}
         <div className="lg:col-span-7 space-y-6">
           {/* Team Name */}
           <div>
@@ -80,69 +85,52 @@ export const StepTeamBranding: React.FC<StepTeamBrandingProps> = ({
             />
           </div>
 
-          {/* Official Branding Selection (₹8,000 vs ₹13,000) */}
+          {/* Single Unified Charge: Team Registration Charges (₹13,000) */}
           <div className="pt-4 border-t border-[#1A2C68]">
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2.5">
-              Select Registration Package <span className="text-[#FFB800]">*</span>
+              Tournament Charges <span className="text-[#FFB800]">*</span>
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {/* Option 1: Standard Entry (₹8,000) */}
-              <div
-                onClick={() => setIncludeBranding(false)}
-                className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer text-left relative select-none active:scale-[0.99] ${
-                  !includeBranding
-                    ? 'bg-[#0B1538] border-[#FFB800] ring-2 ring-[#FFB800]/30 shadow-lg'
-                    : 'bg-[#091230]/70 border-[#1A2C68] hover:border-slate-700'
-                }`}
-              >
-                {!includeBranding && (
-                  <div className="absolute top-3.5 right-3.5 text-[#FFB800]">
-                    <CheckCircle2 className="w-5 h-5 fill-[#FFB800]/20" />
-                  </div>
-                )}
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-xs font-bold text-slate-300 uppercase font-mono-sport">
-                    Standard Entry
-                  </span>
-                </div>
-                <div className="text-2xl font-black text-white font-mono-sport mb-1">
-                  ₹{baseFee.toLocaleString('en-IN')}
-                </div>
-                <p className="text-[11px] text-slate-400 leading-snug">
-                  Official team entry for all tournament matches and tournament scoring.
-                </p>
-                <div className="mt-3 pt-2 border-t border-[#1A2C68]/80 text-[10px] text-slate-500">
-                  Branding Add-on: <strong className="text-slate-400">₹0 (None)</strong>
+            
+            <div className="p-5 rounded-2xl bg-[#0B1538] border-2 border-[#FFB800] ring-2 ring-[#FFB800]/30 shadow-xl shadow-[#FFB800]/10 text-left relative">
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-xs font-bold text-[#FFB800] uppercase font-mono-sport flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-[#FFB800]" />
+                  OFFICIAL TOURNAMENT PACKAGE
+                </span>
+                <div className="flex items-center gap-1 text-[#FFB800] text-xs font-bold font-mono-sport bg-[#FFB800]/15 px-2.5 py-1 rounded-full border border-[#FFB800]/30">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>INCLUDED</span>
                 </div>
               </div>
 
-              {/* Option 2: Full Branding Package (₹13,000) */}
-              <div
-                onClick={() => setIncludeBranding(true)}
-                className={`p-4 rounded-xl border transition-all duration-200 cursor-pointer text-left relative select-none active:scale-[0.99] ${
-                  includeBranding
-                    ? 'bg-[#0B1538] border-[#FFB800] ring-2 ring-[#FFB800]/30 shadow-lg shadow-[#FFB800]/10'
-                    : 'bg-[#091230]/70 border-[#1A2C68] hover:border-slate-700'
-                }`}
-              >
-                {includeBranding && (
-                  <div className="absolute top-3.5 right-3.5 text-[#FFB800]">
-                    <CheckCircle2 className="w-5 h-5 fill-[#FFB800]/20" />
-                  </div>
-                )}
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="text-xs font-bold text-[#FFB800] uppercase font-mono-sport flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5" /> Full Branding Package
-                  </span>
+              <h4 className="text-base sm:text-lg font-black text-white font-heading uppercase tracking-wide">
+                Team Registration Charges
+              </h4>
+
+              <div className="text-3xl font-black text-[#FFB800] font-mono-sport my-2">
+                ₹{totalAmount.toLocaleString('en-IN')}
+              </div>
+
+              <p className="text-xs text-slate-300 leading-relaxed mb-3">
+                Complete official tournament registration package for 8 squad players, including custom match jerseys with school/academy logo branding, match broadcast, and digital live scoring.
+              </p>
+
+              <div className="pt-3 border-t border-[#1A2C68] grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-300">
+                <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Full 8-Player Squad Entry</span>
                 </div>
-                <div className="text-2xl font-black text-[#FFB800] font-mono-sport mb-1">
-                  ₹{(baseFee + brandingAddon).toLocaleString('en-IN')}
+                <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Custom Branded Team Jerseys</span>
                 </div>
-                <p className="text-[11px] text-slate-300 leading-snug">
-                  Base Registration (₹8,000) + Official Custom Branding Add-on (₹5,000).
-                </p>
-                <div className="mt-3 pt-2 border-t border-[#1A2C68]/80 text-[10px] text-[#FFB800] font-medium">
-                  Custom team jerseys with school logo sublimation & media coverage.
+                <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Live Web Scoring & OBS Broadcast</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Trophies, Medals & Certificates</span>
                 </div>
               </div>
             </div>
@@ -176,12 +164,8 @@ export const StepTeamBranding: React.FC<StepTeamBrandingProps> = ({
             )}
 
             <div className="pt-3">
-              <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${
-                includeBranding 
-                  ? 'bg-[#FFB800]/15 text-[#FFB800] border-[#FFB800]/40' 
-                  : 'bg-slate-800 text-slate-300 border-slate-700'
-              }`}>
-                {includeBranding ? '✓ Full Branding Package Included' : 'Standard Tournament Entry'}
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold border bg-[#FFB800]/15 text-[#FFB800] border-[#FFB800]/40">
+                ✓ Team Registration Package Included
               </span>
             </div>
           </div>
@@ -189,14 +173,8 @@ export const StepTeamBranding: React.FC<StepTeamBrandingProps> = ({
           {/* Fee Calculation Breakdown */}
           <div className="p-4 rounded-xl bg-[#070D24] border border-[#1A2C68] space-y-2.5 text-xs">
             <div className="flex justify-between text-slate-400">
-              <span>Base Team Registration Fee:</span>
-              <span className="font-mono font-semibold text-white">₹{baseFee.toLocaleString('en-IN')}</span>
-            </div>
-            <div className="flex justify-between text-slate-400">
-              <span>Branding Add-on Fee:</span>
-              <span className="font-mono font-semibold text-[#FFB800]">
-                {includeBranding ? `+₹${brandingAddon.toLocaleString('en-IN')}` : '₹0 (None)'}
-              </span>
+              <span>Team Registration Charges:</span>
+              <span className="font-mono font-semibold text-white">₹{totalAmount.toLocaleString('en-IN')}</span>
             </div>
             <div className="pt-2.5 border-t border-[#1A2C68] flex justify-between font-bold text-sm">
               <span className="text-white">Calculated Total Fee:</span>

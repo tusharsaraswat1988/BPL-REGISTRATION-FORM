@@ -265,12 +265,8 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           </div>
           <p className="text-base font-bold text-white font-heading">{teamName || 'Team Name'}</p>
           <div className="mt-2 flex items-center gap-2">
-            <span className={`px-2.5 py-0.5 rounded text-xs font-bold border ${
-              includeBranding 
-                ? 'bg-[#FFB800]/15 text-[#FFB800] border-[#FFB800]/40' 
-                : 'bg-slate-800 text-slate-300 border-slate-700'
-            }`}>
-              {includeBranding ? 'Full Branding Package (₹13,000)' : 'Standard Entry (₹8,000)'}
+            <span className="px-2.5 py-0.5 rounded text-xs font-bold border bg-[#FFB800]/15 text-[#FFB800] border-[#FFB800]/40">
+              Team Registration Charges (₹13,000)
             </span>
           </div>
         </div>
@@ -429,19 +425,15 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
                   ₹{paymentDueAmount.toLocaleString('en-IN')}
                 </span>
                 <span className="text-xs text-slate-400">
-                  {isBrandingAddonPending 
-                    ? '(Branding Add-on Fee: ₹5,000 | Base ₹8,000 Paid)'
-                    : `(Base: ₹8,000 ${includeBranding ? '+ Branding Add-on: ₹5,000' : '+ Branding: ₹0'})`}
+                  (Official Team Registration Charges)
                 </span>
               </div>
               <p className="text-xs text-slate-300">
-                {isBrandingAddonPending
-                  ? 'Includes customized team jersey branding, social media team spotlight, and match broadcast banner.'
-                  : 'Includes 8 player match registrations, box-cricket fixtures, digital scoring & arena coverage.'}
+                Includes 8 player match registrations, custom branded team jerseys with school/academy logo, box-cricket fixtures, digital live scoring & arena coverage.
               </p>
             </div>
             <div className="text-xs text-[#FFB800] font-bold bg-[#FFB800]/15 px-3 py-1.5 rounded-lg border border-[#FFB800]/30 whitespace-nowrap font-mono-sport">
-              {isBrandingAddonPending ? 'Branding Add-on Payment' : (includeBranding ? 'Branded Team Package' : 'Standard Team Entry')}
+              Team Registration Charges
             </div>
           </div>
         )}

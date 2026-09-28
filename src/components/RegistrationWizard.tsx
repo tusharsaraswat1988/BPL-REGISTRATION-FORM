@@ -128,7 +128,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
 
   // 3. Team Branding & Options State
   const [teamName, setTeamName] = useState<string>(() => initialDraft?.teamName || '');
-  const [includeBranding, setIncludeBranding] = useState<boolean>(() => Boolean(initialDraft?.includeBranding));
+  const [includeBranding, setIncludeBranding] = useState<boolean>(() => initialDraft?.includeBranding !== false);
   const [teamTagline, setTeamTagline] = useState<string>(() => initialDraft?.teamTagline || '');
 
   // 4. Exactly 8 Players (Initialized with restored draft or clean slots)
