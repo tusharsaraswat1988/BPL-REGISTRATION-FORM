@@ -479,12 +479,9 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
       if (mentor.secondMobile?.trim() && !isValidIndianMobile(mentor.secondMobile)) {
         newErrors.mentorSecondMobile = 'Alternative mobile must be a valid 10-digit number.';
       }
-      if (!mentor.email.trim()) {
-        newErrors.mentorEmail = 'Mentor Email is required.';
-      } else if (!isValidEmail(mentor.email)) {
+      if (mentor.email?.trim() && !isValidEmail(mentor.email)) {
         newErrors.mentorEmail = 'Please enter a valid email address.';
       }
-      if (!mentor.photo.trim()) newErrors.mentorPhoto = 'Mentor Photo is required.';
     } else if (stepIndex === 2) {
       if (!teamName.trim()) newErrors.teamName = 'Team Name is required.';
     } else if (stepIndex === 3) {

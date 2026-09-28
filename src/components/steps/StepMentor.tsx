@@ -73,11 +73,11 @@ export const StepMentor: React.FC<StepMentorProps> = ({ mentor, setMentor, error
         <div>
           <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
             <Mail className="w-3.5 h-3.5 text-slate-400" />
-            Official Email <span className="text-[#FFB800]">*</span>
+            Official Email <span className="text-slate-500 text-[11px] normal-case font-normal">(Optional)</span>
           </label>
           <input
             type="email"
-            value={mentor.email}
+            value={mentor.email || ''}
             onChange={e => handleChange('email', e.target.value.trim())}
             placeholder="coach@school.edu.in or personal email"
             className={`w-full px-4 py-3 bg-[#0A1230] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[#FFB800]/50 transition-all ${
@@ -137,13 +137,13 @@ export const StepMentor: React.FC<StepMentorProps> = ({ mentor, setMentor, error
       <div className="mt-4">
         <ImageUploadField
           label="Mentor Photo"
-          required
+          required={false}
           tag="mentors"
-          value={mentor.photo}
+          value={mentor.photo || ''}
           onChange={url => handleChange('photo', url)}
           error={errors.mentorPhoto}
           aspectRatio="square"
-          helperText="Recent passport-style photo for official coordinator pass"
+          helperText="Optional: Recent passport-style photo for official coordinator pass"
         />
       </div>
     </div>

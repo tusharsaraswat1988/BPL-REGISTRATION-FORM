@@ -73,8 +73,8 @@ CREATE TABLE IF NOT EXISTS mentors (
   name VARCHAR(255) NOT NULL,
   mobile VARCHAR(50) NOT NULL,
   second_mobile VARCHAR(50),
-  email VARCHAR(255) NOT NULL,
-  photo TEXT NOT NULL,
+  email VARCHAR(255),
+  photo TEXT,
   designation VARCHAR(255),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -311,6 +311,13 @@ export async function initDatabase(): Promise<boolean> {
 
     // 2. Execute schema migration
     await client.query(sql);
+    
+    // Ensure mentors email and photo columns allow NULL on existing databases
+    await client.query(`
+      ALTER TABLE mentors ALTER COLUMN email DROP NOT NULL;
+      ALTER TABLE mentors ALTER COLUMN photo DROP NOT NULL;
+    `).catch(() => {});
+
     console.log('[Database] Schema execution completed. Verifying required tables...');
 
     // 3. Verify all required tables exist

@@ -54,8 +54,8 @@ export interface MentorDetails {
   name: string; // Required *
   mobile: string; // Required *
   secondMobile?: string; // Optional
-  email: string; // Required *
-  photo: string; // Required *
+  email?: string; // Optional
+  photo?: string; // Optional
   designation?: string;
 }
 

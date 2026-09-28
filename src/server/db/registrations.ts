@@ -38,8 +38,8 @@ export interface MentorInput {
   name: string;
   mobile: string;
   secondMobile?: string;
-  email: string;
-  photo: string;
+  email?: string;
+  photo?: string;
   designation?: string;
 }
 
@@ -213,8 +213,7 @@ export function validateRegistrationPayload(input: RegistrationSubmissionInput):
   if (!input.mentor) return { valid: false, error: 'Mentor details are required.' };
   if (!input.mentor.name?.trim()) return { valid: false, error: 'Mentor Name is required.' };
   if (!input.mentor.mobile?.trim()) return { valid: false, error: 'Mentor Mobile is required.' };
-  if (!input.mentor.email?.trim()) return { valid: false, error: 'Mentor Email is required.' };
-  if (!input.mentor.photo?.trim()) return { valid: false, error: 'Mentor Photo is required.' };
+  // Email and photo are optional
 
   // Team Name check
   if (!input.teamName?.trim()) return { valid: false, error: 'Team Name is required.' };
@@ -671,8 +670,8 @@ export async function createRegistrationTransaction(
         input.mentor.name.trim(),
         input.mentor.mobile.trim(),
         input.mentor.secondMobile?.trim() || null,
-        input.mentor.email.trim().toLowerCase(),
-        input.mentor.photo.trim(),
+        input.mentor.email?.trim() ? input.mentor.email.trim().toLowerCase() : null,
+        input.mentor.photo?.trim() || null,
         input.mentor.designation?.trim() || 'Head Coach',
       ]
     );

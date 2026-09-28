@@ -54,8 +54,8 @@ CREATE TABLE IF NOT EXISTS mentors (
   name VARCHAR(255) NOT NULL,
   mobile VARCHAR(50) NOT NULL,
   second_mobile VARCHAR(50),
-  email VARCHAR(255) NOT NULL,
-  photo TEXT NOT NULL,
+  email VARCHAR(255),
+  photo TEXT,
   designation VARCHAR(255),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

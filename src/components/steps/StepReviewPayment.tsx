@@ -246,7 +246,7 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
             {mentor.secondMobile ? ` / ${mentor.secondMobile}` : ''}
           </p>
           <p className="text-xs text-slate-400">
-            Email: <strong className="text-slate-200">{mentor.email}</strong>
+            Email: <strong className="text-slate-200">{mentor.email || 'Not Provided (Optional)'}</strong>
           </p>
         </div>
 
