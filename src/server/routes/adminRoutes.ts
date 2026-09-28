@@ -5,7 +5,8 @@ import {
   getRegistrationById,
   getAllRegistrationsForAdmin,
   getAdminDashboardStats,
-  deleteRegistrationByAdmin
+  deleteRegistrationByAdmin,
+  updateRegistrationByAdmin
 } from '../db/registrations';
 import { requireAdminKey } from '../middleware/auth';
 import { adminLimiter } from '../middleware/rateLimiter';
@@ -274,6 +275,36 @@ adminRoutes.delete(
     }
   }
 );
+
+// Admin Update Full Registration Details
+adminRoutes.put(
+  '/admin/registrations/:id',
+  adminLimiter,
+  requireAdminKey,
+  async (req, res, next) => {
+    try {
+      const registrationId = req.params.id;
+      const updated = await updateRegistrationByAdmin(registrationId, req.body);
+      if (!updated) {
+        res.status(404).json({
+          success: false,
+          error: 'RegistrationNotFound',
+          message: `Registration ${registrationId} not found or could not be updated.`,
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: `Team "${updated.teamName}" (${registrationId}) updated successfully.`,
+        registration: updated,
+      });
+    } catch (err: any) {
+      next(err);
+    }
+  }
+);
+
 
 
 

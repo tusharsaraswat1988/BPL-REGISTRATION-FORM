@@ -4,10 +4,11 @@ import {
   CheckCircle2, Clock, XCircle, Users, Trophy, DollarSign,
   ExternalLink, Eye, ChevronRight, AlertTriangle, Check, X,
   User, Phone, Mail, MapPin, Calendar, Building, Sparkles,
-  FileSpreadsheet, ArrowUpDown, Copy, Layers, Trash2
+  FileSpreadsheet, ArrowUpDown, Copy, Layers, Trash2, Edit3
 } from 'lucide-react';
 import { BplLogo } from '../BplLogo';
 import { RegistrationFullRecord, PlayerInput } from '../../server/db/registrations';
+import { AdminEditTeamModal } from '../admin/AdminEditTeamModal';
 
 interface AdminStats {
   totalRegistrations: number;
@@ -49,6 +50,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
 
   // Selected registration for details modal
   const [selectedReg, setSelectedReg] = useState<RegistrationFullRecord | null>(null);
+
+  // Selected registration for editing modal
+  const [editingReg, setEditingReg] = useState<RegistrationFullRecord | null>(null);
 
   // Selected registration for printing dossier
   const [printingReg, setPrintingReg] = useState<RegistrationFullRecord | null>(null);
@@ -1108,6 +1112,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                             </button>
 
                             <button
+                              onClick={() => setEditingReg(reg)}
+                              className="px-2.5 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                              title="Edit Team, School, Players & Payment Details"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Edit</span>
+                            </button>
+
+                            <button
                               onClick={() => handlePrintDossier(reg)}
                               className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                               title="Print Official Registration Dossier"
@@ -1197,6 +1210,14 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
               </div>
 
               <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setEditingReg(selectedReg)}
+                  className="px-3 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Edit All Details for this Team"
+                >
+                  <Edit3 className="w-4 h-4 text-indigo-400" />
+                  <span>Edit Details</span>
+                </button>
                 <button
                   onClick={() => handlePrintDossier(selectedReg)}
                   className="px-3 py-1.5 rounded-lg bg-[#0E1B48] hover:bg-[#152766] border border-[#1A2C68] text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
@@ -1644,6 +1665,28 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* EDIT TEAM DETAILS MODAL */}
+      {/* ------------------------------------------------------------- */}
+      {editingReg && (
+        <AdminEditTeamModal
+          registration={editingReg}
+          apiKey={apiKey}
+          onClose={() => setEditingReg(null)}
+          onSaveSuccess={(updated) => {
+            setEditingReg(null);
+            setRegistrations((prev) =>
+              prev.map((r) => (r.id === updated.id ? updated : r))
+            );
+            if (selectedReg && selectedReg.id === updated.id) {
+              setSelectedReg(updated);
+            }
+            showToast(`Team "${updated.teamName}" (${updated.id}) updated successfully!`);
+            fetchData();
+          }}
+        />
       )}
 
       {/* ------------------------------------------------------------- */}

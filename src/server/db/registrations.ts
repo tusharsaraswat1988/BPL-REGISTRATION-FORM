@@ -1154,4 +1154,210 @@ export async function deleteRegistrationByAdmin(registrationId: string): Promise
   });
 }
 
+export interface AdminUpdateRegistrationInput {
+  category?: 'class_4_5_6' | 'class_7_8_9';
+  teamName?: string;
+  includeBranding?: boolean;
+  teamTagline?: string;
+  teamShortCode?: string;
+  status?: string;
+  notes?: string;
+  association?: {
+    associationName?: string;
+    branch?: string;
+    email?: string;
+    mobile?: string;
+    associationLogo?: string;
+    associationType?: string;
+    city?: string;
+  };
+  mentor?: {
+    name?: string;
+    mobile?: string;
+    secondMobile?: string;
+    email?: string;
+    photo?: string;
+    designation?: string;
+  };
+  players?: PlayerInput[];
+  payment?: {
+    method?: string;
+    gateway?: string;
+    utrTransactionId?: string;
+    paymentScreenshot?: string;
+    baseAmount?: number;
+    brandingAmount?: number;
+    totalAmount?: number;
+    paymentStatus?: string;
+    verifiedBy?: string | null;
+    verifiedAt?: string | null;
+    paidAt?: string;
+  };
+}
+
+/**
+ * Full Admin Update of Registration Record
+ */
+export async function updateRegistrationByAdmin(
+  registrationId: string,
+  input: AdminUpdateRegistrationInput
+): Promise<RegistrationFullRecord | null> {
+  return withTransaction(async (client) => {
+    // 1. Verify existence
+    const existing = await getRegistrationById(registrationId, client);
+    if (!existing) {
+      return null;
+    }
+
+    // 2. Update registrations master record
+    const category = input.category || existing.category;
+    const teamName = input.teamName !== undefined ? input.teamName.trim() : existing.teamName;
+    const includeBranding = input.includeBranding !== undefined ? Boolean(input.includeBranding) : existing.includeBranding;
+    const teamTagline = input.teamTagline !== undefined ? (input.teamTagline.trim() || null) : (existing.branding.teamTagline || null);
+    const teamShortCode = input.teamShortCode !== undefined ? (input.teamShortCode.trim() || 'BPL') : (existing.branding.teamShortCode || 'BPL');
+    const status = input.status !== undefined ? input.status : existing.status;
+    const notes = input.notes !== undefined ? (input.notes.trim() || null) : null;
+
+    await client.query(
+      `UPDATE registrations
+       SET category = $1, team_name = $2, include_branding = $3, team_tagline = $4,
+           team_short_code = $5, status = $6, notes = COALESCE($7, notes), updated_at = NOW()
+       WHERE id = $8`,
+      [category, teamName, includeBranding, teamTagline, teamShortCode, status, notes, registrationId]
+    );
+
+    // 3. Update association
+    if (input.association) {
+      const a = input.association;
+      await client.query(
+        `UPDATE associations
+         SET association_name = COALESCE($1, association_name),
+             branch = COALESCE($2, branch),
+             email = COALESCE($3, email),
+             mobile = COALESCE($4, mobile),
+             association_logo = COALESCE($5, association_logo),
+             association_type = COALESCE($6, association_type),
+             city = COALESCE($7, city)
+         WHERE registration_id = $8`,
+        [
+          a.associationName !== undefined ? a.associationName.trim() : null,
+          a.branch !== undefined ? a.branch.trim() : null,
+          a.email !== undefined ? a.email.trim().toLowerCase() : null,
+          a.mobile !== undefined ? a.mobile.trim() : null,
+          a.associationLogo !== undefined ? a.associationLogo.trim() : null,
+          a.associationType !== undefined ? a.associationType.trim() : null,
+          a.city !== undefined ? a.city.trim() : null,
+          registrationId
+        ]
+      );
+    }
+
+    // 4. Update mentor
+    if (input.mentor) {
+      const m = input.mentor;
+      await client.query(
+        `UPDATE mentors
+         SET name = COALESCE($1, name),
+             mobile = COALESCE($2, mobile),
+             second_mobile = $3,
+             email = $4,
+             photo = $5,
+             designation = COALESCE($6, designation)
+         WHERE registration_id = $7`,
+        [
+          m.name !== undefined ? m.name.trim() : null,
+          m.mobile !== undefined ? m.mobile.trim() : null,
+          m.secondMobile !== undefined ? (m.secondMobile.trim() || null) : (existing.mentor.secondMobile || null),
+          m.email !== undefined ? (m.email.trim() ? m.email.trim().toLowerCase() : null) : (existing.mentor.email || null),
+          m.photo !== undefined ? (m.photo.trim() || null) : (existing.mentor.photo || null),
+          m.designation !== undefined ? m.designation.trim() : null,
+          registrationId
+        ]
+      );
+    }
+
+    // 5. Update players if provided (replaces all 8 players)
+    if (input.players && Array.isArray(input.players) && input.players.length > 0) {
+      await client.query(`DELETE FROM players WHERE registration_id = $1`, [registrationId]);
+
+      for (let i = 0; i < input.players.length; i++) {
+        const p = input.players[i];
+        await client.query(
+          `INSERT INTO players (
+            registration_id, player_index, player_name, student_class, date_of_birth,
+            parent_mobile, parent_email, player_photo, jersey_number, jersey_size,
+            cricket_role, batting_style, bowling_style
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+          [
+            registrationId,
+            i + 1,
+            p.playerName?.trim() || `Player ${i + 1}`,
+            Number(p.studentClass) || (category === 'class_4_5_6' ? 4 : 7),
+            p.dateOfBirth?.trim() || '2014-01-01',
+            p.parentMobile?.trim() || null,
+            p.parentEmail?.trim() ? p.parentEmail.trim().toLowerCase() : null,
+            p.playerPhoto?.trim() || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300',
+            p.jerseyNumber ? Number(p.jerseyNumber) : null,
+            p.jerseySize?.trim() || null,
+            p.cricketRole?.trim() || 'All Rounder',
+            p.battingStyle || null,
+            p.bowlingStyle || null,
+          ]
+        );
+      }
+    }
+
+    // 6. Update payment
+    if (input.payment) {
+      const pay = input.payment;
+      const normalizedUtr = pay.utrTransactionId ? normalizeUtr(pay.utrTransactionId) : null;
+
+      // Check UTR uniqueness against other registrations
+      if (normalizedUtr) {
+        const utrCheck = await client.query(
+          `SELECT 1 FROM payments WHERE utr_transaction_id = $1 AND registration_id != $2 LIMIT 1`,
+          [normalizedUtr, registrationId]
+        );
+        if (utrCheck.rows.length > 0) {
+          throw new Error(`UTR / Transaction Reference '${normalizedUtr}' is already used by another team.`);
+        }
+      }
+
+      await client.query(
+        `UPDATE payments
+         SET method = COALESCE($1, method),
+             gateway = COALESCE($2, gateway),
+             utr_transaction_id = COALESCE($3, utr_transaction_id),
+             payment_screenshot = COALESCE($4, payment_screenshot),
+             base_amount = COALESCE($5, base_amount),
+             branding_amount = COALESCE($6, branding_amount),
+             total_amount = COALESCE($7, total_amount),
+             payment_status = COALESCE($8, payment_status),
+             verified_by = $9,
+             verified_at = $10,
+             paid_at = COALESCE($11, paid_at)
+         WHERE registration_id = $12`,
+        [
+          pay.method || null,
+          pay.gateway || null,
+          normalizedUtr,
+          pay.paymentScreenshot ? pay.paymentScreenshot.trim() : null,
+          pay.baseAmount !== undefined ? pay.baseAmount : null,
+          pay.brandingAmount !== undefined ? pay.brandingAmount : null,
+          pay.totalAmount !== undefined ? pay.totalAmount : null,
+          pay.paymentStatus || null,
+          pay.verifiedBy !== undefined ? pay.verifiedBy : null,
+          pay.verifiedAt !== undefined ? pay.verifiedAt : null,
+          pay.paidAt ? pay.paidAt : null,
+          registrationId
+        ]
+      );
+    }
+
+    // Return the updated full record
+    return await getRegistrationById(registrationId, client);
+  });
+}
+
+
 
