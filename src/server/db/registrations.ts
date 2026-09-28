@@ -15,7 +15,7 @@ export interface PlayerInput {
   studentClass: number;
   dateOfBirth: string;
   parentMobile?: string;
-  parentEmail: string;
+  parentEmail?: string;
   playerPhoto: string;
   jerseyNumber?: number;
   jerseySize?: string;
@@ -249,9 +249,7 @@ export function validateRegistrationPayload(input: RegistrationSubmissionInput):
     if (!p.dateOfBirth?.trim()) {
       return { valid: false, error: `Player #${playerNum}: Date of Birth is required.` };
     }
-    if (!p.parentEmail?.trim()) {
-      return { valid: false, error: `Player #${playerNum}: Parent Email is required.` };
-    }
+    // Parent email is optional
     if (!p.playerPhoto?.trim()) {
       return { valid: false, error: `Player #${playerNum}: Player Photo is required.` };
     }
@@ -692,7 +690,7 @@ export async function createRegistrationTransaction(
           Number(p.studentClass),
           p.dateOfBirth.trim(),
           p.parentMobile ? p.parentMobile.trim() : null,
-          p.parentEmail.trim().toLowerCase(),
+          p.parentEmail?.trim() ? p.parentEmail.trim().toLowerCase() : null,
           p.playerPhoto.trim(),
           p.jerseyNumber ? Number(p.jerseyNumber) : null,
           p.jerseySize ? p.jerseySize.trim() : null,

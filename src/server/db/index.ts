@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS players (
   student_class INTEGER NOT NULL,
   date_of_birth DATE NOT NULL,
   parent_mobile VARCHAR(50),
-  parent_email VARCHAR(255) NOT NULL,
+  parent_email VARCHAR(255),
   player_photo TEXT NOT NULL,
   jersey_number INTEGER CHECK (jersey_number IS NULL OR (jersey_number >= 1 AND jersey_number <= 99)),
   jersey_size VARCHAR(10),
@@ -312,10 +312,11 @@ export async function initDatabase(): Promise<boolean> {
     // 2. Execute schema migration
     await client.query(sql);
     
-    // Ensure mentors email and photo columns allow NULL on existing databases
+    // Ensure mentors email/photo and players parent_email columns allow NULL on existing databases
     await client.query(`
       ALTER TABLE mentors ALTER COLUMN email DROP NOT NULL;
       ALTER TABLE mentors ALTER COLUMN photo DROP NOT NULL;
+      ALTER TABLE players ALTER COLUMN parent_email DROP NOT NULL;
     `).catch(() => {});
 
     console.log('[Database] Schema execution completed. Verifying required tables...');

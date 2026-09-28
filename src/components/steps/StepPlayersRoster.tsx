@@ -132,8 +132,7 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
       p.playerName?.trim() &&
       p.studentClass &&
       p.dateOfBirth?.trim() &&
-      p.parentEmail?.trim() &&
-      isValidEmail(p.parentEmail) &&
+      (!p.parentEmail?.trim() || isValidEmail(p.parentEmail)) &&
       p.playerPhoto?.trim() &&
       hasValidRoleAndStyles &&
       (!p.parentMobile?.trim() || isValidIndianMobile(p.parentMobile)) &&
@@ -326,11 +325,11 @@ export const StepPlayersRoster: React.FC<StepPlayersRosterProps> = ({
             {/* Parent Email with Validation */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">
-                Parent Email <span className="text-[#FFB800]">*</span>
+                Parent Email <span className="text-slate-500 text-[11px] normal-case font-normal">(Optional)</span>
               </label>
               <input
                 type="email"
-                value={activePlayer.parentEmail}
+                value={activePlayer.parentEmail || ''}
                 onChange={e => handlePlayerChange(activePlayerIndex, 'parentEmail', e.target.value.trim())}
                 placeholder="parent@example.com"
                 className={`w-full px-4 py-2.5 bg-[#070D24] border rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 ${

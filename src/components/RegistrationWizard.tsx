@@ -512,11 +512,7 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
           newErrors.players = `${pLabel} parent mobile must be a valid 10-digit mobile number starting with 6, 7, 8, or 9.`;
           break;
         }
-        if (!p.parentEmail?.trim()) {
-          newErrors.players = `${pLabel} is missing Parent Email.`;
-          break;
-        }
-        if (!isValidEmail(p.parentEmail)) {
+        if (p.parentEmail?.trim() && !isValidEmail(p.parentEmail)) {
           newErrors.players = `${pLabel} requires a valid email address (e.g. parent@example.com).`;
           break;
         }

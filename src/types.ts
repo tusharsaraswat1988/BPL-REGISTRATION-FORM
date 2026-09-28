@@ -65,7 +65,7 @@ export interface PlayerDetails {
   studentClass: number; // Required * (4, 5, 6 for class_4_5_6, or 7, 8, 9 for class_7_8_9)
   dateOfBirth: string; // Required *
   parentMobile?: string; // Optional
-  parentEmail: string; // Required *
+  parentEmail?: string; // Optional
   playerPhoto: string; // Required *
   jerseyNumber?: number; // Optional (unique within team if provided, 1-99)
   jerseySize?: JerseySize | string; // Optional

@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS players (
   student_class INTEGER NOT NULL,
   date_of_birth DATE NOT NULL,
   parent_mobile VARCHAR(50),
-  parent_email VARCHAR(255) NOT NULL,
+  parent_email VARCHAR(255),
   player_photo TEXT NOT NULL,
   jersey_number INTEGER CHECK (jersey_number IS NULL OR (jersey_number >= 1 AND jersey_number <= 99)),
   jersey_size VARCHAR(10),
