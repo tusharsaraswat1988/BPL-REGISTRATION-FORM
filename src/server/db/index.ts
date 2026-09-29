@@ -149,12 +149,14 @@ ALTER TABLE payments ADD COLUMN IF NOT EXISTS confirmation_email_sent_at TIMESTA
 ALTER TABLE players ALTER COLUMN parent_mobile DROP NOT NULL;
 ALTER TABLE players ALTER COLUMN jersey_number DROP NOT NULL;
 ALTER TABLE players ALTER COLUMN jersey_size DROP NOT NULL;
+ALTER TABLE drafts ADD COLUMN IF NOT EXISTS auth_user_mobile VARCHAR(50);
 
 -- 7. Autosave / Server-Side Drafts Table
 CREATE TABLE IF NOT EXISTS drafts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   draft_token VARCHAR(64) UNIQUE NOT NULL,
   auth_user_id VARCHAR(255),
+  auth_user_mobile VARCHAR(50),
   current_step INTEGER NOT NULL DEFAULT 0,
   data JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

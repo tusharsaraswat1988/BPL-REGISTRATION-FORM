@@ -4,11 +4,14 @@ import {
   CheckCircle2, Clock, XCircle, Users, Trophy, DollarSign,
   ExternalLink, Eye, ChevronRight, AlertTriangle, Check, X,
   User, Phone, Mail, MapPin, Calendar, Building, Sparkles,
-  FileSpreadsheet, ArrowUpDown, Copy, Layers, Trash2, Edit3
+  FileSpreadsheet, ArrowUpDown, Copy, Layers, Trash2, Edit3,
+  ShieldCheck, MessageCircle
 } from 'lucide-react';
 import { BplLogo } from '../BplLogo';
 import { RegistrationFullRecord, PlayerInput } from '../../server/db/registrations';
+import { UnfinishedRegistrationItem } from '../../server/db/drafts';
 import { AdminEditTeamModal } from '../admin/AdminEditTeamModal';
+import { AdminUnfinishedModal } from '../admin/AdminUnfinishedModal';
 
 interface AdminStats {
   totalRegistrations: number;
@@ -20,6 +23,7 @@ interface AdminStats {
   rejectedPayments: number;
   totalRevenueCollected: number;
   totalRevenueVerified: number;
+  totalUnfinishedRegistrations?: number;
 }
 
 interface AdminPageProps {
@@ -27,6 +31,9 @@ interface AdminPageProps {
 }
 
 export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
+  // Tab state: 'confirmed' (Master Registrations) or 'unfinished' (Incomplete Drafts)
+  const [adminTab, setAdminTab] = useState<'confirmed' | 'unfinished'>('confirmed');
+
   // Auth state
   const [apiKey, setApiKey] = useState<string>(() => {
     return localStorage.getItem('bpl_admin_key') || sessionStorage.getItem('bpl_admin_key') || '';
@@ -39,23 +46,27 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
 
   // Data state
   const [registrations, setRegistrations] = useState<RegistrationFullRecord[]>([]);
+  const [unfinishedRegistrations, setUnfinishedRegistrations] = useState<UnfinishedRegistrationItem[]>([]);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters
+  // Filters for Confirmed Registrations
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<'all' | 'class_4_5_6' | 'class_7_8_9'>('all');
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'VERIFIED' | 'PENDING_VERIFICATION' | 'PAYMENT_REJECTED'>('all');
 
-  // Selected registration for details modal
+  // Filters for Unfinished Registrations
+  const [unfinishedSearchQuery, setUnfinishedSearchQuery] = useState('');
+  const [unfinishedStepFilter, setUnfinishedStepFilter] = useState<'all' | '0' | '1' | '2' | '3' | '4'>('all');
+  const [unfinishedCategoryFilter, setUnfinishedCategoryFilter] = useState<'all' | 'class_4_5_6' | 'class_7_8_9'>('all');
+
+  // Selected records for modals
   const [selectedReg, setSelectedReg] = useState<RegistrationFullRecord | null>(null);
-
-  // Selected registration for editing modal
+  const [selectedUnfinished, setSelectedUnfinished] = useState<UnfinishedRegistrationItem | null>(null);
   const [editingReg, setEditingReg] = useState<RegistrationFullRecord | null>(null);
-
-  // Selected registration for printing dossier
   const [printingReg, setPrintingReg] = useState<RegistrationFullRecord | null>(null);
+  const [draftToDelete, setDraftToDelete] = useState<UnfinishedRegistrationItem | null>(null);
 
   // Action states
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
@@ -123,18 +134,21 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
     }
   }, []);
 
-  // Fetch all registrations & stats when authenticated
+  // Fetch all registrations, stats & unfinished drafts when authenticated
   const fetchData = async () => {
     if (!isAuthenticated || !apiKey) return;
     setLoading(true);
     setError(null);
 
     try {
-      const [regsRes, statsRes] = await Promise.all([
+      const [regsRes, statsRes, unfinishedRes] = await Promise.all([
         fetch('/api/admin/registrations', {
           headers: { 'x-admin-key': apiKey },
         }),
         fetch('/api/admin/stats', {
+          headers: { 'x-admin-key': apiKey },
+        }),
+        fetch('/api/admin/unfinished-registrations', {
           headers: { 'x-admin-key': apiKey },
         }),
       ]);
@@ -153,6 +167,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         setStats(statsData.stats || null);
+      }
+
+      if (unfinishedRes.ok) {
+        const unfinishedData = await unfinishedRes.json();
+        setUnfinishedRegistrations(unfinishedData.unfinishedRegistrations || []);
       }
     } catch (err: any) {
       setError(err.message || 'Error connecting to database.');
@@ -174,7 +193,34 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
     setApiKey('');
     setIsAuthenticated(false);
     setRegistrations([]);
+    setUnfinishedRegistrations([]);
     setStats(null);
+  };
+
+  // Handle Deleting an Unfinished Registration Draft
+  const handleDeleteUnfinishedDraft = async (draftToken: string) => {
+    if (!apiKey) return;
+    try {
+      const res = await fetch(`/api/admin/unfinished-registrations/${encodeURIComponent(draftToken)}`, {
+        method: 'DELETE',
+        headers: { 'x-admin-key': apiKey },
+      });
+
+      if (res.ok) {
+        showToast('Unfinished registration draft removed.');
+        setUnfinishedRegistrations((prev) => prev.filter((d) => d.draftToken !== draftToken));
+        if (selectedUnfinished && selectedUnfinished.draftToken === draftToken) {
+          setSelectedUnfinished(null);
+        }
+        setDraftToDelete(null);
+        fetchData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(`Failed to delete draft: ${err.message || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      showToast(`Error deleting draft: ${err.message}`);
+    }
   };
 
   // Handle Payment Verification
@@ -607,6 +653,176 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
     showToast('Player Directory CSV downloaded successfully!');
   };
 
+  // Filter Unfinished Registrations
+  const filteredUnfinished = useMemo(() => {
+    return unfinishedRegistrations.filter((d) => {
+      // Category filter
+      if (unfinishedCategoryFilter !== 'all' && d.category !== unfinishedCategoryFilter) {
+        return false;
+      }
+      // Step filter
+      if (unfinishedStepFilter !== 'all' && String(d.currentStep) !== unfinishedStepFilter) {
+        return false;
+      }
+      // Search query
+      if (unfinishedSearchQuery.trim()) {
+        const q = unfinishedSearchQuery.toLowerCase().trim();
+        const matchesToken = d.draftToken.toLowerCase().includes(q);
+        const matchesAuthMobile = (d.authUserMobile || '').toLowerCase().includes(q);
+        const matchesContactMobile = (d.contactMobile || '').toLowerCase().includes(q);
+        const matchesContactEmail = (d.contactEmail || '').toLowerCase().includes(q);
+        const matchesTeamName = (d.teamName || '').toLowerCase().includes(q);
+        const matchesAssoc = (d.association.associationName || '').toLowerCase().includes(q);
+        const matchesAssocCity = (d.association.city || '').toLowerCase().includes(q);
+        const matchesMentor = (d.mentor.name || '').toLowerCase().includes(q);
+        const matchesMentorMobile = (d.mentor.mobile || '').toLowerCase().includes(q);
+        const matchesUtr = ((d.payment.transactionReference || d.payment.utrTransactionId) || '').toLowerCase().includes(q);
+        const matchesPlayers = (d.players || []).some((p: any) => p?.playerName && p.playerName.toLowerCase().includes(q));
+
+        return (
+          matchesToken ||
+          matchesAuthMobile ||
+          matchesContactMobile ||
+          matchesContactEmail ||
+          matchesTeamName ||
+          matchesAssoc ||
+          matchesAssocCity ||
+          matchesMentor ||
+          matchesMentorMobile ||
+          matchesUtr ||
+          matchesPlayers
+        );
+      }
+      return true;
+    });
+  }, [unfinishedRegistrations, unfinishedCategoryFilter, unfinishedStepFilter, unfinishedSearchQuery]);
+
+  // Export Unfinished Registrations to Excel / CSV
+  const exportUnfinishedCsv = () => {
+    if (filteredUnfinished.length === 0) {
+      showToast('No unfinished registrations to export.');
+      return;
+    }
+
+    const headers = [
+      'Draft Token',
+      'OTP Verified Mobile',
+      'Contact Mobile',
+      'Contact Email',
+      'Current Step Number',
+      'Step Name',
+      'Division Category',
+      'Team Name',
+      'Tagline',
+      'Branded Jersey Package',
+      'School / Association Name',
+      'Branch',
+      'City',
+      'Institution Type',
+      'School Email',
+      'School Mobile',
+      'School Logo URL',
+      'Mentor Name',
+      'Mentor Designation',
+      'Mentor Mobile',
+      'Mentor Second Mobile',
+      'Mentor Email',
+      'Mentor Photo URL',
+      'Players Entered Count',
+      ...[1, 2, 3, 4, 5, 6, 7, 8].flatMap((num) => [
+        `P${num} Name`,
+        `P${num} Class`,
+        `P${num} DOB`,
+        `P${num} Jersey #`,
+        `P${num} Role`,
+        `P${num} Parent Mobile`,
+        `P${num} Photo URL`,
+      ]),
+      'Payment Method',
+      'Payment Gateway',
+      'Payment UTR / Reference',
+      'Payment Proof URL',
+      'Created At',
+      'Last Active / Updated At',
+    ];
+
+    const rows = filteredUnfinished.map((d) => {
+      const pCols: string[] = [];
+      for (let i = 0; i < 8; i++) {
+        const p = (d.players && d.players[i]) || {};
+        pCols.push(
+          p.playerName || '',
+          p.studentClass ? String(p.studentClass) : '',
+          p.dateOfBirth || '',
+          p.jerseyNumber ? String(p.jerseyNumber) : '',
+          p.cricketRole || '',
+          p.parentMobile || '',
+          p.playerPhoto || ''
+        );
+      }
+
+      return [
+        d.draftToken,
+        d.authUserMobile || '',
+        d.contactMobile || '',
+        d.contactEmail || '',
+        String(d.currentStep),
+        d.stepName,
+        d.category === 'class_4_5_6' ? 'Class 4–5–6' : d.category === 'class_7_8_9' ? 'Class 7–8–9' : 'Unselected',
+        d.teamName || '',
+        d.teamTagline || '',
+        d.includeBranding ? 'YES' : 'NO',
+        d.association.associationName || '',
+        d.association.branch || '',
+        d.association.city || '',
+        d.association.associationType || 'School',
+        d.association.email || '',
+        d.association.mobile || '',
+        d.association.associationLogo || '',
+        d.mentor.name || '',
+        d.mentor.designation || '',
+        d.mentor.mobile || '',
+        d.mentor.secondMobile || '',
+        d.mentor.email || '',
+        d.mentor.photo || '',
+        String(d.playersFilledCount),
+        ...pCols,
+        d.payment.method || '',
+        d.payment.gateway || '',
+        d.payment.transactionReference || d.payment.utrTransactionId || '',
+        d.payment.paymentProofUrl || d.payment.paymentScreenshot || '',
+        new Date(d.createdAt).toLocaleString('en-IN'),
+        new Date(d.updatedAt).toLocaleString('en-IN'),
+      ];
+    });
+
+    const csvContent =
+      '\uFEFF' +
+      [headers, ...rows]
+        .map((row) =>
+          row
+            .map((field) => {
+              const str = String(field ?? '').replace(/"/g, '""');
+              return `"${str}"`;
+            })
+            .join(',')
+        )
+        .join('\r\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute(
+      'download',
+      `BPL_2026_Unfinished_Registrations_${new Date().toISOString().split('T')[0]}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Unfinished Registrations CSV downloaded successfully!');
+  };
+
   // Trigger browser print for single team dossier
   const handlePrintDossier = (reg: RegistrationFullRecord) => {
     setPrintingReg(reg);
@@ -758,23 +974,36 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
               <span className="hidden sm:inline">Refresh</span>
             </button>
 
-            <button
-              onClick={exportMasterCsv}
-              className="gold-button px-3.5 py-2 rounded-xl text-xs font-bold text-[#070D24] flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer"
-              title="Export all fields including 8 players and Cloudinary URLs to Excel"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Export Excel (All Data)</span>
-            </button>
+            {adminTab === 'confirmed' ? (
+              <>
+                <button
+                  onClick={exportMasterCsv}
+                  className="gold-button px-3.5 py-2 rounded-xl text-xs font-bold text-[#070D24] flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer"
+                  title="Export all fields including 8 players and Cloudinary URLs to Excel"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>Export Excel (All Data)</span>
+                </button>
 
-            <button
-              onClick={exportPlayersCsv}
-              className="px-3 py-2 rounded-xl bg-[#091230] border border-[#1A2C68] hover:border-white/30 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Export 1 row per player roster"
-            >
-              <Users className="w-3.5 h-3.5 text-blue-400" />
-              <span className="hidden md:inline">Player Directory CSV</span>
-            </button>
+                <button
+                  onClick={exportPlayersCsv}
+                  className="px-3 py-2 rounded-xl bg-[#091230] border border-[#1A2C68] hover:border-white/30 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Export 1 row per player roster"
+                >
+                  <Users className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="hidden md:inline">Player Directory CSV</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={exportUnfinishedCsv}
+                className="gold-button px-3.5 py-2 rounded-xl text-xs font-bold text-[#070D24] flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer"
+                title="Export unfinished registrations and contact details to Excel/CSV"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Export Unfinished (CSV)</span>
+              </button>
+            )}
 
             <button
               onClick={handleLogout}
@@ -789,11 +1018,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
-        {/* KPI Metrics Cards */}
+        {/* KPI Metrics Cards (5 Cards Grid) */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
             {/* Total Teams */}
-            <div className="bg-[#091230] border border-[#1A2C68] rounded-2xl p-4 relative overflow-hidden">
+            <div
+              onClick={() => setAdminTab('confirmed')}
+              className={`bg-[#091230] border rounded-2xl p-4 relative overflow-hidden cursor-pointer transition-all ${
+                adminTab === 'confirmed'
+                  ? 'border-[#FFB800] ring-1 ring-[#FFB800]/50 shadow-lg shadow-amber-500/10'
+                  : 'border-[#1A2C68] hover:border-amber-500/50'
+              }`}
+            >
               <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
                 <span className="font-semibold uppercase tracking-wider">Registered Teams</span>
                 <Trophy className="w-4 h-4 text-[#FFB800]" />
@@ -838,7 +1074,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
 
             {/* Pending Approvals */}
             <div
-              onClick={() => setPaymentFilter('PENDING_VERIFICATION')}
+              onClick={() => {
+                setAdminTab('confirmed');
+                setPaymentFilter('PENDING_VERIFICATION');
+              }}
               className="bg-[#091230] border border-[#1A2C68] hover:border-amber-500/50 rounded-2xl p-4 relative overflow-hidden cursor-pointer transition-colors"
             >
               <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
@@ -853,11 +1092,82 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                 <span>Rejected: <strong className="text-red-400">{stats.rejectedPayments}</strong></span>
               </div>
             </div>
+
+            {/* Unfinished Registrations Card */}
+            <div
+              onClick={() => setAdminTab('unfinished')}
+              className={`bg-[#091230] border rounded-2xl p-4 relative overflow-hidden cursor-pointer transition-all ${
+                adminTab === 'unfinished'
+                  ? 'border-[#FFB800] ring-1 ring-[#FFB800]/50 shadow-lg shadow-amber-500/10'
+                  : 'border-[#1A2C68] hover:border-amber-500/50'
+              }`}
+            >
+              <div className="flex items-center justify-between text-slate-400 text-xs mb-2">
+                <span className="font-semibold uppercase tracking-wider">Unfinished Drafts</span>
+                <Layers className="w-4 h-4 text-amber-400" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-display font-extrabold text-amber-400 flex items-center gap-2">
+                <span>{stats.totalUnfinishedRegistrations ?? unfinishedRegistrations.length}</span>
+                {(stats.totalUnfinishedRegistrations ?? unfinishedRegistrations.length) > 0 && (
+                  <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Active
+                  </span>
+                )}
+              </div>
+              <div className="mt-2 text-[11px] text-slate-400 border-t border-white/5 pt-1.5 flex items-center justify-between">
+                <span>OTP login drop-offs</span>
+                <span className="text-amber-400 font-semibold hover:underline">View Tab →</span>
+              </div>
+            </div>
           </div>
         )}
 
-        {/* Filters & Search Toolbar */}
-        <div className="bg-[#091230] border border-[#1A2C68] rounded-2xl p-4 shadow-sm">
+        {/* Master Tab Switcher */}
+        <div className="flex items-center gap-3 border-b border-[#1A2C68] pb-1">
+          <button
+            type="button"
+            onClick={() => setAdminTab('confirmed')}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+              adminTab === 'confirmed'
+                ? 'bg-amber-500/20 text-[#FFB800] border border-amber-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] border border-transparent'
+            }`}
+          >
+            <Trophy className="w-4 h-4" />
+            <span>Submitted Registrations</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300 border border-slate-700 font-bold">
+              {registrations.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAdminTab('unfinished')}
+            className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+              adminTab === 'unfinished'
+                ? 'bg-amber-500/20 text-[#FFB800] border border-amber-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.03] border border-transparent'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            <span>Unfinished Registrations</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
+              unfinishedRegistrations.length > 0
+                ? 'bg-amber-500/30 text-amber-300 border-amber-500/50'
+                : 'bg-slate-800 text-slate-400 border-slate-700'
+            }`}>
+              {unfinishedRegistrations.length}
+            </span>
+          </button>
+        </div>
+
+        {/* ============================================================= */}
+        {/* VIEW 1: CONFIRMED / SUBMITTED REGISTRATIONS                   */}
+        {/* ============================================================= */}
+        {adminTab === 'confirmed' && (
+          <>
+            {/* Filters & Search Toolbar */}
+            <div className="bg-[#091230] border border-[#1A2C68] rounded-2xl p-4 shadow-sm">
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
             {/* Search Input */}
             <div className="sm:col-span-5 relative">
@@ -1177,6 +1487,334 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
             </table>
           </div>
         </div>
+      </>
+    )}
+
+        {/* ============================================================= */}
+        {/* VIEW 2: UNFINISHED REGISTRATIONS (OTP LOGINS & DRAFTS)        */}
+        {/* ============================================================= */}
+        {adminTab === 'unfinished' && (
+          <div className="space-y-4">
+            {/* Informative Header Banner */}
+            <div className="bg-[#091230] border border-amber-500/30 rounded-2xl p-4.5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-[#FFB800] flex-shrink-0 mt-0.5 sm:mt-0">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white uppercase tracking-wide">
+                      Unfinished Registration Tracking Portal
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      Live Incomplete Drafts
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed max-w-3xl">
+                    These teams authenticated via Mobile OTP and entered details into the registration wizard, but have not finished final submission or payment. Admins can view entered players/mentor info, track drop-off steps, and reach out directly via Phone or WhatsApp.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  onClick={exportUnfinishedCsv}
+                  className="gold-button px-3.5 py-2 rounded-xl text-xs font-bold text-[#070D24] flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer"
+                  title="Export Unfinished Registrations to Excel/CSV"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5" />
+                  <span>Download Excel/CSV</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Unfinished Filters & Search Toolbar */}
+            <div className="bg-[#091230] border border-[#1A2C68] rounded-2xl p-4 shadow-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                {/* Search Input */}
+                <div className="sm:col-span-5 relative">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={unfinishedSearchQuery}
+                    onChange={(e) => setUnfinishedSearchQuery(e.target.value)}
+                    placeholder="Search unfinished by Team, School, Mentor, Mobile, Email..."
+                    className="w-full bg-[#050B1E] border border-[#1A2C68] focus:border-[#FFB800] text-white text-xs rounded-xl pl-10 pr-8 py-2.5 outline-none transition-colors placeholder:text-slate-600"
+                  />
+                  {unfinishedSearchQuery && (
+                    <button
+                      onClick={() => setUnfinishedSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Step Filter */}
+                <div className="sm:col-span-3">
+                  <select
+                    value={unfinishedStepFilter}
+                    onChange={(e: any) => setUnfinishedStepFilter(e.target.value)}
+                    className="w-full bg-[#050B1E] border border-[#1A2C68] focus:border-[#FFB800] text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-colors cursor-pointer"
+                  >
+                    <option value="all">All Steps (Drop-off Point)</option>
+                    <option value="0">Step 1: Category & School</option>
+                    <option value="1">Step 2: Mentor Details</option>
+                    <option value="2">Step 3: Team & Branding</option>
+                    <option value="3">Step 4: Squad (Players)</option>
+                    <option value="4">Step 5: Review & Payment</option>
+                  </select>
+                </div>
+
+                {/* Category Filter */}
+                <div className="sm:col-span-3">
+                  <select
+                    value={unfinishedCategoryFilter}
+                    onChange={(e: any) => setUnfinishedCategoryFilter(e.target.value)}
+                    className="w-full bg-[#050B1E] border border-[#1A2C68] focus:border-[#FFB800] text-slate-200 text-xs rounded-xl px-3 py-2.5 outline-none transition-colors cursor-pointer"
+                  >
+                    <option value="all">All Division Categories</option>
+                    <option value="class_4_5_6">Class 4–5–6 Division</option>
+                    <option value="class_7_8_9">Class 7–8–9 Division</option>
+                  </select>
+                </div>
+
+                {/* Count Badge */}
+                <div className="sm:col-span-1 text-right">
+                  <span className="text-xs font-bold text-amber-400">
+                    {filteredUnfinished.length} <span className="text-[10px] text-slate-400 font-normal">drafts</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Unfinished Registrations Master Table */}
+            <div className="bg-[#091230] border border-[#1A2C68] rounded-2xl overflow-hidden shadow-xl">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-[#070D24] text-slate-400 uppercase font-bold tracking-wider text-[10px] border-b border-[#1A2C68]">
+                      <th className="py-3.5 px-4">OTP Mobile & Session</th>
+                      <th className="py-3.5 px-4">Team & School / Academy</th>
+                      <th className="py-3.5 px-4">Division</th>
+                      <th className="py-3.5 px-4">Mentor In-Charge</th>
+                      <th className="py-3.5 px-4">Step Reached & Progress</th>
+                      <th className="py-3.5 px-4">Last Active</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1A2C68]/60">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={7} className="py-12 text-center text-slate-400">
+                          <RefreshCw className="w-6 h-6 animate-spin text-[#FFB800] mx-auto mb-2" />
+                          <span>Loading unfinished registrations...</span>
+                        </td>
+                      </tr>
+                    ) : filteredUnfinished.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="py-12 text-center text-slate-400">
+                          <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                          <p className="font-semibold text-slate-200">No unfinished registrations found.</p>
+                          <p className="text-[11px] text-slate-500 mt-1">
+                            {unfinishedSearchQuery || unfinishedStepFilter !== 'all' || unfinishedCategoryFilter !== 'all'
+                              ? 'Try adjusting your search or filters.'
+                              : 'All teams that logged in via OTP have either completed their entry or have not started.'}
+                          </p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredUnfinished.map((draft) => {
+                        const currentStep = draft.currentStep;
+                        const progress = Math.min(100, Math.round(((currentStep + 1) / 5) * 100));
+                        const primaryMobile = draft.authUserMobile || draft.contactMobile || draft.association.mobile || draft.mentor.mobile || '';
+                        const cleanDigits = primaryMobile.replace(/\D/g, '');
+                        const waNum = cleanDigits.length === 10 ? `91${cleanDigits}` : cleanDigits;
+
+                        return (
+                          <tr
+                            key={draft.draftToken}
+                            className="hover:bg-[#0E1B48]/50 transition-colors group"
+                          >
+                            {/* OTP Mobile & Draft Token */}
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                {draft.authUserMobile ? (
+                                  <span className="font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30 text-xs flex items-center gap-1">
+                                    <ShieldCheck className="w-3 h-3" />
+                                    {draft.authUserMobile}
+                                  </span>
+                                ) : primaryMobile ? (
+                                  <span className="font-mono font-semibold text-slate-200 bg-slate-800 px-2 py-0.5 rounded border border-slate-700 text-xs flex items-center gap-1">
+                                    <Phone className="w-3 h-3 text-slate-400" />
+                                    {primaryMobile}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-500 italic text-[11px]">No mobile saved</span>
+                                )}
+
+                                {primaryMobile && (
+                                  <button
+                                    onClick={() => copyToClipboard(primaryMobile, 'Phone Number')}
+                                    className="text-slate-500 hover:text-amber-400 transition-colors cursor-pointer"
+                                    title="Copy Mobile"
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </button>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-slate-500 font-mono mt-1 truncate max-w-[140px]" title={draft.draftToken}>
+                                Token: {draft.draftToken.slice(0, 18)}...
+                              </div>
+                            </td>
+
+                            {/* Team & School */}
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-3">
+                                {draft.association.associationLogo ? (
+                                  <img
+                                    src={draft.association.associationLogo}
+                                    alt="Logo"
+                                    className="w-9 h-9 rounded-lg object-contain bg-slate-900 border border-slate-700 flex-shrink-0"
+                                    onError={(e: any) => {
+                                      e.target.style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0 text-slate-400">
+                                    <Building className="w-4 h-4" />
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <div className="font-bold text-white text-sm truncate group-hover:text-amber-300 transition-colors">
+                                    {draft.teamName || <span className="text-slate-500 italic font-normal">(Team name pending)</span>}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 truncate">
+                                    {draft.association.associationName ? (
+                                      `${draft.association.associationName} ${draft.association.branch ? `(${draft.association.branch})` : ''}`
+                                    ) : (
+                                      <span className="text-slate-600 italic">No school entered</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Category */}
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              {draft.category ? (
+                                <span
+                                  className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                    draft.category === 'class_4_5_6'
+                                      ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                      : 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
+                                  }`}
+                                >
+                                  {draft.category === 'class_4_5_6' ? 'Class 4–5–6' : 'Class 7–8–9'}
+                                </span>
+                              ) : (
+                                <span className="text-slate-600 italic text-[11px]">Unselected</span>
+                              )}
+                            </td>
+
+                            {/* Mentor */}
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-2.5">
+                                {draft.mentor.photo ? (
+                                  <img
+                                    src={draft.mentor.photo}
+                                    alt={draft.mentor.name}
+                                    className="w-8 h-8 rounded-full object-cover border border-slate-700 flex-shrink-0"
+                                    onError={(e: any) => {
+                                      e.target.style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
+                                    <User className="w-3.5 h-3.5" />
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <div className="font-semibold text-slate-200 truncate">
+                                    {draft.mentor.name || <span className="text-slate-500 italic font-normal">Pending</span>}
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 font-mono">
+                                    {draft.mentor.mobile || draft.contactMobile || '—'}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Step Reached & Progress */}
+                            <td className="py-3.5 px-4 whitespace-nowrap min-w-[160px]">
+                              <div className="flex items-center justify-between text-[11px] mb-1">
+                                <span className="font-semibold text-amber-300">
+                                  {draft.stepName}
+                                </span>
+                                <span className="font-mono text-slate-400 font-bold">{progress}%</span>
+                              </div>
+                              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-1">
+                                <div
+                                  className="h-full bg-gradient-to-r from-amber-500 to-emerald-400"
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                              <div className="text-[10px] text-slate-400">
+                                Squad: <strong className="text-purple-300">{draft.playersFilledCount}</strong>/8 players
+                              </div>
+                            </td>
+
+                            {/* Last Active */}
+                            <td className="py-3.5 px-4 whitespace-nowrap text-slate-400 text-[11px]">
+                              <div>{new Date(draft.updatedAt).toLocaleDateString('en-IN')}</div>
+                              <div className="text-[10px] text-slate-500">{new Date(draft.updatedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</div>
+                            </td>
+
+                            {/* Actions */}
+                            <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => setSelectedUnfinished(draft)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-[#0E1B48] hover:bg-[#1A2C68] text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                                  title="View Full Unfinished Registration Data"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Details</span>
+                                </button>
+
+                                {primaryMobile && (
+                                  <a
+                                    href={`https://wa.me/${waNum}?text=${encodeURIComponent(`Hi, this is from the BidWar Premier League organizing team regarding your registration draft for ${draft.teamName || draft.association.associationName || 'BPL Season 1'}. Do you need any help completing your squad registration?`)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-2.5 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                                    title="Contact on WhatsApp"
+                                  >
+                                    <MessageCircle className="w-3.5 h-3.5" />
+                                    <span>WhatsApp</span>
+                                  </a>
+                                )}
+
+                                <button
+                                  onClick={() => setDraftToDelete(draft)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                                  title="Delete Draft"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ------------------------------------------------------------- */}
@@ -1808,6 +2446,67 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
             {/* Notice Footer */}
             <div className="text-[9px] text-gray-600 text-center border-t border-black pt-2">
               Tournament Venue: Pitch and Paddle, Sigra | Match Dates: 10–11 October 2026 | Inquiries: bpl@bidwar.in | bidwar.in
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* UNFINISHED REGISTRATION DOSSIER MODAL                         */}
+      {/* ------------------------------------------------------------- */}
+      {selectedUnfinished && (
+        <AdminUnfinishedModal
+          draft={selectedUnfinished}
+          apiKey={apiKey}
+          onClose={() => setSelectedUnfinished(null)}
+          onDeleteSuccess={(token) => {
+            handleDeleteUnfinishedDraft(token);
+            setSelectedUnfinished(null);
+          }}
+        />
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* DELETE DRAFT CONFIRMATION MODAL                               */}
+      {/* ------------------------------------------------------------- */}
+      {draftToDelete && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#091230] border border-red-500/40 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 text-red-400">
+              <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Delete Incomplete Draft?</h3>
+                <p className="text-xs text-slate-400">This action permanently deletes this autosaved session from the database.</p>
+              </div>
+            </div>
+
+            <div className="p-3 bg-[#050B1E] border border-white/5 rounded-xl text-xs space-y-1 text-slate-300">
+              <div>Team: <strong className="text-white">{draftToDelete.teamName || draftToDelete.association.associationName || '(Untitled Draft)'}</strong></div>
+              <div>Mobile: <strong className="text-amber-400 font-mono">{draftToDelete.authUserMobile || draftToDelete.contactMobile || 'N/A'}</strong></div>
+              <div>Step: <strong className="text-slate-200">{draftToDelete.stepName}</strong></div>
+              <div className="text-[10px] text-slate-500 font-mono">Token: {draftToDelete.draftToken}</div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setDraftToDelete(null)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleDeleteUnfinishedDraft(draftToDelete.draftToken);
+                  setDraftToDelete(null);
+                }}
+                className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-colors cursor-pointer"
+              >
+                Permanently Delete
+              </button>
             </div>
           </div>
         </div>

@@ -924,6 +924,7 @@ export interface AdminDashboardStats {
   rejectedPayments: number;
   totalRevenueCollected: number;
   totalRevenueVerified: number;
+  totalUnfinishedRegistrations: number;
 }
 
 /**
@@ -945,7 +946,18 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     LEFT JOIN payments p ON r.id = p.registration_id
   `);
 
+  const unfinishedRes = await query(`
+    SELECT COUNT(d.id)::int AS total_unfinished
+    FROM drafts d
+    WHERE NOT EXISTS (
+      SELECT 1 FROM registrations r
+      WHERE d.auth_user_id IS NOT NULL AND r.auth_user_id = d.auth_user_id
+    )
+  `);
+
   const row = res.rows[0] || {};
+  const unfinishedRow = unfinishedRes.rows[0] || {};
+
   return {
     totalRegistrations: row.total_registrations || 0,
     totalPlayers: row.total_players || 0,
@@ -956,6 +968,7 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     rejectedPayments: row.rejected_payments || 0,
     totalRevenueCollected: row.total_revenue_collected || 0,
     totalRevenueVerified: row.total_revenue_verified || 0,
+    totalUnfinishedRegistrations: unfinishedRow.total_unfinished || 0,
   };
 }
 

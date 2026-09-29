@@ -8,6 +8,7 @@ import {
   deleteRegistrationByAdmin,
   updateRegistrationByAdmin
 } from '../db/registrations';
+import { getAllUnfinishedRegistrations, deleteDraft } from '../db/drafts';
 import { requireAdminKey } from '../middleware/auth';
 import { adminLimiter } from '../middleware/rateLimiter';
 import {
@@ -298,6 +299,53 @@ adminRoutes.put(
         success: true,
         message: `Team "${updated.teamName}" (${registrationId}) updated successfully.`,
         registration: updated,
+      });
+    } catch (err: any) {
+      next(err);
+    }
+  }
+);
+
+// Get All Unfinished Registrations / Drafts for Admin
+adminRoutes.get(
+  '/admin/unfinished-registrations',
+  adminLimiter,
+  requireAdminKey,
+  async (_req, res, next) => {
+    try {
+      const unfinished = await getAllUnfinishedRegistrations();
+      res.json({
+        success: true,
+        count: unfinished.length,
+        unfinishedRegistrations: unfinished,
+      });
+    } catch (err: any) {
+      next(err);
+    }
+  }
+);
+
+// Delete Unfinished Registration / Draft by Admin
+adminRoutes.delete(
+  '/admin/unfinished-registrations/:draftToken',
+  adminLimiter,
+  requireAdminKey,
+  async (req, res, next) => {
+    try {
+      const draftToken = req.params.draftToken;
+      const success = await deleteDraft(draftToken);
+      if (!success) {
+        res.status(404).json({
+          success: false,
+          error: 'DraftNotFound',
+          message: `Unfinished registration draft was not found or already deleted.`,
+        });
+        return;
+      }
+
+      res.json({
+        success: true,
+        message: 'Unfinished registration draft cleared from database.',
       });
     } catch (err: any) {
       next(err);

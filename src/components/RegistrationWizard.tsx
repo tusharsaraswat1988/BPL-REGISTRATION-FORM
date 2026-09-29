@@ -8,6 +8,7 @@ import { StepMentor } from './steps/StepMentor';
 import { StepTeamBranding } from './steps/StepTeamBranding';
 import { StepPlayersRoster } from './steps/StepPlayersRoster';
 import { StepReviewPayment } from './steps/StepReviewPayment';
+import { TOURNAMENT_CONFIG } from '../config/tournamentConfig';
 import confetti from 'canvas-confetti';
 import { 
   Check, ArrowRight, ArrowLeft, Trophy, RefreshCw, AlertCircle,

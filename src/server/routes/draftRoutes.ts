@@ -116,8 +116,9 @@ draftRoutes.post('/drafts', draftLimiter, optionalAuth, async (req: Authenticate
     const tokenToUse = (draftToken || tokenHeader || '').trim() || undefined;
     const step = typeof currentStep === 'number' ? currentStep : 0;
     const authUserId = req.authIdentity?.userId;
+    const authUserMobile = req.authIdentity?.mobile;
 
-    const result = await saveDraft(tokenToUse, step, data, authUserId);
+    const result = await saveDraft(tokenToUse, step, data, authUserId, authUserMobile);
 
     res.json({
       success: true,
