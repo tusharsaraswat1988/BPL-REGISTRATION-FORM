@@ -100,7 +100,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-amber-500 selection:text-slate-950 print:min-h-0 print:h-auto print:p-0 print:m-0 print:bg-white print:text-black print:block">
       {/* Official Sticky Sports Header */}
       <Header
         currentPath={currentPath}
@@ -109,7 +109,7 @@ export default function App() {
       />
 
       {/* Main Routed Content Area */}
-      <main className="flex-1">
+      <main className="flex-1 print:min-h-0 print:h-auto print:p-0 print:m-0 print:block">
         {currentPath === '/' && (
           <HomePage
             categories={categories}

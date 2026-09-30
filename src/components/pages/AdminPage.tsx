@@ -823,12 +823,23 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
     showToast('Unfinished Registrations CSV downloaded successfully!');
   };
 
+  // Clean up printing state once browser print dialog closes
+  useEffect(() => {
+    const handleAfterPrint = () => {
+      setPrintingReg(null);
+    };
+    window.addEventListener('afterprint', handleAfterPrint);
+    return () => {
+      window.removeEventListener('afterprint', handleAfterPrint);
+    };
+  }, []);
+
   // Trigger browser print for single team dossier
   const handlePrintDossier = (reg: RegistrationFullRecord) => {
     setPrintingReg(reg);
     setTimeout(() => {
       window.print();
-    }, 300);
+    }, 150);
   };
 
   // -------------------------------------------------------------
@@ -932,8 +943,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
   // RENDER: Main Admin Dashboard
   // -------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-[#050B1E] text-slate-100 pb-20">
-      {/* Toast Notification */}
+    <div className="min-h-screen bg-[#050B1E] text-slate-100 pb-20 print:min-h-0 print:pb-0 print:p-0 print:m-0 print:bg-white print:text-black">
+      <div className="no-print">
+        {/* Toast Notification */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-[#0E1B48] border border-[#FFB800] text-amber-300 px-4 py-3 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-bounce">
           <Sparkles className="w-4 h-4 text-[#FFB800]" />
@@ -2507,6 +2519,123 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
               >
                 Permanently Delete
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* PRINTABLE TEAM REGISTRATION DOSSIER (SINGLE A4 PAGE)          */}
+      {/* ------------------------------------------------------------- */}
+      {printingReg && (
+        <div className="print-only hidden print:block bg-white text-black p-0 m-0 w-full">
+          <div className="w-full max-w-[760px] mx-auto border-2 border-black p-3.5 space-y-2.5 bg-white text-black font-sans leading-tight">
+            {/* Dossier Header */}
+            <div className="flex items-center justify-between border-b-2 border-black pb-2">
+              <div className="flex items-center gap-3">
+                <BplLogo size={46} />
+                <div>
+                  <h1 className="text-lg font-black uppercase tracking-tight text-black">BIDWAR PREMIER LEAGUE</h1>
+                  <h2 className="text-xs font-bold text-gray-800 uppercase tracking-wide">KIDS EDITION · SEASON 1 (VARANASI 2026)</h2>
+                  <p className="text-[9px] text-gray-600 font-medium">Official Tournament Team Registration & Squad Dossier</p>
+                </div>
+              </div>
+
+              <div className="text-right font-mono">
+                <div className="text-xs font-bold bg-black text-white px-2.5 py-0.5 inline-block rounded">
+                  {printingReg.id}
+                </div>
+                <div className="text-xs font-bold mt-1 text-black">
+                  Team Code: <span className="text-sm font-black">{printingReg.teamCode}</span>
+                </div>
+                <div className="text-[9px] text-gray-700 uppercase font-extrabold">
+                  {printingReg.category === 'class_4_5_6' ? 'Class 4–5–6 Division' : 'Class 7–8–9 Division'}
+                </div>
+              </div>
+            </div>
+
+            {/* Team & Association & Mentor Info */}
+            <div className="grid grid-cols-2 gap-3 border border-black p-2 text-[10.5px] bg-gray-50/60">
+              <div className="space-y-0.5">
+                <div className="font-black text-xs uppercase text-black">{printingReg.teamName}</div>
+                <div>Association: <strong className="text-black">{printingReg.association.associationName}</strong> ({printingReg.association.branch})</div>
+                <div>Contact: {printingReg.association.email} | Phone: {printingReg.association.mobile}</div>
+                <div>Location: {printingReg.association.city || 'Varanasi'} | Type: {printingReg.association.associationType || 'School'}</div>
+                {printingReg.branding.teamTagline && (
+                  <div className="text-[9px] italic text-gray-600 truncate">Tagline: "{printingReg.branding.teamTagline}"</div>
+                )}
+              </div>
+              <div className="space-y-0.5 border-l border-gray-300 pl-3">
+                <div className="font-black text-xs uppercase text-black">Mentor: {printingReg.mentor.name}</div>
+                <div>Role: {printingReg.mentor.designation || 'Head Coach / In-Charge'}</div>
+                <div>Mobile: <strong className="text-black">{printingReg.mentor.mobile}</strong> {printingReg.mentor.secondMobile ? `| Alt: ${printingReg.mentor.secondMobile}` : ''}</div>
+                <div>Email: {printingReg.mentor.email}</div>
+                <div className="text-[9.5px] font-bold text-emerald-800">
+                  Media Consent: {printingReg.mediaConsent ? '✓ Granted & Authorized' : 'Pending / Not Recorded'}
+                </div>
+              </div>
+            </div>
+
+            {/* Official 8-Player Grid with Photos */}
+            <div>
+              <div className="flex items-center justify-between border-b border-black pb-0.5 mb-1.5">
+                <h3 className="text-[10px] font-black uppercase tracking-wider text-black">
+                  Official Playing Squad (Strictly 8 Verified Players)
+                </h3>
+                <span className="text-[9px] font-mono text-gray-600">
+                  Category: {printingReg.category === 'class_4_5_6' ? 'Classes 4, 5, 6' : 'Classes 7, 8, 9'}
+                </span>
+              </div>
+              <div className="grid grid-cols-4 gap-1.5">
+                {printingReg.players.map((p, idx) => (
+                  <div key={idx} className="border border-black p-1.5 text-[9px] flex flex-col justify-between bg-white">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <img
+                        src={p.playerPhoto}
+                        alt={p.playerName}
+                        className="w-8 h-8 object-cover border border-black flex-shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-black text-[10px] leading-tight">#{p.jerseyNumber}</div>
+                        <div className="font-bold truncate text-[9px] text-black leading-tight">{p.playerName}</div>
+                      </div>
+                    </div>
+                    <div className="border-t border-gray-300 pt-0.5 space-y-0.5 text-[8.5px] leading-tight text-gray-800">
+                      <div>Class: <strong>{p.studentClass}</strong> | Size: {p.jerseySize}</div>
+                      <div className="truncate">Role: {p.cricketRole}</div>
+                      <div>DOB: {p.dateOfBirth}</div>
+                      <div className="truncate font-mono">P: {p.parentMobile}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment, Verification & Official Stamp */}
+            <div className="border border-black p-2 text-[9.5px] grid grid-cols-3 gap-2 items-center bg-gray-50/60">
+              <div>
+                <div className="font-bold uppercase text-[8.5px] text-gray-600">Payment Status</div>
+                <div className="text-xs font-black uppercase mt-0.5 text-black">{printingReg.payment.paymentStatus}</div>
+                <div>Amount: <strong>₹{printingReg.payment.totalAmount}</strong> ({printingReg.includeBranding ? 'Branded' : 'Standard'})</div>
+              </div>
+
+              <div>
+                <div className="font-bold uppercase text-[8.5px] text-gray-600">Transaction / UTR</div>
+                <div className="font-mono text-[9.5px] font-bold mt-0.5 text-black truncate">{printingReg.payment.utrTransactionId || 'GATEWAY_VERIFIED'}</div>
+                <div className="text-[8.5px] text-gray-600">Verified By: {printingReg.payment.verifiedBy || 'Tournament Committee'}</div>
+              </div>
+
+              <div className="text-center border-l border-gray-300 pl-2">
+                <div className="h-5 border-b border-dashed border-gray-400 mb-0.5" />
+                <div className="text-[8.5px] font-bold uppercase text-black">Authorized Official</div>
+                <div className="text-[7.5px] text-gray-500">BidWar Premier League Committee</div>
+              </div>
+            </div>
+
+            {/* Notice Footer */}
+            <div className="text-[8px] text-gray-600 text-center border-t border-black pt-1 leading-tight">
+              Tournament Venue: Pitch and Paddle, Sigra, Varanasi | Match Dates: 10–11 October 2026 | Support: bpl@bidwar.in | bidwar.in
             </div>
           </div>
         </div>

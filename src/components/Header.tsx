@@ -62,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-[#070D24]/95 backdrop-blur-md border-b border-[#1A2C68]">
+    <header className="sticky top-0 z-50 bg-[#070D24]/95 backdrop-blur-md border-b border-[#1A2C68] no-print">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Brand & Navigation Row */}
         <div className="flex items-center justify-between py-2.5 sm:py-3 gap-2 sm:gap-4">
