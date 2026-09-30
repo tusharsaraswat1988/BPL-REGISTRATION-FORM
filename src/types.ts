@@ -113,6 +113,8 @@ export interface DraftRecord {
   teamTagline: string;
   players: PlayerDetails[];
   payment: PaymentInfo;
+  mediaConsent?: boolean;
+  mediaConsentTimestamp?: string;
   status: 'DRAFT' | 'SUBMITTED';
   updatedAt: string;
   createdAt?: string;
@@ -150,6 +152,8 @@ export interface RegistrationRecord {
     utrTransactionId?: string;
     paymentScreenshot?: string;
   };
+  mediaConsent?: boolean;
+  mediaConsentTimestamp?: string;
   whatsappCommunityUrl?: string;
   notes?: string;
 }

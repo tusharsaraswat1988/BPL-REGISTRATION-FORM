@@ -118,8 +118,8 @@ export const TOURNAMENT_CONFIG = {
 
   // Registration Window & Deadline
   REGISTRATION_START: "2026-09-08T00:00:00+05:30",
-  REGISTRATION_END: "2026-09-25T23:59:59+05:30",
-  REGISTRATION_DEADLINE_DISPLAY: "25 September 2026",
+  REGISTRATION_END: "2026-10-15T23:59:59+05:30",
+  REGISTRATION_DEADLINE_DISPLAY: "10 October 2026",
 
   // Sponsors Architecture (Multiple sponsors supported)
   SPONSORS: [

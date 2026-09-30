@@ -186,6 +186,10 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
     };
   });
 
+  // 6. Media, Photography & Branding Consent State (Mandatory, default unchecked)
+  const [mediaConsent, setMediaConsent] = useState<boolean>(false);
+  const [mediaConsentTimestamp, setMediaConsentTimestamp] = useState<string | undefined>(undefined);
+
   // Track online / offline events and instant save on pageunload / refresh
   useEffect(() => {
     const handleOnline = () => {
@@ -313,6 +317,8 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
       teamTagline,
       players,
       payment,
+      mediaConsent,
+      mediaConsentTimestamp,
       updatedAt: new Date().toISOString()
     };
 
@@ -549,31 +555,31 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         }
       }
     } else if (stepIndex === 4) {
+      if (!mediaConsent) {
+        newErrors.mediaConsent = 'Please read and accept the Media, Photography & Branding Consent before submitting the registration.';
+      }
+
       const isVerified = payment.paymentStatus === 'VERIFIED';
       const isBrandingAddonPending = isVerified && includeBranding && (!payment.brandingAmount || payment.brandingAmount === 0 || payment.totalAmount === 8000);
 
-      if (isVerified && !isBrandingAddonPending) {
-        // Fully verified base + branding, no payment validation errors
-        setErrors({});
-        return true;
-      }
-
-      if (payment.method === 'CASHFREE') {
-        if (!payment.gatewayPaymentId && !payment.transactionReference && !payment.utrTransactionId) {
-          newErrors.payment = 'Please complete your online payment with Cashfree before final submission.';
-        }
-      } else {
-        const utr = (payment.transactionReference || payment.utrTransactionId || '').trim();
-        const proof = (payment.paymentProofUrl || payment.paymentScreenshot || '').trim();
-        if (!utr) {
-          newErrors.payment = isBrandingAddonPending 
-            ? 'UTR / Transaction Reference for the ₹5,000 Branding Add-on is required.'
-            : 'UTR / Transaction Reference number is required.';
-        }
-        if (!proof) {
-          newErrors.payment = isBrandingAddonPending
-            ? 'Payment receipt screenshot for the ₹5,000 Branding Add-on is required.'
-            : 'Payment receipt / screenshot is required.';
+      if (!isVerified || isBrandingAddonPending) {
+        if (payment.method === 'CASHFREE') {
+          if (!payment.gatewayPaymentId && !payment.transactionReference && !payment.utrTransactionId) {
+            newErrors.payment = 'Please complete your online payment with Cashfree before final submission.';
+          }
+        } else {
+          const utr = (payment.transactionReference || payment.utrTransactionId || '').trim();
+          const proof = (payment.paymentProofUrl || payment.paymentScreenshot || '').trim();
+          if (!utr) {
+            newErrors.payment = isBrandingAddonPending 
+              ? 'UTR / Transaction Reference for the ₹5,000 Branding Add-on is required.'
+              : 'UTR / Transaction Reference number is required.';
+          }
+          if (!proof) {
+            newErrors.payment = isBrandingAddonPending
+              ? 'Payment receipt screenshot for the ₹5,000 Branding Add-on is required.'
+              : 'Payment receipt / screenshot is required.';
+          }
         }
       }
     }
@@ -606,6 +612,14 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         setCurrentStep(s);
         return;
       }
+    }
+
+    if (!mediaConsent) {
+      setErrors(prev => ({
+        ...prev,
+        mediaConsent: 'Please read and accept the Media, Photography & Branding Consent before submitting the registration.'
+      }));
+      return;
     }
 
     setIsSubmitting(true);
@@ -648,7 +662,9 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
         includeBranding,
         teamTagline,
         players: sanitizedPlayers,
-        payment: normalizedPayment
+        payment: normalizedPayment,
+        mediaConsent: true,
+        mediaConsentTimestamp: mediaConsentTimestamp || new Date().toISOString(),
       };
 
       const response = await fetch('/api/registrations', {
@@ -710,6 +726,8 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
       designation: 'Head Cricket Coach'
     });
     setPlayers(createEmptyPlayers('class_4_5_6'));
+    setMediaConsent(false);
+    setMediaConsentTimestamp(undefined);
     setDraftToken(null);
     setShowResetConfirm(false);
   };
@@ -1061,6 +1079,18 @@ export const RegistrationWizard: React.FC<WizardProps> = ({
             players={players}
             payment={payment}
             setPayment={setPayment}
+            mediaConsent={mediaConsent}
+            setMediaConsent={val => {
+              setMediaConsent(val);
+              if (val) {
+                setMediaConsentTimestamp(new Date().toISOString());
+                setErrors(prev => {
+                  const { mediaConsent: _removed, ...rest } = prev;
+                  return rest;
+                });
+              }
+            }}
+            errors={errors}
             isSubmitting={isSubmitting}
             onSubmit={handleSubmit}
             onBackToStep={idx => {

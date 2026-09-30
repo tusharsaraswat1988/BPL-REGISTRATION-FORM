@@ -138,6 +138,9 @@ export function EmailFooter(): string {
         <a href="${facebookUrl}" style="color: #38bdf8; text-decoration: none; margin: 0 8px; font-weight: 600;">Facebook</a> •
         <a href="${youtubeUrl}" style="color: #38bdf8; text-decoration: none; margin: 0 8px; font-weight: 600;">YouTube</a>
       </div>
+      <p style="margin: 8px 0 0 0; font-size: 11px; color: #cbd5e1;">
+        Tournament Helpline & Support: <strong style="color: #FFB800;">${TOURNAMENT_CONFIG.HELPLINE_DISPLAY}</strong> (${TOURNAMENT_CONFIG.HELPLINE_PHONE}) • Email: <a href="mailto:${TOURNAMENT_CONFIG.OFFICIAL_EMAIL}" style="color: #38bdf8; text-decoration: none;">${TOURNAMENT_CONFIG.OFFICIAL_EMAIL}</a>
+      </p>
       <p style="margin: 8px 0 0 0; font-size: 10px; color: #64748b;">
         © 2026 BidWar Premier League. All rights reserved. Registered participants communication.
       </p>

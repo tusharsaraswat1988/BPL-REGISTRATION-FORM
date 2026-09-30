@@ -140,6 +140,8 @@ async function runAllTests() {
       paymentScreenshot: 'https://res.cloudinary.com/demo/image/upload/bpl-kids/payment-proofs/proof.jpg',
       method: 'UPI',
     },
+    mediaConsent: true,
+    mediaConsentTimestamp: new Date().toISOString(),
   };
 
   const validCheck = validateRegistrationPayload(validSubmission);
@@ -205,6 +207,29 @@ async function runAllTests() {
   };
   const checkAllRounderBat = validateRegistrationPayload(missingAllRounderBat);
   assert(checkAllRounderBat.valid === false && (checkAllRounderBat.error?.includes('Batting style is required') ?? false), 'Missing batting style for All Rounder is rejected');
+
+  // Check missing Media, Photography & Branding Consent
+  const missingMediaConsent = {
+    ...validSubmission,
+    mediaConsent: false
+  };
+  const checkMissingMedia = validateRegistrationPayload(missingMediaConsent);
+  assert(
+    checkMissingMedia.valid === false &&
+    checkMissingMedia.error === 'Please read and accept the Media, Photography & Branding Consent before submitting the registration.',
+    'Missing or false Media Consent is rejected with exact mandated error message'
+  );
+
+  const undefinedMediaConsent = {
+    ...validSubmission,
+    mediaConsent: undefined
+  };
+  const checkUndefinedMedia = validateRegistrationPayload(undefinedMediaConsent);
+  assert(
+    checkUndefinedMedia.valid === false &&
+    checkUndefinedMedia.error === 'Please read and accept the Media, Photography & Branding Consent before submitting the registration.',
+    'Undefined Media Consent is rejected with exact mandated error message'
+  );
 
   // -------------------------------------------------------------
   // TEST SUITE 4: Cloudinary Buffer & MIME Validation
@@ -663,6 +688,8 @@ async function runAllTests() {
               team_short_code: params?.[6],
               status: 'SUBMITTED',
               auth_user_id: storedAuthUserId,
+              media_consent: params?.[9],
+              media_consent_timestamp: params?.[10],
               created_at: new Date().toISOString(),
             });
             return { rows: [] };
@@ -726,7 +753,8 @@ async function runAllTests() {
               branding_amount: params?.[9],
               total_amount: params?.[10],
               payment_status: params?.[11],
-              verified_by: params?.[12],
+              verified_at: params?.[12],
+              verified_by: params?.[13],
               confirmation_email_sent_at: params?.[11] === 'VERIFIED' ? new Date().toISOString() : null,
             });
             return { rows: [] };
@@ -876,6 +904,37 @@ async function runAllTests() {
   assert(!returnedRegKeys.includes('paymentScreenshot'), 'Registration response does NOT return payment screenshot');
   assert(!returnedRegKeys.includes('auth_user_id') && !returnedRegKeys.includes('authUserId'), 'Registration response does NOT return auth_user_id');
   assert(!returnedRegKeys.includes('draftToken'), 'Registration response does NOT return draft token');
+
+  // Verify Media Consent was stored with record
+  const savedReg = mockRegistrations.get(submissionJson.registration.registrationId);
+  assert(savedReg && savedReg.media_consent === true, 'Registration record saved in database with media_consent: true');
+  assert(savedReg && Boolean(savedReg.media_consent_timestamp), 'Registration record saved with valid media_consent_timestamp');
+
+  // Test POST /api/registrations without Media Consent (Must be blocked with validation error)
+  const rejectedConsentRes = await fetch(`${baseUrl}/api/registrations`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${tokenA}`,
+    },
+    body: JSON.stringify({
+      ...validSubmission,
+      mediaConsent: false,
+      teamName: 'DPS Reject Consent Test',
+      payment: {
+        utrTransactionId: 'HDFC-NOCONSENT-001',
+        paymentScreenshot: 'https://res.cloudinary.com/bpl-kids/payments/proof-noconsent.jpg',
+        method: 'UPI',
+      },
+    }),
+  });
+  const rejectedConsentJson = await rejectedConsentRes.json();
+  assert(
+    rejectedConsentRes.status >= 400 &&
+    (rejectedConsentJson.message === 'Please read and accept the Media, Photography & Branding Consent before submitting the registration.' ||
+     rejectedConsentJson.error === 'Please read and accept the Media, Photography & Branding Consent before submitting the registration.'),
+    'POST /api/registrations without mediaConsent is rejected with exact validation error'
+  );
 
   // -------------------------------------------------------------
   // TEST SUITE 8: Authenticated Ownership Authorization Boundary

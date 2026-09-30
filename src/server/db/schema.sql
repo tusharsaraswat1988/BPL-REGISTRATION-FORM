@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS registrations (
   status VARCHAR(32) NOT NULL DEFAULT 'SUBMITTED' CHECK (status IN ('SUBMITTED', 'CONFIRMED', 'UNDER_REVIEW', 'REJECTED')),
   auth_user_id VARCHAR(255), -- Associated authenticated BidWar user identity
   idempotency_key VARCHAR(128) UNIQUE,
+  media_consent BOOLEAN NOT NULL DEFAULT FALSE,
+  media_consent_timestamp TIMESTAMPTZ,
   notes TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -131,6 +133,8 @@ ALTER TABLE players ALTER COLUMN parent_mobile DROP NOT NULL;
 ALTER TABLE players ALTER COLUMN jersey_number DROP NOT NULL;
 ALTER TABLE players ALTER COLUMN jersey_size DROP NOT NULL;
 ALTER TABLE drafts ADD COLUMN IF NOT EXISTS auth_user_mobile VARCHAR(50);
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS media_consent BOOLEAN DEFAULT FALSE;
+ALTER TABLE registrations ADD COLUMN IF NOT EXISTS media_consent_timestamp TIMESTAMPTZ;
 
 -- 7. Autosave / Server-Side Drafts Table
 CREATE TABLE IF NOT EXISTS drafts (

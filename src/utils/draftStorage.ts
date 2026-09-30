@@ -20,6 +20,8 @@ export interface FormDraftData {
   teamTagline: string;
   players: PlayerDetails[];
   payment: PaymentInfo;
+  mediaConsent?: boolean;
+  mediaConsentTimestamp?: string;
   updatedAt: string;
 }
 

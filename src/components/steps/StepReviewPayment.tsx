@@ -10,7 +10,7 @@ import {
 import { 
   ShieldCheck, CreditCard, QrCode, Building, CheckCircle2, 
   Trophy, Users, ArrowRight, Loader2, Copy, Check, Zap, AlertCircle, ExternalLink,
-  Clock, RefreshCw, Sparkles
+  Clock, RefreshCw, Sparkles, Camera
 } from 'lucide-react';
 import { ImageUploadField } from '../ImageUploadField';
 import { TOURNAMENT_CONFIG } from '../../config/tournamentConfig';
@@ -24,6 +24,9 @@ interface StepReviewPaymentProps {
   players: PlayerDetails[];
   payment: PaymentInfo;
   setPayment: React.Dispatch<React.SetStateAction<PaymentInfo>>;
+  mediaConsent: boolean;
+  setMediaConsent: (val: boolean) => void;
+  errors?: Record<string, string>;
   isSubmitting: boolean;
   onSubmit: () => void;
   onBackToStep: (stepIndex: number) => void;
@@ -38,6 +41,9 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
   players,
   payment,
   setPayment,
+  mediaConsent,
+  setMediaConsent,
+  errors,
   isSubmitting,
   onSubmit,
   onBackToStep
@@ -645,7 +651,7 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
         )}
 
         {/* Undertaking Declaration */}
-        <div className="p-4 rounded-xl bg-[#0A1230] border border-[#1A2C68] flex items-start gap-3 mb-6">
+        <div className="p-4 rounded-xl bg-[#0A1230] border border-[#1A2C68] flex items-start gap-3 mb-4">
           <input
             id="terms-check"
             type="checkbox"
@@ -659,14 +665,89 @@ export const StepReviewPayment: React.FC<StepReviewPaymentProps> = ({
           </label>
         </div>
 
+        {/* MEDIA, PHOTOGRAPHY & BRANDING CONSENT (MANDATORY) */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-[#070D24] border border-[#1A2C68] space-y-4 mb-6 relative overflow-hidden">
+          <div className="flex items-center gap-2.5 pb-2 border-b border-[#1A2C68]">
+            <div className="w-8 h-8 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 flex items-center justify-center text-[#FFB800] flex-shrink-0">
+              <Camera className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-sm sm:text-base font-bold text-white uppercase tracking-wider font-heading">
+                MEDIA, PHOTOGRAPHY & BRANDING CONSENT
+              </h4>
+              <span className="text-[10px] font-bold text-[#FFB800] uppercase tracking-widest font-mono-sport">
+                Mandatory Authorization
+              </span>
+            </div>
+          </div>
+
+          <div className="text-xs text-slate-300 leading-relaxed space-y-2.5">
+            <p className="font-medium text-slate-200">
+              By submitting this registration, the registering School / Organisation / Team Representative acknowledges and provides consent for the participation of registered children in the Bidwar Premier League – Kids Edition (BPL) and agrees that:
+            </p>
+            <ul className="space-y-2 pl-1 text-slate-300">
+              <li className="flex items-start gap-2">
+                <span className="text-[#FFB800] text-base leading-none font-bold select-none">•</span>
+                <span>Matches and tournament activities may be photographed, videographed and/or live-streamed by Bidwar Premier League, its official media partners and authorised representatives.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#FFB800] text-base leading-none font-bold select-none">•</span>
+                <span>Photographs, videos, match footage and other event-related content featuring participating children may be used for live streaming, tournament coverage, highlights, promotional content and archival purposes.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#FFB800] text-base leading-none font-bold select-none">•</span>
+                <span>The name and branding of the participating School / Organisation, along with relevant team and player-related information, may be featured across BPL/Bidwar websites, official social media handles, digital platforms, promotional materials and news/media coverage related to the tournament.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#FFB800] text-base leading-none font-bold select-none">•</span>
+                <span>Such content may be edited, reproduced, published, distributed and displayed for tournament promotion, documentation and publicity without any additional payment or compensation.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-[#FFB800] text-base leading-none font-bold select-none">•</span>
+                <span>The registering School / Organisation / Team Representative confirms that they have the necessary authority and consent to provide this approval on behalf of the participating team and its players.</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Mandatory Checkbox */}
+          <div className={`p-3.5 rounded-xl border transition-colors ${
+            errors?.mediaConsent 
+              ? 'bg-red-500/10 border-red-500/50' 
+              : mediaConsent 
+                ? 'bg-[#0E1B48] border-[#FFB800]/60' 
+                : 'bg-[#0A1230] border-[#1A2C68] hover:border-slate-600'
+          }`}>
+            <label htmlFor="media-consent-checkbox" className="flex items-start gap-3 cursor-pointer select-none">
+              <input
+                id="media-consent-checkbox"
+                type="checkbox"
+                checked={mediaConsent}
+                onChange={e => setMediaConsent(e.target.checked)}
+                className="mt-0.5 sm:mt-1 w-4 h-4 rounded border-slate-700 text-[#FFB800] focus:ring-[#FFB800] bg-slate-800 cursor-pointer accent-[#FFB800] flex-shrink-0"
+              />
+              <span className="text-xs text-slate-200 font-medium leading-relaxed">
+                I have read, understood and agree to the above Media, Photography & Branding Consent, including live streaming, photography/videography, and the use of team, school/organisation and player-related content across Bidwar/BPL websites, social media, digital platforms and news/media coverage. <span className="text-[#FFB800] font-bold">*</span>
+              </span>
+            </label>
+          </div>
+
+          {/* Explicit Validation Error Banner if user attempted submission without consent */}
+          {errors?.mediaConsent && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-red-950/40 border border-red-500/50 text-red-300 text-xs animate-shake">
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <span>{errors.mediaConsent}</span>
+            </div>
+          )}
+        </div>
+
         {/* DYNAMIC ACTION BUTTON */}
         <div>
           <button
             type="button"
-            disabled={!agreedToTerms || isSubmitting || (!isFullyVerified && payment.method === 'CASHFREE' && !isCashfreePaid)}
+            disabled={!mediaConsent || !agreedToTerms || isSubmitting || (!isFullyVerified && payment.method === 'CASHFREE' && !isCashfreePaid)}
             onClick={onSubmit}
             className={`w-full py-4 rounded-xl text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg transition-all duration-200 flex items-center justify-center gap-2 font-heading cursor-pointer select-none active:scale-[0.99] ${
-              agreedToTerms && !isSubmitting && (isFullyVerified || payment.method !== 'CASHFREE' || isCashfreePaid)
+              mediaConsent && agreedToTerms && !isSubmitting && (isFullyVerified || payment.method !== 'CASHFREE' || isCashfreePaid)
                 ? 'bg-[#FFB800] hover:bg-[#FBBF24] shadow-[#FFB800]/25'
                 : 'bg-slate-800 text-slate-500 cursor-not-allowed'
             }`}

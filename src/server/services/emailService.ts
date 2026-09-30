@@ -195,7 +195,7 @@ export async function triggerRegistrationCompletedEmails(registrationId: string,
       bowlingStyle: p.bowlingStyle,
     }));
 
-    // Send Registration Summary ONLY to Association
+    // 1. Send Registration Summary to Association
     if (reg.association?.email) {
       const assocTpl = renderRegistrationConfirmationEmail({
         recipientType: 'ASSOCIATION',
@@ -223,6 +223,83 @@ export async function triggerRegistrationCompletedEmails(registrationId: string,
         emailType: 'REGISTRATION_CONFIRMATION',
         subject: assocTpl.subject,
         html: assocTpl.html,
+      }, forceResend);
+    }
+
+    // 2. Send Registration Summary to Mentor
+    if (reg.mentor?.email) {
+      const mentorTpl = renderRegistrationConfirmationEmail({
+        recipientType: 'MENTOR',
+        registrationId: reg.id,
+        teamCode: reg.teamCode,
+        teamName: reg.teamName,
+        category: reg.category,
+        associationName: reg.association.associationName,
+        branch: reg.association.branch,
+        mentorName: reg.mentor.name,
+        mentorMobile: reg.mentor.mobile,
+        mentorSecondMobile: reg.mentor.secondMobile,
+        mentorEmail: reg.mentor.email,
+        mentorDesignation: reg.mentor.designation,
+        includeBranding: reg.includeBranding,
+        totalAmount: reg.payment.totalAmount,
+        paymentStatus: reg.payment.paymentStatus,
+        players: playerInfos,
+      });
+
+      await sendEmailWithIdempotency({
+        registrationId: reg.id,
+        recipientType: 'MENTOR',
+        recipientEmail: reg.mentor.email,
+        emailType: 'REGISTRATION_CONFIRMATION',
+        subject: mentorTpl.subject,
+        html: mentorTpl.html,
+      }, forceResend);
+    }
+
+    // 3. Send Registration Summary to Each Parent
+    for (let i = 0; i < reg.players.length; i++) {
+      const player = reg.players[i];
+      if (!player.parentEmail) continue;
+
+      const parentPlayerInfo = {
+        playerIndex: i + 1,
+        playerName: player.playerName,
+        studentClass: player.studentClass,
+        jerseyNumber: player.jerseyNumber,
+        jerseySize: player.jerseySize,
+        cricketRole: player.cricketRole,
+        battingStyle: player.battingStyle,
+        bowlingStyle: player.bowlingStyle,
+      };
+
+      const parentTpl = renderRegistrationConfirmationEmail({
+        recipientType: 'PARENT',
+        registrationId: reg.id,
+        teamCode: reg.teamCode,
+        teamName: reg.teamName,
+        category: reg.category,
+        associationName: reg.association.associationName,
+        branch: reg.association.branch,
+        mentorName: reg.mentor.name,
+        mentorMobile: reg.mentor.mobile,
+        mentorSecondMobile: reg.mentor.secondMobile,
+        mentorEmail: reg.mentor.email,
+        mentorDesignation: reg.mentor.designation,
+        includeBranding: reg.includeBranding,
+        totalAmount: reg.payment.totalAmount,
+        paymentStatus: reg.payment.paymentStatus,
+        players: playerInfos,
+        parentPlayer: parentPlayerInfo,
+      });
+
+      await sendEmailWithIdempotency({
+        registrationId: reg.id,
+        recipientType: 'PARENT',
+        recipientEmail: player.parentEmail,
+        emailType: 'REGISTRATION_CONFIRMATION',
+        subject: parentTpl.subject,
+        html: parentTpl.html,
       }, forceResend);
     }
   } catch (err: any) {
@@ -271,117 +348,56 @@ export async function triggerPaymentVerifiedEmails(registrationId: string, force
       ? new Date(reg.payment.verifiedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
       : new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
-    // --- STEP 1: PAYMENT RECEIPT EMAIL (Sent to Association Official Email) ---
+    // --- STEP 1: PAYMENT CONFIRMATION RECEIPT (Sent to Association, Mentor & Parents) ---
+    const paymentRecipients: { email: string; type: RecipientType }[] = [];
     if (reg.association?.email) {
-      const paymentTpl = renderPaymentConfirmationEmail({
-        registrationId: reg.id,
-        teamCode: reg.teamCode,
-        teamName: reg.teamName,
-        category: reg.category,
-        associationName: reg.association.associationName,
-        paymentAmount: reg.payment.totalAmount,
-        paymentMethod,
-        transactionId,
-        paymentDate,
-        includeBranding: reg.includeBranding,
-      });
+      paymentRecipients.push({ email: reg.association.email, type: 'ASSOCIATION' });
+    }
+    if (reg.mentor?.email) {
+      paymentRecipients.push({ email: reg.mentor.email, type: 'MENTOR' });
+    }
+    for (const player of reg.players) {
+      if (player.parentEmail && !paymentRecipients.some(p => p.email.toLowerCase() === player.parentEmail?.toLowerCase())) {
+        paymentRecipients.push({ email: player.parentEmail, type: 'PARENT' });
+      }
+    }
 
+    const paymentTpl = renderPaymentConfirmationEmail({
+      registrationId: reg.id,
+      teamCode: reg.teamCode,
+      teamName: reg.teamName,
+      category: reg.category,
+      associationName: reg.association?.associationName || '',
+      paymentAmount: reg.payment.totalAmount,
+      paymentMethod,
+      transactionId,
+      paymentDate,
+      includeBranding: reg.includeBranding,
+    });
+
+    for (const r of paymentRecipients) {
       await sendEmailWithIdempotency({
         registrationId: reg.id,
-        recipientType: 'ASSOCIATION',
-        recipientEmail: reg.association.email,
+        recipientType: r.type,
+        recipientEmail: r.email,
         emailType: 'PAYMENT_CONFIRMATION',
         subject: paymentTpl.subject,
         html: paymentTpl.html,
       }, forceResend);
     }
 
-    // --- STEP 2: MENTOR WELCOME & TEAM ROSTER (Sent to Mentor) ---
-    if (reg.mentor?.email) {
-      const mentorTpl = renderRegistrationConfirmationEmail({
-        recipientType: 'MENTOR',
-        registrationId: reg.id,
-        teamCode: reg.teamCode,
-        teamName: reg.teamName,
-        category: reg.category,
-        associationName: reg.association.associationName,
-        branch: reg.association.branch,
-        mentorName: reg.mentor.name,
-        mentorMobile: reg.mentor.mobile,
-        mentorSecondMobile: reg.mentor.secondMobile,
-        mentorEmail: reg.mentor.email,
-        mentorDesignation: reg.mentor.designation,
-        includeBranding: reg.includeBranding,
-        totalAmount: reg.payment.totalAmount,
-        paymentStatus: reg.payment.paymentStatus,
-        players: playerInfos,
-      });
-
-      await sendEmailWithIdempotency({
-        registrationId: reg.id,
-        recipientType: 'MENTOR',
-        recipientEmail: reg.mentor.email,
-        emailType: 'REGISTRATION_CONFIRMATION',
-        subject: mentorTpl.subject,
-        html: mentorTpl.html,
-      }, forceResend);
-    }
-
-    // --- STEP 3: PARENTS WELCOME + CHILD & MENTOR CONTACT DETAILS (Sent to each Parent) ---
-    for (let i = 0; i < reg.players.length; i++) {
-      const player = reg.players[i];
-      if (!player.parentEmail) continue;
-
-      const parentPlayerInfo = {
-        playerIndex: i + 1,
-        playerName: player.playerName,
-        studentClass: player.studentClass,
-        jerseyNumber: player.jerseyNumber,
-        jerseySize: player.jerseySize,
-        cricketRole: player.cricketRole,
-        battingStyle: player.battingStyle,
-        bowlingStyle: player.bowlingStyle,
-      };
-
-      const parentTpl = renderRegistrationConfirmationEmail({
-        recipientType: 'PARENT',
-        registrationId: reg.id,
-        teamCode: reg.teamCode,
-        teamName: reg.teamName,
-        category: reg.category,
-        associationName: reg.association.associationName,
-        branch: reg.association.branch,
-        mentorName: reg.mentor.name,
-        mentorMobile: reg.mentor.mobile,
-        mentorSecondMobile: reg.mentor.secondMobile,
-        mentorEmail: reg.mentor.email,
-        mentorDesignation: reg.mentor.designation,
-        includeBranding: reg.includeBranding,
-        totalAmount: reg.payment.totalAmount,
-        paymentStatus: reg.payment.paymentStatus,
-        players: playerInfos,
-        parentPlayer: parentPlayerInfo,
-      });
-
-      await sendEmailWithIdempotency({
-        registrationId: reg.id,
-        recipientType: 'PARENT',
-        recipientEmail: player.parentEmail,
-        emailType: 'REGISTRATION_CONFIRMATION',
-        subject: parentTpl.subject,
-        html: parentTpl.html,
-      }, forceResend);
-    }
-
-    // --- STEP 4: TOURNAMENT RULES & IMPORTANT INFORMATION (Association & Mentor ONLY) ---
-    // Parents will NOT receive rules email — parents receive strictly one welcome confirmation email.
+    // --- STEP 2: TOURNAMENT RULES & IMPORTANT INFORMATION (Sent to Association, Mentor & Parents) ---
     const rulesRecipients: { email: string; type: RecipientType }[] = [];
-
     if (reg.association?.email) {
       rulesRecipients.push({ email: reg.association.email, type: 'ASSOCIATION' });
     }
     if (reg.mentor?.email) {
       rulesRecipients.push({ email: reg.mentor.email, type: 'MENTOR' });
+    }
+    for (const player of reg.players) {
+      if (player.parentEmail && !rulesRecipients.some(r => r.email.toLowerCase() === player.parentEmail?.toLowerCase())) {
+        rulesRecipients.push({ email: player.parentEmail, type: 'PARENT' });
+      }
     }
 
     const rulesTpl = renderTournamentRulesEmail({
@@ -389,10 +405,10 @@ export async function triggerPaymentVerifiedEmails(registrationId: string, force
       teamCode: reg.teamCode,
       teamName: reg.teamName,
       category: reg.category,
-      associationName: reg.association.associationName,
-      mentorName: reg.mentor.name,
-      mentorMobile: reg.mentor.mobile,
-      mentorEmail: reg.mentor.email,
+      associationName: reg.association?.associationName || '',
+      mentorName: reg.mentor?.name || '',
+      mentorMobile: reg.mentor?.mobile || '',
+      mentorEmail: reg.mentor?.email || '',
       includeBranding: reg.includeBranding,
     });
 

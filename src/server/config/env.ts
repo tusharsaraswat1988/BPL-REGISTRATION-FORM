@@ -121,7 +121,7 @@ export const config: ServerConfig = {
 
   registrationWindow: {
     start: process.env.REGISTRATION_START_TIME || '2026-09-08T00:00:00+05:30',
-    end: process.env.REGISTRATION_END_TIME || '2026-09-25T23:59:59+05:30',
+    end: process.env.REGISTRATION_END_TIME || '2026-10-15T23:59:59+05:30',
     enabled: process.env.REGISTRATION_ENABLED !== 'false',
   },
 

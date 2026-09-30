@@ -69,6 +69,10 @@ export interface RegistrationSubmissionInput {
   mentor: MentorInput;
   players: PlayerInput[];
   payment: PaymentInput;
+  mediaConsent?: boolean;
+  mediaConsentTimestamp?: string;
+  media_consent?: boolean;
+  media_consent_timestamp?: string;
   notes?: string;
   idempotencyKey?: string;
   draftToken?: string;
@@ -107,6 +111,8 @@ export interface RegistrationFullRecord {
     verifiedBy?: string | null;
     verifiedAt?: string | null;
   };
+  mediaConsent: boolean;
+  mediaConsentTimestamp?: string;
 }
 
 /**
@@ -312,6 +318,15 @@ export function validateRegistrationPayload(input: RegistrationSubmissionInput):
     }
   }
 
+  // Media, Photography & Branding Consent check
+  const hasMediaConsent = Boolean(input.mediaConsent || (input as any).media_consent);
+  if (!hasMediaConsent) {
+    return {
+      valid: false,
+      error: 'Please read and accept the Media, Photography & Branding Consent before submitting the registration.',
+    };
+  }
+
   return { valid: true };
 }
 
@@ -421,12 +436,17 @@ export async function createRegistrationTransaction(
         targetVerifiedAt = null;
       }
 
+      const hasMediaConsent = Boolean(input.mediaConsent || (input as any).media_consent);
+      const mediaConsentTimestamp = (input.mediaConsentTimestamp || (input as any).media_consent_timestamp) 
+        ? new Date(input.mediaConsentTimestamp || (input as any).media_consent_timestamp) 
+        : new Date();
+
       // 1. Update Master Registration Record
       await client.query(
         `UPDATE registrations
          SET category = $1, team_name = $2, include_branding = $3, team_tagline = $4,
-             team_short_code = $5, notes = $6, updated_at = NOW()
-         WHERE id = $7`,
+             team_short_code = $5, notes = $6, media_consent = $7, media_consent_timestamp = $8, updated_at = NOW()
+         WHERE id = $9`,
         [
           input.category,
           input.teamName.trim(),
@@ -434,6 +454,8 @@ export async function createRegistrationTransaction(
           input.teamTagline?.trim() || null,
           input.teamShortCode?.trim() || 'BPL',
           input.notes?.trim() || null,
+          hasMediaConsent,
+          mediaConsentTimestamp,
           existingRegId,
         ]
       );
@@ -623,12 +645,17 @@ export async function createRegistrationTransaction(
     const registrationId = await generateNextRegistrationId(client);
     const teamCode = await generateUnique4DigitTeamCode(client);
 
+    const hasMediaConsent = Boolean(input.mediaConsent || (input as any).media_consent);
+    const mediaConsentTimestamp = (input.mediaConsentTimestamp || (input as any).media_consent_timestamp) 
+      ? new Date(input.mediaConsentTimestamp || (input as any).media_consent_timestamp) 
+      : new Date();
+
     // E. Insert Master Registration Record
     await client.query(
       `INSERT INTO registrations (
         id, team_code, category, team_name, include_branding, team_tagline, team_short_code,
-        status, auth_user_id, idempotency_key, notes
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'SUBMITTED', $8, $9, $10)`,
+        status, auth_user_id, idempotency_key, media_consent, media_consent_timestamp, notes
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'SUBMITTED', $8, $9, $10, $11, $12)`,
       [
         registrationId,
         teamCode,
@@ -639,6 +666,8 @@ export async function createRegistrationTransaction(
         input.teamShortCode?.trim() || 'BPL',
         input.authUserId || null,
         input.idempotencyKey || null,
+        hasMediaConsent,
+        mediaConsentTimestamp,
         input.notes?.trim() || null,
       ]
     );
@@ -870,6 +899,8 @@ export async function getRegistrationById(
       verifiedBy: payment.verified_by,
       verifiedAt: payment.verified_at,
     },
+    mediaConsent: Boolean(reg.media_consent),
+    mediaConsentTimestamp: reg.media_consent_timestamp ? (reg.media_consent_timestamp instanceof Date ? reg.media_consent_timestamp.toISOString() : String(reg.media_consent_timestamp)) : undefined,
   };
 }
 
@@ -1016,7 +1047,9 @@ export async function getAllRegistrationsForAdmin(filter?: {
       p.payment_status,
       p.paid_at,
       p.verified_by,
-      p.verified_at
+      p.verified_at,
+      r.media_consent,
+      r.media_consent_timestamp
     FROM registrations r
     LEFT JOIN associations a ON r.id = a.registration_id
     LEFT JOIN mentors m ON r.id = m.registration_id
@@ -1136,6 +1169,8 @@ export async function getAllRegistrationsForAdmin(filter?: {
       verifiedBy: row.verified_by,
       verifiedAt: row.verified_at,
     },
+    mediaConsent: Boolean(row.media_consent),
+    mediaConsentTimestamp: row.media_consent_timestamp ? (row.media_consent_timestamp instanceof Date ? row.media_consent_timestamp.toISOString() : String(row.media_consent_timestamp)) : undefined,
   }));
 }
 
