@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Users, FileText, PlusCircle, 
   Menu, X, ShieldCheck, 
-  ArrowLeft, LayoutDashboard
+  ArrowLeft, LayoutDashboard, Lock
 } from 'lucide-react';
 import { BplLogo } from './BplLogo';
 import { TOURNAMENT_CONFIG, SponsorConfig } from '../config/tournamentConfig';
@@ -32,18 +32,11 @@ export const Header: React.FC<HeaderProps> = ({
 
   const menuItems = [
     {
-      id: 'register',
-      label: 'Register Team',
-      path: '/register',
-      icon: PlusCircle,
-      isPrimary: true
-    },
-    {
       id: 'teams',
       label: `Registered Teams (${registeredCount})`,
       path: '/teams',
       icon: Users,
-      isPrimary: false
+      isPrimary: true
     },
     {
       id: 'rules',
@@ -58,6 +51,14 @@ export const Header: React.FC<HeaderProps> = ({
       path: '/verify',
       icon: ShieldCheck,
       isPrimary: false
+    },
+    {
+      id: 'register',
+      label: 'Registration (Closed)',
+      path: '/register',
+      icon: Lock,
+      isPrimary: false,
+      isClosed: true
     }
   ];
 
@@ -125,7 +126,9 @@ export const Header: React.FC<HeaderProps> = ({
                         ? 'gold-button gold-button-hover shadow-md shadow-[#FFB800]/25 text-[#070D24]'
                         : item.isPrimary
                           ? 'bg-[#FFB800]/15 text-[#FFB800] hover:bg-[#FFB800]/25 border border-[#FFB800]/30'
-                          : 'text-slate-300 hover:text-white hover:bg-[#0E1B48]'
+                          : (item as any).isClosed
+                            ? 'text-amber-400/80 hover:text-amber-300 hover:bg-amber-500/10 border border-amber-500/20'
+                            : 'text-slate-300 hover:text-white hover:bg-[#0E1B48]'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -152,11 +155,11 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-2 lg:hidden">
               <button
                 type="button"
-                onClick={() => handleNav('/register')}
+                onClick={() => handleNav('/teams')}
                 className="gold-button gold-button-hover px-3 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
               >
-                <PlusCircle className="w-3.5 h-3.5" />
-                <span>Register</span>
+                <Users className="w-3.5 h-3.5 text-[#070D24]" />
+                <span>Teams ({registeredCount})</span>
               </button>
 
               <button

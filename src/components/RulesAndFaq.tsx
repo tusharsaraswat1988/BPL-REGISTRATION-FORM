@@ -42,7 +42,7 @@ export const RulesAndFaq: React.FC<{ onNavigate?: (path: string) => void }> = ({
     },
     {
       q: "What is the registration deadline?",
-      a: "The official registration deadline is 25 September 2026. Slots are strictly capped at 8 teams per category on a first-confirmed basis."
+      a: "The official registration deadline was 25 September 2026. Registrations are officially closed for Season 1. See you in the next league!"
     },
     {
       q: "When and where will the tournament matches be held?",
@@ -520,7 +520,7 @@ export const RulesAndFaq: React.FC<{ onNavigate?: (path: string) => void }> = ({
                 Registration Fees & Official Deadline
               </h2>
             </div>
-            <span className="text-xs text-[#FFB800] font-bold uppercase font-mono-sport">DEADLINE: 25 SEPT 2026</span>
+            <span className="text-xs text-amber-400 font-bold uppercase font-mono-sport">DEADLINE WAS 25 SEPT 2026 (CLOSED)</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -565,18 +565,18 @@ export const RulesAndFaq: React.FC<{ onNavigate?: (path: string) => void }> = ({
             <div className="space-y-0.5 text-center sm:text-left">
               <div className="text-xs font-bold text-white flex items-center justify-center sm:justify-start gap-1.5">
                 <Calendar className="w-4 h-4 text-[#FFB800]" />
-                <span>Registration Deadline: <strong>25 September 2026</strong></span>
+                <span>Registration Deadline: <strong>25 September 2026 (Closed)</strong></span>
               </div>
-              <p className="text-[11px] text-slate-400">Strictly 8 teams per category on a first-come, first-confirmed basis.</p>
+              <p className="text-[11px] text-slate-400">Registrations for Season 1 are officially closed. See you in the next league!</p>
             </div>
 
             {onNavigate && (
               <button
                 type="button"
-                onClick={() => onNavigate('/register')}
+                onClick={() => onNavigate('/teams')}
                 className="gold-button gold-button-hover px-6 py-2.5 text-xs font-bold flex items-center gap-2 cursor-pointer whitespace-nowrap"
               >
-                <span>REGISTER TEAM SQUAD</span>
+                <span>VIEW REGISTERED TEAMS</span>
                 <ArrowRight className="w-4 h-4 text-[#070D24]" />
               </button>
             )}
@@ -652,11 +652,11 @@ export const RulesAndFaq: React.FC<{ onNavigate?: (path: string) => void }> = ({
           {onNavigate && (
             <button
               type="button"
-              onClick={() => onNavigate('/register')}
+              onClick={() => onNavigate('/teams')}
               className="gold-button gold-button-hover px-8 py-3 text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer"
             >
-              <Trophy className="w-4 h-4 text-[#070D24]" />
-              <span>START TEAM REGISTRATION →</span>
+              <Users className="w-4 h-4 text-[#070D24]" />
+              <span>VIEW REGISTERED TEAMS →</span>
             </button>
           )}
 

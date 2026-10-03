@@ -88,7 +88,12 @@ async function runAllTests() {
   // -------------------------------------------------------------
   console.log('--- Suite 1: Registration Window Enforcement ---');
   const windowStatus = isRegistrationWindowOpen();
-  assert(windowStatus.open === true, 'Current date (Sept 2026) is within registration window');
+  assert(windowStatus.open === false, 'Registration window is closed after deadline (25 Sept 2026)');
+  assert(typeof windowStatus.reason === 'string' && windowStatus.reason.includes('closed'), 'Closed reason is provided');
+
+  // Enable window for subsequent mock submission payload tests
+  config.registrationWindow.enabled = true;
+  config.registrationWindow.end = '2030-01-01T00:00:00Z';
 
   // -------------------------------------------------------------
   // TEST SUITE 2: UTR Normalization & Validation

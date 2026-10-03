@@ -121,7 +121,7 @@ export interface RegistrationFullRecord {
 export function isRegistrationWindowOpen(): { open: boolean; reason?: string } {
   const { start, end, enabled } = config.registrationWindow;
   if (!enabled) {
-    return { open: false, reason: 'Registration is currently disabled by tournament administration.' };
+    return { open: false, reason: 'Registration is officially closed for Season 1. The deadline was 25 September 2026. See you in the next league!' };
   }
 
   const now = new Date();
@@ -133,7 +133,7 @@ export function isRegistrationWindowOpen(): { open: boolean; reason?: string } {
   }
 
   if (now > endTime) {
-    return { open: false, reason: `Registration closed on 25 September 2026 at 23:59:59 IST.` };
+    return { open: false, reason: `Registration closed on 25 September 2026 at 23:59:59 IST. See you in the next league!` };
   }
 
   return { open: true };

@@ -45,10 +45,10 @@ export const LegalPage: React.FC<LegalPageProps> = ({ initialTab = 'terms', onNa
             <div className="flex items-center gap-2 self-stretch sm:self-auto">
               <button
                 type="button"
-                onClick={() => onNavigate && onNavigate('/register')}
+                onClick={() => onNavigate && onNavigate('/teams')}
                 className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#FFB800] to-[#E6A600] text-slate-950 font-bold text-xs uppercase tracking-wider font-mono hover:brightness-110 transition-all cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-[#FFB800]/20"
               >
-                <span>Register Team</span>
+                <span>Registered Teams</span>
               </button>
             </div>
           </div>

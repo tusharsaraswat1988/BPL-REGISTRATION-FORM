@@ -27,9 +27,12 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
         <div className="text-center max-w-3xl mx-auto">
           {/* Top Brand Badges */}
           <div className="inline-flex flex-wrap items-center justify-center gap-2 mb-4 font-sans">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/30 text-xs font-bold uppercase">
-              <span className="live-dot" />
-              Official Registration Open · Deadline 25 Sept 2026
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase">
+              <span className="w-2 h-2 rounded-full bg-amber-400" />
+              Official Registrations Closed · Deadline Was 25 Sept 2026
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-500/15 text-sky-300 border border-sky-500/30 text-xs font-bold uppercase">
+              See You in Next League
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0B1538] text-slate-300 border border-[#1A2C68] text-xs font-semibold">
               <span className="text-slate-400">Pitch and Paddle, Sigra • Organised by</span>
@@ -113,7 +116,7 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
               <div>
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Tournament Dates</p>
                 <p className="text-sm font-display font-bold text-white">10TH & 11TH OCTOBER 2026</p>
-                <p className="text-xs text-[#FFB800] font-medium">Deadline: 25 September 2026</p>
+                <p className="text-xs text-amber-400 font-medium">Deadline: 25 September 2026 (Closed)</p>
               </div>
             </div>
 
@@ -147,7 +150,7 @@ export const TournamentHero: React.FC<HeroProps> = ({ onStartRegistration, onChe
               className="gold-button gold-button-hover w-full sm:w-auto px-8 py-3.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 cursor-pointer"
             >
               <Trophy className="w-4 h-4 text-[#070D24]" />
-              <span>Register Team Squad</span>
+              <span>Registrations Closed · See You in Next League</span>
             </button>
 
             <button

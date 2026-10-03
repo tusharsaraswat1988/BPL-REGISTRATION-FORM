@@ -54,9 +54,13 @@ export const HomePage: React.FC<HomePageProps> = ({
             <div className="flex flex-col justify-center text-left space-y-6">
               {/* Badges Strip */}
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="inline-flex items-center gap-2 rounded-full border border-red-500/40 bg-red-500/10 px-3.5 py-1 text-xs font-bold text-red-400 uppercase tracking-wide">
-                  <span className="live-dot" />
-                  REGISTRATION OPEN · DEADLINE 25 SEPT 2026
+                <span className="inline-flex items-center gap-2 rounded-full border border-amber-500/40 bg-amber-500/15 px-3.5 py-1 text-xs font-bold text-amber-300 uppercase tracking-wide">
+                  <span className="w-2 h-2 rounded-full bg-amber-400" />
+                  REGISTRATIONS CLOSED · DEADLINE WAS 25 SEPT 2026
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/40 bg-sky-500/15 px-3.5 py-1 text-xs font-bold text-sky-300 uppercase tracking-wide">
+                  <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+                  SEE YOU IN NEXT LEAGUE
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1 text-xs font-semibold text-slate-300">
                   <MapPin className="w-3 h-3 text-[#FFB800]" />
@@ -67,7 +71,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               {/* Tournament Title & Subtitle */}
               <div className="space-y-2">
                 <div className="text-xs sm:text-sm font-bold tracking-wider text-[#FFB800] uppercase flex items-center gap-2">
-                  <span>OFFICIAL TOURNAMENT REGISTRATION PORTAL</span>
+                  <span>OFFICIAL TOURNAMENT PORTAL · KIDS SEASON 1</span>
                 </div>
 
                 <h1 className="text-hero text-white tracking-tight">
@@ -84,7 +88,7 @@ export const HomePage: React.FC<HomePageProps> = ({
                 <span className="text-slate-500">•</span>
                 <span className="text-slate-300">PITCH AND PADDLE, SIGRA</span>
                 <span className="text-slate-500">•</span>
-                <span className="text-[#FFB800] font-bold">₹1,000 / PLAYER</span>
+                <span className="text-amber-400 font-bold uppercase">REGISTRATIONS CLOSED</span>
               </div>
 
               {/* Description */}
@@ -92,25 +96,41 @@ export const HomePage: React.FC<HomePageProps> = ({
                 The premier youth box cricket championship bringing school and academy players together at Pitch and Paddle, Sigra. 8 teams per category across two verified age divisions with 2-group league stages, Semi-Finals, Grand Final, and live digital scoring.
               </p>
 
-              {/* Primary Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => onNavigate('/register')}
-                  className="gold-button gold-button-hover px-7 py-3.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Trophy className="w-4 h-4 text-[#070D24]" />
-                  <span>REGISTER YOUR TEAM SQUAD →</span>
-                </button>
+              {/* Primary Action Buttons & Status Notice */}
+              <div className="space-y-3 pt-2">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  <span>REGISTRATIONS OFFICIALLY CLOSED — SEE YOU IN NEXT LEAGUE!</span>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => onNavigate('/rules')}
-                  className="ghost-button ghost-button-hover px-6 py-3.5 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <FileText className="w-4 h-4 text-[#FFB800]" />
-                  <span>VIEW RULES & FORMAT</span>
-                </button>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('/teams')}
+                    className="gold-button gold-button-hover px-7 py-3.5 text-xs sm:text-sm font-bold flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Users className="w-4 h-4 text-[#070D24]" />
+                    <span>VIEW REGISTERED TEAMS ({teams.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('/rules')}
+                    className="ghost-button ghost-button-hover px-6 py-3.5 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-[#FFB800]" />
+                    <span>VIEW RULES & FORMAT</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onNavigate('/verify')}
+                    className="ghost-button ghost-button-hover px-5 py-3.5 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-[#FFB800]" />
+                    <span>VERIFY STATUS</span>
+                  </button>
+                </div>
               </div>
 
               {/* 4 Trust Highlights */}
@@ -194,7 +214,7 @@ export const HomePage: React.FC<HomePageProps> = ({
               <div className="text-xs font-bold uppercase tracking-wide text-slate-400">SCHEDULE & VENUE</div>
               <h3 className="font-display text-lg font-bold text-white mt-1">10–11 OCTOBER 2026</h3>
               <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
-                Saturday & Sunday tournament weekend held at Pitch and Paddle, Sigra. Registration closes 25 September 2026.
+                Saturday & Sunday tournament weekend held at Pitch and Paddle, Sigra. Registration closed on 25 September 2026.
               </p>
             </div>
           </div>
@@ -309,9 +329,9 @@ export const HomePage: React.FC<HomePageProps> = ({
 
             <div className="pt-3 flex flex-wrap items-center justify-between border-t border-white/10 text-xs gap-2">
               <span className="text-slate-400">Brand Association Package: +₹5,000 (Total ₹13k)</span>
-              <div className="flex items-center gap-1.5 text-xs text-[#FFB800] font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#FFB800] animate-pulse" />
-                <span>DEADLINE: 25 SEPT</span>
+              <div className="flex items-center gap-1.5 text-xs text-amber-400 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span>DEADLINE PASSED (25 SEPT) · CLOSED</span>
               </div>
             </div>
           </div>
@@ -362,9 +382,9 @@ export const HomePage: React.FC<HomePageProps> = ({
 
             <div className="pt-3 flex flex-wrap items-center justify-between border-t border-white/10 text-xs gap-2">
               <span className="text-slate-400">Brand Association Package: +₹5,000 (Total ₹13k)</span>
-              <div className="flex items-center gap-1.5 text-xs text-sky-400 font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-                <span>DEADLINE: 25 SEPT</span>
+              <div className="flex items-center gap-1.5 text-xs text-amber-400 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <span>DEADLINE PASSED (25 SEPT) · CLOSED</span>
               </div>
             </div>
           </div>

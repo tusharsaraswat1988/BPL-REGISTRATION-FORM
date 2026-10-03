@@ -124,8 +124,8 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
                   onClick={() => handleNav('/register')}
                   className="text-slate-300 hover:text-[#FFB800] transition-colors cursor-pointer text-left flex items-center gap-2"
                 >
-                  <PlusCircle className="w-3.5 h-3.5 text-[#FFB800]" />
-                  <span>Register Team</span>
+                  <Lock className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Registration (Closed)</span>
                 </button>
               </li>
               <li>
