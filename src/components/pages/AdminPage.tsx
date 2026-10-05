@@ -431,8 +431,171 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
     });
   }, [registrations, categoryFilter, paymentFilter, searchQuery]);
 
-  // Export to Excel / CSV (Master Sheet with 1 row per team and all 8 player columns)
-  const exportMasterCsv = () => {
+  // Helper to trigger file download in Excel-ready UTF-8 BOM CSV format
+  const downloadCsv = (content: string, filename: string) => {
+    const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Generate Player-wise Roster CSV (Team-wise grouped, 1 row per player)
+  const generateRosterCsvContent = (targetRegistrations: RegistrationFullRecord[]) => {
+    const headers = [
+      'Sr No.',
+      'Team Code',
+      'Team Name',
+      'Division Category',
+      'Player #',
+      'Player Name',
+      'Student Class',
+      'Date of Birth',
+      'Jersey Number',
+      'Jersey Size',
+      'Cricket Role',
+      'Batting Style',
+      'Bowling Style',
+      'Parent Mobile',
+      'Parent Email',
+      'Player Photo URL (Cloudinary)',
+      'School / Association Name',
+      'Branch',
+      'City',
+      'Association Type',
+      'School Email',
+      'School Mobile',
+      'School Logo URL (Cloudinary)',
+      'Mentor Name',
+      'Mentor Designation',
+      'Mentor Mobile',
+      'Mentor Alt Mobile',
+      'Mentor Email',
+      'Mentor Photo URL (Cloudinary)',
+      'Team Tagline',
+      'Team Short Code',
+      'Branded Jersey Included',
+      'Base Entry Fee (INR)',
+      'Branding Fee (INR)',
+      'Total Amount (INR)',
+      'Payment Status',
+      'Payment Method',
+      'Payment Gateway',
+      'UTR / Transaction Reference',
+      'Gateway Order ID',
+      'Paid At',
+      'Verified By',
+      'Verified At',
+      'Payment Proof Screenshot URL',
+      'Registration ID',
+      'Registration Submitted At',
+    ];
+
+    let srNo = 1;
+    const rows: string[][] = [];
+
+    targetRegistrations.forEach((r) => {
+      const playersList = r.players && r.players.length > 0 ? r.players : [{} as PlayerInput];
+
+      playersList.forEach((p, idx) => {
+        rows.push([
+          String(srNo++),
+          r.teamCode || '',
+          r.teamName || '',
+          r.category === 'class_4_5_6' ? 'Class 4–5–6' : 'Class 7–8–9',
+          `Player ${idx + 1}`,
+          p.playerName || '',
+          p.studentClass ? `Class ${p.studentClass}` : '',
+          p.dateOfBirth || '',
+          p.jerseyNumber ? String(p.jerseyNumber) : '',
+          p.jerseySize || '',
+          p.cricketRole || '',
+          p.battingStyle || '',
+          p.bowlingStyle || '',
+          p.parentMobile || '',
+          p.parentEmail || '',
+          p.playerPhoto || '',
+          r.association.associationName || '',
+          r.association.branch || '',
+          r.association.city || '',
+          r.association.associationType || 'School',
+          r.association.email || '',
+          r.association.mobile || '',
+          r.association.associationLogo || '',
+          r.mentor.name || '',
+          r.mentor.designation || 'Head Coach',
+          r.mentor.mobile || '',
+          r.mentor.secondMobile || '',
+          r.mentor.email || '',
+          r.mentor.photo || '',
+          r.branding.teamTagline || '',
+          r.branding.teamShortCode || '',
+          r.includeBranding ? 'YES' : 'NO',
+          String(r.payment.baseAmount || 8000),
+          String(r.payment.brandingAmount || 0),
+          String(r.payment.totalAmount || 8000),
+          r.payment.paymentStatus || '',
+          r.payment.method || '',
+          r.payment.gateway || 'MANUAL',
+          r.payment.utrTransactionId || '',
+          r.payment.gatewayOrderId || '',
+          r.payment.paidAt ? new Date(r.payment.paidAt).toLocaleString('en-IN') : '',
+          r.payment.verifiedBy || '',
+          r.payment.verifiedAt ? new Date(r.payment.verifiedAt).toLocaleString('en-IN') : '',
+          r.payment.paymentScreenshot || '',
+          r.id || '',
+          r.createdAt ? new Date(r.createdAt).toLocaleString('en-IN') : '',
+        ]);
+      });
+    });
+
+    return (
+      '\uFEFF' +
+      [headers, ...rows]
+        .map((row) =>
+          row
+            .map((field) => {
+              const str = String(field ?? '').replace(/"/g, '""');
+              return `"${str}"`;
+            })
+            .join(',')
+        )
+        .join('\r\n')
+    );
+  };
+
+  // Export Overall Teams (Team-wise Roster with Players per Row)
+  const exportAllTeamsRosterCsv = () => {
+    if (filteredRegistrations.length === 0) {
+      showToast('No registrations to export.');
+      return;
+    }
+
+    const csvContent = generateRosterCsvContent(filteredRegistrations);
+    downloadCsv(
+      csvContent,
+      `BPL_2026_Teams_Player_Roster_${new Date().toISOString().split('T')[0]}.csv`
+    );
+    showToast(`Excel Roster downloaded successfully! (${filteredRegistrations.length} teams, player per row)`);
+  };
+
+  // Export a Single Team (Team-wise with Players per Row)
+  const exportSingleTeamCsv = (reg: RegistrationFullRecord) => {
+    const csvContent = generateRosterCsvContent([reg]);
+    const safeName = (reg.teamName || 'Team').replace(/[^a-zA-Z0-9_-]/g, '_');
+    downloadCsv(
+      csvContent,
+      `BPL_2026_Team_${reg.teamCode || reg.id}_${safeName}_Roster.csv`
+    );
+    showToast(`Excel downloaded for team: ${reg.teamName} (8 players row-wise)`);
+  };
+
+  // Export Team Summary (1 row per team overview for quick accounts / finance review)
+  const exportTeamSummaryCsv = () => {
     if (filteredRegistrations.length === 0) {
       showToast('No registrations to export.');
       return;
@@ -446,185 +609,65 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       'Team Name',
       'Tagline',
       'Short Code',
-      'Branding Package Included',
-      'Association / School Name',
+      'Branded Jersey Package',
+      'School / Association Name',
       'Branch',
-      'Association City',
+      'City',
       'Association Type',
-      'Association Email',
-      'Association Mobile',
-      'Association Logo URL (Cloudinary)',
+      'School Email',
+      'School Mobile',
       'Mentor Name',
       'Mentor Designation',
       'Mentor Mobile',
-      'Mentor Second Mobile',
       'Mentor Email',
-      'Mentor Photo URL (Cloudinary)',
-      // Player 1 to 8 Headers
-      ...[1, 2, 3, 4, 5, 6, 7, 8].flatMap((num) => [
-        `P${num} Name`,
-        `P${num} Class`,
-        `P${num} DOB`,
-        `P${num} Jersey #`,
-        `P${num} Jersey Size`,
-        `P${num} Role`,
-        `P${num} Batting Style`,
-        `P${num} Bowling Style`,
-        `P${num} Parent Mobile`,
-        `P${num} Parent Email`,
-        `P${num} Photo URL (Cloudinary)`,
-      ]),
+      'Total Players Count',
+      'Player Names',
       'Base Entry Fee (INR)',
       'Branding Fee (INR)',
       'Total Amount (INR)',
+      'Payment Status',
       'Payment Method',
       'Payment Gateway',
       'UTR / Transaction Reference',
       'Gateway Order ID',
-      'Payment Status',
       'Paid At',
       'Verified By',
       'Verified At',
-      'Payment Proof Screenshot URL (Cloudinary)',
     ];
 
-    const rows = filteredRegistrations.map((r) => {
-      const pCols: string[] = [];
-      for (let i = 0; i < 8; i++) {
-        const p = r.players[i] || ({} as PlayerInput);
-        pCols.push(
-          p.playerName || '',
-          p.studentClass ? String(p.studentClass) : '',
-          p.dateOfBirth || '',
-          p.jerseyNumber ? String(p.jerseyNumber) : '',
-          p.jerseySize || '',
-          p.cricketRole || '',
-          p.battingStyle || '',
-          p.bowlingStyle || '',
-          p.parentMobile || '',
-          p.parentEmail || '',
-          p.playerPhoto || ''
-        );
-      }
-
-      return [
-        r.id,
-        r.teamCode,
-        new Date(r.createdAt).toLocaleString('en-IN'),
-        r.category === 'class_4_5_6' ? 'Class 4–5–6' : 'Class 7–8–9',
-        r.teamName,
-        r.branding.teamTagline || '',
-        r.branding.teamShortCode || '',
-        r.includeBranding ? 'YES' : 'NO',
-        r.association.associationName,
-        r.association.branch,
-        r.association.city || '',
-        r.association.associationType || 'School',
-        r.association.email,
-        r.association.mobile,
-        r.association.associationLogo,
-        r.mentor.name,
-        r.mentor.designation || 'Head Coach',
-        r.mentor.mobile,
-        r.mentor.secondMobile || '',
-        r.mentor.email,
-        r.mentor.photo,
-        ...pCols,
-        String(r.payment.baseAmount || 8000),
-        String(r.payment.brandingAmount || 0),
-        String(r.payment.totalAmount || 8000),
-        r.payment.method,
-        r.payment.gateway || 'MANUAL',
-        r.payment.utrTransactionId || '',
-        r.payment.gatewayOrderId || '',
-        r.payment.paymentStatus,
-        r.payment.paidAt ? new Date(r.payment.paidAt).toLocaleString('en-IN') : '',
-        r.payment.verifiedBy || '',
-        r.payment.verifiedAt ? new Date(r.payment.verifiedAt).toLocaleString('en-IN') : '',
-        r.payment.paymentScreenshot || '',
-      ];
-    });
-
-    const csvContent =
-      '\uFEFF' + // UTF-8 BOM so Microsoft Excel opens cleanly
-      [headers, ...rows]
-        .map((row) =>
-          row
-            .map((field) => {
-              const str = String(field ?? '').replace(/"/g, '""');
-              return `"${str}"`;
-            })
-            .join(',')
-        )
-        .join('\r\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      `BPL_2026_Master_Registrations_${new Date().toISOString().split('T')[0]}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Excel/CSV Master Export downloaded successfully!');
-  };
-
-  // Export Flat Player Directory (1 row per player)
-  const exportPlayersCsv = () => {
-    if (filteredRegistrations.length === 0) {
-      showToast('No players to export.');
-      return;
-    }
-
-    const headers = [
-      'Registration ID',
-      'Team Code',
-      'Team Name',
-      'Division Category',
-      'Association Name',
-      'Player Index',
-      'Player Name',
-      'Student Class',
-      'Date of Birth',
-      'Jersey Number',
-      'Jersey Size',
-      'Cricket Role',
-      'Batting Style',
-      'Bowling Style',
-      'Parent Mobile',
-      'Parent Email',
-      'Player Photo URL (Cloudinary)',
-      'Payment Status',
-    ];
-
-    const rows: string[][] = [];
-    filteredRegistrations.forEach((r) => {
-      r.players.forEach((p, idx) => {
-        rows.push([
-          r.id,
-          r.teamCode,
-          r.teamName,
-          r.category === 'class_4_5_6' ? 'Class 4–5–6' : 'Class 7–8–9',
-          r.association.associationName,
-          String(idx + 1),
-          p.playerName,
-          String(p.studentClass),
-          p.dateOfBirth,
-          String(p.jerseyNumber),
-          p.jerseySize,
-          p.cricketRole,
-          p.battingStyle || '',
-          p.bowlingStyle || '',
-          p.parentMobile,
-          p.parentEmail,
-          p.playerPhoto,
-          r.payment.paymentStatus,
-        ]);
-      });
-    });
+    const rows = filteredRegistrations.map((r) => [
+      r.id,
+      r.teamCode,
+      new Date(r.createdAt).toLocaleString('en-IN'),
+      r.category === 'class_4_5_6' ? 'Class 4–5–6' : 'Class 7–8–9',
+      r.teamName,
+      r.branding.teamTagline || '',
+      r.branding.teamShortCode || '',
+      r.includeBranding ? 'YES' : 'NO',
+      r.association.associationName,
+      r.association.branch,
+      r.association.city || '',
+      r.association.associationType || 'School',
+      r.association.email,
+      r.association.mobile,
+      r.mentor.name,
+      r.mentor.designation || 'Head Coach',
+      r.mentor.mobile,
+      r.mentor.email,
+      String(r.players?.length || 0),
+      (r.players || []).map((p) => p.playerName).filter(Boolean).join('; '),
+      String(r.payment.baseAmount || 8000),
+      String(r.payment.brandingAmount || 0),
+      String(r.payment.totalAmount || 8000),
+      r.payment.paymentStatus,
+      r.payment.method,
+      r.payment.gateway || 'MANUAL',
+      r.payment.utrTransactionId || '',
+      r.payment.gatewayOrderId || '',
+      r.payment.paidAt ? new Date(r.payment.paidAt).toLocaleString('en-IN') : '',
+      r.payment.verifiedBy || '',
+      r.payment.verifiedAt ? new Date(r.payment.verifiedAt).toLocaleString('en-IN') : '',
+    ]);
 
     const csvContent =
       '\uFEFF' +
@@ -639,18 +682,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
         )
         .join('\r\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      `BPL_2026_Player_Directory_${new Date().toISOString().split('T')[0]}.csv`
+    downloadCsv(
+      csvContent,
+      `BPL_2026_Teams_Summary_1Row_${new Date().toISOString().split('T')[0]}.csv`
     );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Player Directory CSV downloaded successfully!');
+    showToast('Team Summary CSV downloaded successfully!');
   };
 
   // Filter Unfinished Registrations
@@ -989,21 +1025,21 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
             {adminTab === 'confirmed' ? (
               <>
                 <button
-                  onClick={exportMasterCsv}
+                  onClick={exportAllTeamsRosterCsv}
                   className="gold-button px-3.5 py-2 rounded-xl text-xs font-bold text-[#070D24] flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer"
-                  title="Export all fields including 8 players and Cloudinary URLs to Excel"
+                  title="Export all teams with player names per row wise to Excel"
                 >
                   <FileSpreadsheet className="w-3.5 h-3.5" />
-                  <span>Export Excel (All Data)</span>
+                  <span>Export Excel (Player-wise Roster)</span>
                 </button>
 
                 <button
-                  onClick={exportPlayersCsv}
+                  onClick={exportTeamSummaryCsv}
                   className="px-3 py-2 rounded-xl bg-[#091230] border border-[#1A2C68] hover:border-white/30 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
-                  title="Export 1 row per player roster"
+                  title="Export 1 row per team summary (finance & payment overview)"
                 >
                   <Users className="w-3.5 h-3.5 text-blue-400" />
-                  <span className="hidden md:inline">Player Directory CSV</span>
+                  <span className="hidden md:inline">Team Summary CSV</span>
                 </button>
               </>
             ) : (
@@ -1452,6 +1488,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                             </button>
 
                             <button
+                              onClick={() => exportSingleTeamCsv(reg)}
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                              title="Export Team Excel (Player-wise Roster)"
+                            >
+                              <FileSpreadsheet className="w-3.5 h-3.5" />
+                              <span>Excel</span>
+                            </button>
+
+                            <button
                               onClick={() => handleResendEmails(reg.id)}
                               disabled={resendingId === reg.id}
                               className="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
@@ -1876,6 +1921,14 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                   <span>Print Dossier</span>
                 </button>
                 <button
+                  onClick={() => exportSingleTeamCsv(selectedReg)}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Export Team Roster Excel (Player-wise)"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                  <span>Export Team Excel</span>
+                </button>
+                <button
                   onClick={() => setTeamToDelete(selectedReg)}
                   className="px-3 py-1.5 rounded-lg bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-300 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                   title="Permanently Delete Team"
@@ -2000,9 +2053,19 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                     <Users className="w-4 h-4" />
                     Official Squad (Strictly 8 Players)
                   </h3>
-                  <span className="text-[11px] text-slate-400">
-                    All player photos stored securely on Cloudinary
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => exportSingleTeamCsv(selectedReg)}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title="Download this team's roster in Excel format"
+                    >
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                      <span>Download Squad Excel</span>
+                    </button>
+                    <span className="text-[11px] text-slate-400 hidden sm:inline">
+                      All player photos stored securely on Cloudinary
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
